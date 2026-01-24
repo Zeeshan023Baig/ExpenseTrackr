@@ -1,7 +1,0 @@
-export { default as Header } from './Header'
-export { default as ExpenseCard } from './ExpenseCard'
-export { default as StatCard } from './StatCard'
-export { default as ExpenseForm } from './ExpenseForm'
-export { default as CategoryFilter } from './CategoryFilter'
-export { default as LoadingSpinner } from './LoadingSpinner'
-export { default as EmptyState } from './EmptyState'
