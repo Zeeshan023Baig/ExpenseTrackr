@@ -1,31 +1,49 @@
-require('dotenv').config();
 const express = require('express');
+const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const connectDB = require('./config/db');
-const chatRoutes = require('./routes/chatRoutes');
+const rateLimit = require('express-rate-limit');
+const { connectDB } = require('./config/db');
+
+// Load env vars
+dotenv.config();
+
+// Connect to database
+connectDB();
 
 const app = express();
 
-// Connect to MongoDB
-connectDB();
-
 // Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
-app.use(express.json());
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
+// Root Route
+app.get('/', (req, res) => {
+    res.send('API is running...');
+});
 
 // Routes
-// Mounting at / to match "POST /chat" requirement directly if not specified otherwise, 
-// or /api for better structure. I'll use root for simplicity matching the request "POST /chat".
-app.use('/', chatRoutes);
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/expenses', require('./routes/expenseRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/budget', require('./routes/budgetRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 
-// Error Handling Middleware
+// Error Handler
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send('Something broke!');
+    res.status(500).json({ message: 'Something went wrong!' });
 });
 
 const PORT = process.env.PORT || 5000;

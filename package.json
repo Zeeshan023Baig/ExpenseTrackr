@@ -4,26 +4,39 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "node server.js"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.16",
+    "axios": "^1.6.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "framer-motion": "^10.16.4",
+    "postcss": "^8.4.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.1",
-    "axios": "^1.6.2",
-    "react-icons": "^4.12.0",
-    "framer-motion": "^10.16.4",
     "react-hot-toast": "^2.4.1",
-    "tailwindcss": "^3.4.1",
-    "postcss": "^8.4.32",
-    "autoprefixer": "^10.4.16"
+    "react-icons": "^4.12.0",
+    "react-router-dom": "^6.20.1",
+    "tailwindcss": "^3.4.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.2.1",
     "vite": "^5.0.8"
-  }
+  },
+  "description": "A modern, full-featured expense tracking application built with Vite + React. Track your spending, categorize expenses, and visualize your financial habits with beautiful analytics and reports.",
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zeeshan023Baig/ExpenseTrackr.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zeeshan023Baig/ExpenseTrackr/issues"
+  },
+  "homepage": "https://github.com/Zeeshan023Baig/ExpenseTrackr#readme"
 }
