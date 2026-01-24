@@ -1,16 +1,8 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const { getExpenses, addExpense, deleteExpense, updateExpense, getExpenseStats } = require('../controllers/expenseController');
-const { protect } = require('../middleware/authMiddleware');
 
-router.route('/')
-    .get(protect, getExpenses)
-    .post(protect, addExpense);
+router.get("/", (req, res) => {
+    res.json({ message: "Expenses route working" });
+});
 
-router.get('/stats', protect, getExpenseStats); // Specific routes before parameters
-
-router.route('/:id')
-    .delete(protect, deleteExpense)
-    .put(protect, updateExpense);
-
-module.exports = router;
+export default router;
