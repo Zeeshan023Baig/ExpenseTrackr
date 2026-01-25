@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { Op } from 'sequelize';
 import User from '../models/User.js';
 
 // Generate JWT
@@ -14,17 +15,21 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, phoneNumber } = req.body;
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: 'Please add all fields' });
         }
 
         // Check if user exists
-        const userExists = await User.findOne({ where: { email } });
+        const userExists = await User.findOne({
+            where: {
+                [Op.or]: [{ email }, { username }]
+            }
+        });
 
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ message: 'User with this email or username already exists' });
         }
 
         // Hash password
@@ -35,7 +40,8 @@ const registerUser = async (req, res) => {
         const user = await User.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            phoneNumber
         });
 
         if (user) {
@@ -43,6 +49,7 @@ const registerUser = async (req, res) => {
                 _id: user.id,
                 username: user.username,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
                 token: generateToken(user.id)
             });
         } else {
@@ -69,6 +76,7 @@ const loginUser = async (req, res) => {
                 _id: user.id,
                 username: user.username,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
                 token: generateToken(user.id)
             });
         } else {
@@ -90,6 +98,7 @@ const getMe = async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email,
+            phoneNumber: user.phoneNumber
         });
     } catch (error) {
         console.error(error);

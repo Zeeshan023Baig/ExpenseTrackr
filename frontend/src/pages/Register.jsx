@@ -10,6 +10,7 @@ const Register = () => {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
+        phoneNumber: '',
         password: ''
     })
     const [loading, setLoading] = useState(false)
@@ -72,6 +73,21 @@ const Register = () => {
                                 onChange={handleChange}
                                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
                                 placeholder="name@example.com"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <div className="relative">
+                            <FiUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="tel"
+                                name="phoneNumber"
+                                value={formData.phoneNumber}
+                                onChange={handleChange}
+                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                placeholder="+1 234 567 890"
                             />
                         </div>
                     </div>
