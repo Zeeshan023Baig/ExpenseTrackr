@@ -1,8 +1,11 @@
 import express from "express";
+import { getExpenses, addExpense, deleteExpense } from "../controllers/expenseController.js";
+import { protect } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.json({ message: "Expenses route working" });
-});
+router.get("/", protect, getExpenses);
+router.post("/", protect, addExpense);
+router.delete("/:id", protect, deleteExpense);
 
 export default router;

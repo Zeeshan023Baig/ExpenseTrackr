@@ -15,7 +15,8 @@ const AddExpense = () => {
       toast.success('Expense added successfully! 💰')
       navigate('/expenses')
     } catch (error) {
-      toast.error('Failed to add expense')
+      const message = error.response?.data?.message || error.message || 'Failed to add expense'
+      toast.error(`Error: ${message}`)
       console.error(error)
     }
   }

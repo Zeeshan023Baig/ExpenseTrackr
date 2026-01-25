@@ -25,7 +25,9 @@ app.get("/", (req, res) => {
 });
 
 // api routes
+console.log('Mounting /api/auth');
 app.use("/api/auth", authRoutes);
+console.log('Mounting /api/expenses');
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/budget", budgetRoutes);
