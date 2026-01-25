@@ -1,0 +1,13 @@
+{
+    "name": "expensetrackr-root",
+    "version": "1.0.0",
+    "description": "Expense Tracker Application",
+    "scripts": {
+        "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+        "start": "concurrently \"npm run server --prefix backend\" \"npm run client --prefix frontend\"",
+        "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
