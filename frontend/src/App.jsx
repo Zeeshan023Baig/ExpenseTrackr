@@ -1,12 +1,22 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ExpenseProvider } from './context/ExpenseContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header } from './components'
-import { Dashboard, ExpensesList, AddExpense, Reports } from './pages'
+import { Dashboard, ExpensesList, AddExpense, Reports, Login, Register } from './pages'
+
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth()
+
+  if (loading) return null // or a loading spinner
+
+  return isAuthenticated ? children : <Navigate to="/login" />
+}
 
 const AppContent = () => {
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
 
   const pageVariants = {
     initial: {
@@ -60,10 +70,31 @@ const AppContent = () => {
               exit="exit"
             >
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/expenses" element={<ExpensesList />} />
-                <Route path="/add" element={<AddExpense />} />
-                <Route path="/reports" element={<Reports />} />
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
+                {/* Private Routes */}
+                <Route path="/" element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                } />
+                <Route path="/expenses" element={
+                  <PrivateRoute>
+                    <ExpensesList />
+                  </PrivateRoute>
+                } />
+                <Route path="/add" element={
+                  <PrivateRoute>
+                    <AddExpense />
+                  </PrivateRoute>
+                } />
+                <Route path="/reports" element={
+                  <PrivateRoute>
+                    <Reports />
+                  </PrivateRoute>
+                } />
               </Routes>
             </motion.div>
           </AnimatePresence>
@@ -221,9 +252,11 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <ExpenseProvider>
-        <AppContent />
-      </ExpenseProvider>
+      <AuthProvider>
+        <ExpenseProvider>
+          <AppContent />
+        </ExpenseProvider>
+      </AuthProvider>
     </Router>
   )
 }

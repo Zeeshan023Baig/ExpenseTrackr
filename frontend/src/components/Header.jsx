@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion'
-import { FiMenu, FiX } from 'react-icons/fi'
+import { FiMenu, FiX, FiLogOut } from 'react-icons/fi'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
+  const { isAuthenticated, user, logout } = useAuth()
 
   const isActive = (path) => location.pathname === path
 
@@ -29,20 +31,50 @@ const Header = () => {
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex gap-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center gap-4">
+            {isAuthenticated ? (
+              <>
+                <div className="flex gap-1">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${isActive(item.path)
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <div className="h-6 w-px bg-gray-300 mx-2"></div>
+                <div className="text-gray-600 font-medium mr-2">
+                  Hi, {user?.username}
+                </div>
+                <button
+                  onClick={logout}
+                  className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2 font-medium"
+                >
+                  <FiLogOut /> Logout
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -63,20 +95,52 @@ const Header = () => {
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden pb-4 space-y-2"
           >
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMenuOpen(false)}
-                className={`block px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {isAuthenticated ? (
+              <>
+                <div className="px-4 py-2 text-gray-500 text-sm font-medium border-b border-gray-100 mb-2">
+                  Signed in as {user?.username}
+                </div>
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className={`block px-4 py-2 rounded-lg font-medium transition-colors ${isActive(item.path)
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={() => {
+                    logout()
+                    setMenuOpen(false)
+                  }}
+                  className="w-full text-left px-4 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg flex items-center gap-2"
+                >
+                  <FiLogOut /> Logout
+                </button>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 p-2">
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2 text-center text-blue-600 font-medium bg-blue-50 rounded-lg"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-2 text-center bg-blue-600 text-white font-medium rounded-lg"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </motion.nav>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { createContext, useState, useCallback, useEffect } from 'react'
+import { expenseAPI } from '../services/api'
 
 export const ExpenseContext = createContext()
 
@@ -16,43 +17,62 @@ export const ExpenseProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Load expenses from localStorage
-  useEffect(() => {
-    const savedExpenses = localStorage.getItem('expenses')
-    if (savedExpenses) {
-      try {
-        setExpenses(JSON.parse(savedExpenses))
-      } catch (err) {
-        console.error('Error loading expenses:', err)
-      }
+  // Load expenses from API
+  const fetchExpenses = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await expenseAPI.getAllExpenses()
+      setExpenses(response.data)
+      setError(null)
+    } catch (err) {
+      console.error('Error loading expenses:', err)
+      setError('Failed to load expenses')
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  // Save expenses to localStorage
   useEffect(() => {
-    localStorage.setItem('expenses', JSON.stringify(expenses))
-  }, [expenses])
+    fetchExpenses()
+  }, [fetchExpenses])
 
-  const addExpense = useCallback((expense) => {
-    const newExpense = {
-      ...expense,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString()
+  const addExpense = useCallback(async (expenseData) => {
+    setLoading(true)
+    try {
+      const response = await expenseAPI.createExpense(expenseData)
+      setExpenses(prev => [response.data, ...prev])
+      return response.data
+    } catch (err) {
+      console.error('Error adding expense:', err)
+      setError('Failed to add expense')
+      throw err
+    } finally {
+      setLoading(false)
     }
-    setExpenses(prev => [...prev, newExpense])
-    return newExpense
   }, [])
 
-  const deleteExpense = useCallback((id) => {
-    setExpenses(prev => prev.filter(expense => expense.id !== id))
+  const deleteExpense = useCallback(async (id) => {
+    try {
+      await expenseAPI.deleteExpense(id)
+      setExpenses(prev => prev.filter(expense => expense.id !== id))
+    } catch (err) {
+      console.error('Error deleting expense:', err)
+      setError('Failed to delete expense')
+    }
   }, [])
 
-  const updateExpense = useCallback((id, updates) => {
-    setExpenses(prev =>
-      prev.map(expense =>
-        expense.id === id ? { ...expense, ...updates } : expense
+  const updateExpense = useCallback(async (id, updates) => {
+    try {
+      const response = await expenseAPI.updateExpense(id, updates)
+      setExpenses(prev =>
+        prev.map(expense =>
+          expense.id === id ? response.data : expense
+        )
       )
-    )
+    } catch (err) {
+      console.error('Error updating expense:', err)
+      setError('Failed to update expense')
+    }
   }, [])
 
   const getExpensesByCategory = useCallback((category) => {
@@ -65,7 +85,7 @@ export const ExpenseProvider = ({ children }) => {
 
   const getExpensesByDateRange = useCallback((startDate, endDate) => {
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.createdAt)
+      const expenseDate = new Date(expense.createdAt || expense.date)
       return expenseDate >= startDate && expenseDate <= endDate
     })
   }, [expenses])
