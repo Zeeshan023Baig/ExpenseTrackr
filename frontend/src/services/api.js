@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+// Use 192.168.1.10 for LAN access, or localhost for local only
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.10:5000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

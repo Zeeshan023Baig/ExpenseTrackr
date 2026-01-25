@@ -10,7 +10,7 @@ const Dashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState(null)
 
   const totalExpenses = getTotalExpenses()
-  
+
   const filteredExpenses = useMemo(() => {
     if (selectedCategory) {
       return getExpensesByCategory(selectedCategory)
@@ -153,7 +153,7 @@ const Dashboard = () => {
                 >
                   <ExpenseCard
                     expense={expense}
-                    onEdit={() => {}}
+                    onEdit={() => { }}
                     onDelete={deleteExpense}
                   />
                 </motion.div>

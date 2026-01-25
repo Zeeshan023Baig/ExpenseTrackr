@@ -9,9 +9,9 @@ const AddExpense = () => {
   const { addExpense } = useContext(ExpenseContext)
   const navigate = useNavigate()
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = async (formData) => {
     try {
-      addExpense(formData)
+      await addExpense(formData)
       toast.success('Expense added successfully! 💰')
       navigate('/expenses')
     } catch (error) {

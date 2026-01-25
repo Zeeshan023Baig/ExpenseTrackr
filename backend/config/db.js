@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST || '127.0.0.1',
         dialect: 'mysql',
-        logging: false, // Set to console.log to see SQL queries
+        logging: console.log, // Enabled logging to debug queries
     }
 );
 
@@ -19,7 +19,7 @@ const connectDB = async () => {
         await sequelize.authenticate();
         console.log('MySQL Connected...');
         // Sync models
-        await sequelize.sync();
+        await sequelize.sync({ alter: true });
         console.log('Database Synced...');
     } catch (error) {
         console.error('Error connecting to MySQL:', error);

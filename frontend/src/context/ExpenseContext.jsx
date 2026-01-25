@@ -1,9 +1,11 @@
 import { createContext, useState, useCallback, useEffect } from 'react'
 import { expenseAPI } from '../services/api'
+import { useAuth } from './AuthContext'
 
 export const ExpenseContext = createContext()
 
 export const ExpenseProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth()
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([
     'Food',
@@ -19,18 +21,24 @@ export const ExpenseProvider = ({ children }) => {
 
   // Load expenses from API
   const fetchExpenses = useCallback(async () => {
+    if (!isAuthenticated) {
+      setExpenses([])
+      return
+    }
+
     setLoading(true)
     try {
       const response = await expenseAPI.getAllExpenses()
-      setExpenses(response.data)
+      setExpenses(Array.isArray(response.data) ? response.data : [])
       setError(null)
     } catch (err) {
       console.error('Error loading expenses:', err)
       setError('Failed to load expenses')
+      setExpenses([])
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
     fetchExpenses()
@@ -39,12 +47,17 @@ export const ExpenseProvider = ({ children }) => {
   const addExpense = useCallback(async (expenseData) => {
     setLoading(true)
     try {
+      console.log('Adding expense:', expenseData)
       const response = await expenseAPI.createExpense(expenseData)
-      setExpenses(prev => [response.data, ...prev])
+      setExpenses(prev => {
+        const newExpenses = [response.data, ...prev]
+        return newExpenses
+      })
       return response.data
     } catch (err) {
       console.error('Error adding expense:', err)
-      setError('Failed to add expense')
+      console.error('Server response:', err.response?.data)
+      setError(err.response?.data?.message || 'Failed to add expense')
       throw err
     } finally {
       setLoading(false)
@@ -76,14 +89,17 @@ export const ExpenseProvider = ({ children }) => {
   }, [])
 
   const getExpensesByCategory = useCallback((category) => {
+    if (!Array.isArray(expenses)) return []
     return expenses.filter(expense => expense.category === category)
   }, [expenses])
 
   const getTotalExpenses = useCallback(() => {
+    if (!Array.isArray(expenses)) return 0
     return expenses.reduce((total, expense) => total + expense.amount, 0)
   }, [expenses])
 
   const getExpensesByDateRange = useCallback((startDate, endDate) => {
+    if (!Array.isArray(expenses)) return []
     return expenses.filter(expense => {
       const expenseDate = new Date(expense.createdAt || expense.date)
       return expenseDate >= startDate && expenseDate <= endDate

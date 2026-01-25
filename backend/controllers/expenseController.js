@@ -6,6 +6,7 @@ import { sequelize } from '../config/db.js';
 // @access  Private
 const getExpenses = async (req, res) => {
     try {
+        console.log('Fetching expenses for user:', req.user.id);
         const expenses = await Expense.findAll({
             where: { userId: req.user.id },
             order: [['date', 'DESC']]
@@ -27,6 +28,8 @@ const addExpense = async (req, res) => {
             return res.status(400).json({ message: 'Please add all required fields' });
         }
 
+        console.log('Creating expense for user:', req.user?.id);
+
         const expense = await Expense.create({
             userId: req.user.id,
             description,
@@ -35,10 +38,16 @@ const addExpense = async (req, res) => {
             date: date || new Date()
         });
 
+        console.log('Expense created:', expense.toJSON());
+
         res.status(201).json(expense);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('Error adding expense:', error);
+        if (error.name === 'SequelizeValidationError') {
+            const messages = error.errors.map(e => e.message);
+            return res.status(400).json({ message: 'Validation Error', errors: messages });
+        }
+        res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
 
