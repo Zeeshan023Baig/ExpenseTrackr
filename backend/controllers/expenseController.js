@@ -1,5 +1,5 @@
-const Expense = require('../models/Expense');
-const { sequelize } = require('../config/db');
+import Expense from '../models/Expense.js';
+import { sequelize } from '../config/db.js';
 
 // @desc    Get all expenses
 // @route   GET /api/expenses
@@ -108,7 +108,7 @@ const getExpenseStats = async (req, res) => {
     }
 };
 
-module.exports = {
+export {
     getExpenses,
     addExpense,
     deleteExpense,

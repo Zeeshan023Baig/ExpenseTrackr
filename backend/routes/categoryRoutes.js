@@ -1,4 +1,5 @@
-const express = require('express');
+import express from 'express';
+
 const router = express.Router();
 
 // Since we used ENUM for categories in Expense model, 
@@ -12,4 +13,4 @@ router.get('/', (req, res) => {
     ]);
 });
 
-module.exports = router;
+export default router;

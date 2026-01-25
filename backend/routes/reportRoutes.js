@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import { getExpenseStats } from '../controllers/expenseController.js';
+import { protect } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
-const { getExpenseStats } = require('../controllers/expenseController');
-const { protect } = require('../middleware/authMiddleware');
 
 router.get('/category', protect, getExpenseStats);
 router.get('/monthly', protect, getExpenseStats); // For now redirecting to same stats or implement specific monthly logic if needed
 
-module.exports = router;
+export default router;

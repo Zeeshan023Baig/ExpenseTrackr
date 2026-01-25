@@ -1,6 +1,6 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/db');
-const User = require('./User');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/db.js';
+import User from './User.js';
 
 const Expense = sequelize.define('Expense', {
     id: {
@@ -35,4 +35,4 @@ const Expense = sequelize.define('Expense', {
 User.hasMany(Expense, { foreignKey: 'userId' });
 Expense.belongsTo(User, { foreignKey: 'userId' });
 
-module.exports = Expense;
+export default Expense;
