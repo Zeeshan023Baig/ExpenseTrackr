@@ -1,28 +1,27 @@
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
+import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME || 'expense_tracker',
-    process.env.DB_USER || 'root',
-    process.env.DB_PASSWORD || '1323',
-    {
-        host: process.env.DB_HOST || '127.0.0.1',
-        dialect: 'mysql',
-        logging: console.log, // Enabled logging to debug queries
-    }
-);
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: "mysql",
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false,
+        },
+    },
+    logging: false,
+});
 
 const connectDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('MySQL Connected...');
-        // Sync models
+        console.log("MySQL Connected...");
         await sequelize.sync({ alter: true });
-        console.log('Database Synced...');
+        console.log("Database Synced...");
     } catch (error) {
-        console.error('Error connecting to MySQL:', error);
+        console.error("Error connecting to MySQL:", error.message);
         process.exit(1);
     }
 };
