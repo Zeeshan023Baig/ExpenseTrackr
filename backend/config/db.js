@@ -18,12 +18,15 @@ const connectDB = async () => {
     try {
         await sequelize.authenticate();
         console.log("MySQL Connected...");
-        await sequelize.sync({ alter: true });
+
+        await sequelize.sync(); // remove alter:true
+
         console.log("Database Synced...");
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);
         process.exit(1);
     }
 };
+
 
 export { sequelize, connectDB };
