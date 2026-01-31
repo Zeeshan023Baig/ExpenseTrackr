@@ -13,7 +13,7 @@ const Header = () => {
 
   const navItems = [
     { label: 'Dashboard', path: '/' },
-    { label: 'Expenses', path: '/expenses' },
+    { label: 'Analytics', path: '/expenses' },
     { label: 'Add Expense', path: '/add' },
     { label: 'Reports', path: '/reports' }
   ]
@@ -54,13 +54,16 @@ const Header = () => {
 
                 <div className="h-8 w-px bg-surface-200 mx-4"></div>
 
-                <div className="flex items-center gap-4">
-                  <div className="text-sm font-medium text-surface-600">
-                    <span className="text-surface-400 font-normal">Signed in as</span> {user?.username}
+                <div className="flex items-center gap-3">
+                  <div className="hidden lg:block text-sm font-medium text-surface-600 dark:text-surface-300 mr-2">
+                    <span className="text-surface-400 dark:text-surface-500 font-normal">Signed in as</span> {user?.username}
                   </div>
+                  <ColorPicker />
+                  <ThemeToggle />
+                  <div className="h-6 w-px bg-surface-200 dark:bg-surface-700 mx-1"></div>
                   <button
                     onClick={logout}
-                    className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="Logout"
                   >
                     <FiLogOut size={20} />
@@ -127,6 +130,15 @@ const Header = () => {
                       {item.label}
                     </Link>
                   ))}
+
+                  {/* Mobile Theme Controls */}
+                  <div className="px-4 py-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between mt-2">
+                    <span className="text-sm font-medium text-surface-500">Appearance</span>
+                    <div className="flex bg-surface-50 dark:bg-surface-800 rounded-lg p-1 gap-2">
+                      <ColorPicker />
+                      <ThemeToggle />
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (

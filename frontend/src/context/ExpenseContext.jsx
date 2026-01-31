@@ -7,6 +7,7 @@ export const ExpenseContext = createContext()
 export const ExpenseProvider = ({ children }) => {
   const { isAuthenticated } = useAuth()
   const [expenses, setExpenses] = useState([])
+  const [budget, setBudget] = useState(0)
   const [categories, setCategories] = useState([
     'Food',
     'Transportation',
@@ -19,31 +20,48 @@ export const ExpenseProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Load expenses from API
-  const fetchExpenses = useCallback(async () => {
+  // Load data
+  const fetchData = useCallback(async () => {
     if (!isAuthenticated) {
       setExpenses([])
+      setBudget(0)
       return
     }
 
     setLoading(true)
     try {
-      const response = await expenseAPI.getAllExpenses()
-      setExpenses(Array.isArray(response.data) ? response.data : [])
+      const [expensesRes, budgetRes] = await Promise.all([
+        expenseAPI.getAllExpenses(),
+        expenseAPI.getBudget()
+      ])
+
+      setExpenses(Array.isArray(expensesRes.data) ? expensesRes.data : [])
+      setBudget(budgetRes.data.budget || 0)
       setError(null)
     } catch (err) {
-      console.error('Error loading expenses:', err)
-      setError('Failed to load expenses')
-      setExpenses([])
+      console.error('Error loading data:', err)
+      setError('Failed to load data')
     } finally {
       setLoading(false)
     }
   }, [isAuthenticated])
 
   useEffect(() => {
-    fetchExpenses()
-  }, [fetchExpenses])
+    fetchData()
+  }, [fetchData])
 
+  const updateUserBudget = useCallback(async (amount) => {
+    try {
+      const response = await expenseAPI.updateBudget({ budget: amount })
+      setBudget(response.data.budget)
+      return response.data
+    } catch (err) {
+      console.error('Error updating budget:', err)
+      throw err
+    }
+  }, [])
+
+  // Expenses actions
   const addExpense = useCallback(async (expenseData) => {
     setLoading(true)
     try {
@@ -108,12 +126,14 @@ export const ExpenseProvider = ({ children }) => {
 
   const value = {
     expenses,
+    budget,
     categories,
     loading,
     error,
     addExpense,
     deleteExpense,
     updateExpense,
+    updateUserBudget,
     getExpensesByCategory,
     getTotalExpenses,
     getExpensesByDateRange
