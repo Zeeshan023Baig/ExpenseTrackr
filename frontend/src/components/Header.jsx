@@ -3,6 +3,7 @@ import { FiMenu, FiX, FiLogOut, FiPieChart } from 'react-icons/fi'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { ThemeToggle, ColorPicker } from '../context/ThemeContext'
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)
