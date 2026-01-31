@@ -1,25 +1,32 @@
 import { motion } from 'framer-motion'
 
-const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => {
-  const colorClasses = {
-    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-100',
-    green: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-100',
-    red: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-100',
-    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-100'
+const StatCard = ({ title, value, icon: Icon, color = 'brand' }) => {
+  const styles = {
+    brand: { bg: 'bg-brand-50', text: 'text-brand-600' },
+    green: { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+    red: { bg: 'bg-rose-50', text: 'text-rose-600' },
+    purple: { bg: 'bg-violet-50', text: 'text-violet-600' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-600' }
   }
+
+  const activeStyle = styles[color] || styles.brand
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`card ${colorClasses[color]}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white p-6 rounded-2xl border border-surface-100 shadow-sm hover:shadow-md transition-shadow"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-bold">{title}</p>
-          <p className="text-3xl font-black mt-2">{value}</p>
+          <p className="text-sm font-medium text-surface-500">{title}</p>
+          <p className="text-2xl font-bold text-surface-900 mt-1">{value}</p>
         </div>
-        {Icon && <Icon size={40} className="opacity-50" />}
+        {Icon && (
+          <div className={`p-3 rounded-xl ${activeStyle.bg} ${activeStyle.text}`}>
+            <Icon size={20} />
+          </div>
+        )}
       </div>
     </motion.div>
   )

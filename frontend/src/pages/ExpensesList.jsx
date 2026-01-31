@@ -1,9 +1,9 @@
 import { useContext, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiSearch, FiArrowDown } from 'react-icons/fi'
+import { FiSearch, FiArrowDown, FiTrendingUp, FiList } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
-import { ExpenseCard, CategoryFilter, EmptyState } from '../components'
+import { ExpenseCard, CategoryFilter, EmptyState, StatCard } from '../components'
 
 const ExpensesList = () => {
   const { expenses, categories, deleteExpense } = useContext(ExpenseContext)
@@ -29,7 +29,7 @@ const ExpensesList = () => {
 
   const sortedExpenses = useMemo(() => {
     const sorted = [...filteredExpenses]
-    
+
     switch (sortBy) {
       case 'newest':
         return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -74,152 +74,127 @@ const ExpensesList = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-8"
+      className="layout-container py-8 space-y-10"
     >
       {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-          All Expenses
-        </h1>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: 120 }}
-          transition={{ duration: 0.6 }}
-          className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"
-        ></motion.div>
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-surface-900 tracking-tight">
+            All Expenses
+          </h1>
+          <p className="text-surface-500 mt-1">
+            Manage and view your transaction history.
+          </p>
+        </div>
       </motion.div>
 
-      {/* Search and Sort */}
-      <motion.div
-        variants={itemVariants}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* Search */}
-        <motion.div className="relative group">
-          <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
-            <motion.div
-              animate={{ scale: 1.1 }}
-              className="p-2 bg-blue-100 rounded-lg"
-            >
-              <FiSearch className="text-blue-600" size={18} />
-            </motion.div>
-            Search
-          </label>
-          <motion.div
-            animate={{
-              boxShadow: searchTerm ? '0 0 20px rgba(59, 130, 246, 0.3)' : '0 0 0px rgba(59, 130, 246, 0)'
-            }}
-            className="rounded-2xl overflow-hidden"
-          >
-            <input
-              type="text"
-              placeholder="Search by description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium"
-            />
-          </motion.div>
-        </motion.div>
-
-        {/* Sort */}
-        <motion.div className="relative group">
-          <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
-            <motion.div
-              animate={{ scale: 1.1 }}
-              className="p-2 bg-indigo-100 rounded-lg"
-            >
-              <FiArrowDown className="text-indigo-600" size={18} />
-            </motion.div>
-            Sort By
-          </label>
-          <motion.div
-            animate={{
-              boxShadow: '0 0 0px rgba(79, 70, 229, 0)'
-            }}
-            className="rounded-2xl overflow-hidden"
-          >
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white/60 backdrop-blur-sm transition-all duration-300 font-medium text-gray-800 appearance-none cursor-pointer"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 1.5rem center',
-                paddingRight: '2.5rem'
-              }}
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="highest">Highest Amount</option>
-              <option value="lowest">Lowest Amount</option>
-            </select>
-          </motion.div>
-        </motion.div>
-      </motion.div>
-
-      {/* Category Filter */}
-      <motion.div variants={itemVariants}>
-        <CategoryFilter
-          categories={categories}
-          selected={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
-      </motion.div>
-
-      {/* Summary */}
+      {/* Summary Stats */}
       {filteredExpenses.length > 0 && (
-        <motion.div
-          variants={itemVariants}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-8 shadow-xl"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400 rounded-full opacity-5"
-          ></motion.div>
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Value"
+            value={`₹${totalAmount}`}
+            icon={FiTrendingUp}
+            color="brand"
+          />
+          <StatCard
+            title="Transactions"
+            value={filteredExpenses.length}
+            icon={FiList}
+            color="blue"
+          />
+        </motion.div>
+      )}
 
-          <div className="relative z-10">
-            <p className="text-lg font-bold text-blue-900 mb-2">Summary</p>
-            <p className="text-4xl font-black text-blue-600 mb-2">
-              ₹{totalAmount}
-            </p>
-            <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
-              {filteredExpenses.length} expense{filteredExpenses.length !== 1 ? 's' : ''}
-            </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Filters Sidebar */}
+        <motion.div variants={itemVariants} className="lg:col-span-1 space-y-6">
+          {/* Search & Sort Card */}
+          <div className="bg-white p-5 rounded-xl border border-surface-200 shadow-sm space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-surface-700 mb-2">Search</label>
+              <div className="relative">
+                <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                <input
+                  type="text"
+                  placeholder="Search expenses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 input-field"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-surface-700 mb-2">Sort By</label>
+              <div className="relative">
+                <FiArrowDown className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="pl-10 input-field appearance-none"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="highest">Highest Amount</option>
+                  <option value="lowest">Lowest Amount</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Categories Card */}
+          <div className="bg-white p-5 rounded-xl border border-surface-200 shadow-sm">
+            <h3 className="font-bold text-surface-900 mb-4">Filter by Category</h3>
+            <CategoryFilter
+              categories={categories}
+              selected={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
           </div>
         </motion.div>
-      )}
 
-      {/* Expenses List */}
-      {sortedExpenses.length === 0 ? (
-        <EmptyState message={
-          searchTerm || selectedCategory
-            ? 'No expenses match your filters'
-            : 'No expenses yet. Add your first expense!'
-        } />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-        >
-          {sortedExpenses.map((expense, index) => (
+        {/* Expenses List */}
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-surface-900">
+              Transaction List
+            </h2>
+            <span className="text-sm text-surface-500">
+              Showing {sortedExpenses.length} records
+            </span>
+          </div>
+
+          {sortedExpenses.length === 0 ? (
+            <EmptyState message={
+              searchTerm || selectedCategory
+                ? 'No expenses match your filters'
+                : 'No expenses yet. Add your first expense!'
+            } />
+          ) : (
             <motion.div
-              key={expense.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-3"
             >
-              <ExpenseCard
-                expense={expense}
-                onEdit={() => {}}
-                onDelete={handleDelete}
-              />
+              {sortedExpenses.map((expense, index) => (
+                <motion.div
+                  key={expense.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <ExpenseCard
+                    expense={expense}
+                    onEdit={() => { }}
+                    onDelete={handleDelete}
+                  />
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
+          )}
         </motion.div>
-      )}
+      </div>
     </motion.div>
   )
 }

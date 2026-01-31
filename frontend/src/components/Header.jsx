@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { FiMenu, FiX, FiLogOut } from 'react-icons/fi'
+import { FiMenu, FiX, FiLogOut, FiPieChart } from 'react-icons/fi'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -19,59 +19,67 @@ const Header = () => {
   ]
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-white/80 backdrop-blur-md border-b border-surface-200 sticky top-0 z-50">
+      <div className="layout-container">
         <div className="flex justify-between items-center h-16">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2"
           >
-            <div className="text-2xl font-bold text-blue-600">💰 ExpenseTrackr</div>
+            <div className="bg-brand-600 p-2 rounded-lg text-white">
+              <FiPieChart size={20} />
+            </div>
+            <div className="text-xl font-bold text-surface-900 tracking-tight">ExpenseTrackr</div>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-1">
             {isAuthenticated ? (
               <>
-                <div className="flex gap-1">
+                <div className="flex bg-surface-100 p-1 rounded-xl">
                   {navItems.map((item) => (
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${isActive(item.path)
-                          ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive(item.path)
+                        ? 'bg-white text-brand-600 shadow-sm'
+                        : 'text-surface-600 hover:text-surface-900 hover:bg-surface-200/50'
                         }`}
                     >
                       {item.label}
                     </Link>
                   ))}
                 </div>
-                <div className="h-6 w-px bg-gray-300 mx-2"></div>
-                <div className="text-gray-600 font-medium mr-2">
-                  Hi, {user?.username}
+
+                <div className="h-8 w-px bg-surface-200 mx-4"></div>
+
+                <div className="flex items-center gap-4">
+                  <div className="text-sm font-medium text-surface-600">
+                    <span className="text-surface-400 font-normal">Signed in as</span> {user?.username}
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <FiLogOut size={20} />
+                  </button>
                 </div>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2 font-medium"
-                >
-                  <FiLogOut /> Logout
-                </button>
               </>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg"
+                  className="px-5 py-2.5 text-surface-600 font-semibold hover:text-brand-600 transition-colors"
                 >
-                  Login
+                  Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
+                  className="px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg hover:bg-brand-700 shadow-lg shadow-brand-500/20 transition-all hover:-translate-y-0.5"
                 >
-                  Sign Up
+                  Start Tracking
                 </Link>
               </div>
             )}
@@ -79,10 +87,10 @@ const Header = () => {
 
           {/* Mobile Menu Button */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            className="md:hidden p-2 text-surface-600 hover:bg-surface-100 rounded-lg"
           >
             {menuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
           </motion.button>
@@ -91,51 +99,49 @@ const Header = () => {
         {/* Mobile Navigation */}
         {menuOpen && (
           <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden pb-4 space-y-2"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-surface-100 py-4 space-y-2 overflow-hidden"
           >
             {isAuthenticated ? (
               <>
-                <div className="px-4 py-2 text-gray-500 text-sm font-medium border-b border-gray-100 mb-2">
-                  Signed in as {user?.username}
+                <div className="px-4 pb-4 mb-2 border-b border-surface-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-surface-400 uppercase tracking-wilder">Account</div>
+                    <div className="font-bold text-surface-900">{user?.username}</div>
+                  </div>
+                  <button onClick={logout} className="text-red-500 font-medium text-sm">Logout</button>
                 </div>
-                {navItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMenuOpen(false)}
-                    className={`block px-4 py-2 rounded-lg font-medium transition-colors ${isActive(item.path)
-                        ? 'bg-blue-500 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => {
-                    logout()
-                    setMenuOpen(false)
-                  }}
-                  className="w-full text-left px-4 py-2 text-red-600 font-medium hover:bg-red-50 rounded-lg flex items-center gap-2"
-                >
-                  <FiLogOut /> Logout
-                </button>
+                <div className="px-2 space-y-1">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMenuOpen(false)}
+                      className={`block px-4 py-3 rounded-xl font-medium transition-colors ${isActive(item.path)
+                        ? 'bg-brand-50 text-brand-700'
+                        : 'text-surface-600 hover:bg-surface-50'
+                        }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
               </>
             ) : (
-              <div className="grid grid-cols-2 gap-2 p-2">
+              <div className="p-4 space-y-3">
                 <Link
                   to="/login"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2 text-center text-blue-600 font-medium bg-blue-50 rounded-lg"
+                  className="block w-full py-3 text-center font-semibold text-surface-700 bg-surface-50 rounded-xl"
                 >
-                  Login
+                  Log in
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2 text-center bg-blue-600 text-white font-medium rounded-lg"
+                  className="block w-full py-3 text-center font-semibold text-white bg-brand-600 rounded-xl"
                 >
                   Sign Up
                 </Link>

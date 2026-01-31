@@ -61,19 +61,18 @@ const Reports = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-10"
+      className="layout-container py-8 space-y-10"
     >
       {/* Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-          Expense Reports
-        </h1>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: 140 }}
-          transition={{ duration: 0.6 }}
-          className="h-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"
-        ></motion.div>
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-surface-900 tracking-tight">
+            Expense Reports
+          </h1>
+          <p className="text-surface-500 mt-1">
+            Visual analysis of your spending habits.
+          </p>
+        </div>
       </motion.div>
 
       {/* Key Metrics */}
@@ -82,7 +81,7 @@ const Reports = () => {
           title="Total Expenses"
           value={`₹${totalExpenses.toFixed(2)}`}
           icon={FiBarChart2}
-          color="blue"
+          color="brand"
         />
         <StatCard
           title="Total Transactions"
@@ -95,75 +94,53 @@ const Reports = () => {
             title="Highest Expense"
             value={`₹${highestExpense.amount.toFixed(2)}`}
             icon={FiPieChart}
-            color="purple"
+            color="red"
           />
         )}
       </motion.div>
 
       {/* Category Breakdown */}
       {categoryBreakdown.length > 0 ? (
-        <motion.div variants={itemVariants}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-6"
-          >
-            <h2 className="text-2xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <motion.div variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-surface-900">
               Breakdown by Category
             </h2>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 100 }}
-              transition={{ duration: 0.6 }}
-              className="h-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
-            ></motion.div>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categoryBreakdown.map((category, index) => (
               <motion.div
                 key={category.name}
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="relative overflow-hidden rounded-3xl border-2 border-gray-200 shadow-lg p-6 bg-gradient-to-br from-white to-gray-50 group hover:shadow-xl transition-all duration-300"
+                className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm hover:shadow-md transition-shadow"
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                  className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-400 rounded-full opacity-5"
-                ></motion.div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-800">{category.name}</h3>
-                    <motion.span
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="text-2xl font-black text-indigo-600"
-                    >
-                      {category.count}
-                    </motion.span>
-                  </div>
-
-                  <motion.p className="text-3xl font-black text-indigo-600 mb-2">
-                    ₹{category.amount.toFixed(2)}
-                  </motion.p>
-
-                  {/* Progress Bar */}
-                  <div className="relative w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(category.amount / totalExpenses) * 100}%` }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
-                    ></motion.div>
-                  </div>
-
-                  <p className="text-xs font-bold text-gray-600 mt-2 uppercase tracking-wider">
-                    {((category.amount / totalExpenses) * 100).toFixed(1)}% of total
-                  </p>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-surface-900">{category.name}</h3>
+                  <span className="bg-brand-50 text-brand-700 text-xs font-bold px-2 py-1 rounded-full">
+                    {category.count} txns
+                  </span>
                 </div>
+
+                <p className="text-2xl font-bold text-brand-600 mb-4">
+                  ₹{category.amount.toFixed(2)}
+                </p>
+
+                {/* Progress Bar */}
+                <div className="relative w-full bg-surface-100 rounded-full h-2 overflow-hidden mb-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(category.amount / totalExpenses) * 100}%` }}
+                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                    className="h-full bg-brand-500 rounded-full"
+                  ></motion.div>
+                </div>
+
+                <p className="text-xs font-medium text-surface-500">
+                  {((category.amount / totalExpenses) * 100).toFixed(1)}% of total
+                </p>
               </motion.div>
             ))}
           </div>
@@ -174,53 +151,31 @@ const Reports = () => {
 
       {/* Monthly Breakdown */}
       {monthlyBreakdown.length > 0 ? (
-        <motion.div variants={itemVariants}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-6"
-          >
-            <h2 className="text-2xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+        <motion.div variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-surface-900">
               Monthly Trends
             </h2>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 100 }}
-              transition={{ duration: 0.6 }}
-              className="h-1 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full"
-            ></motion.div>
-          </motion.div>
+          </div>
 
-          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {monthlyBreakdown.map((data, index) => (
               <motion.div
                 key={data.month}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 shadow-lg p-6 group hover:shadow-xl transition-all duration-300"
+                className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm hover:shadow-md transition-shadow"
               >
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute -top-10 -right-10 w-24 h-24 bg-purple-400 rounded-full opacity-10"
-                ></motion.div>
-
-                <div className="relative z-10 text-center">
-                  <p className="text-sm font-bold text-purple-700 uppercase tracking-wider mb-2">
-                    {new Date(data.month + '-01').toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long'
-                    })}
-                  </p>
-                  <motion.p
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="text-2xl font-black text-purple-600"
-                  >
-                    ₹{data.amount.toFixed(2)}
-                  </motion.p>
-                </div>
+                <p className="text-sm font-semibold text-surface-500 uppercase tracking-wide mb-2">
+                  {new Date(data.month + '-01').toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                  })}
+                </p>
+                <p className="text-2xl font-bold text-surface-900">
+                  ₹{data.amount.toFixed(2)}
+                </p>
               </motion.div>
             ))}
           </motion.div>

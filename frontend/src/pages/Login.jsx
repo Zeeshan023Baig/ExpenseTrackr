@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiMail, FiLock, FiArrowRight } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
-import toast from 'react-hot-toast'
 
 const Login = () => {
     const { login } = useAuth()
@@ -32,45 +31,45 @@ const Login = () => {
     }
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-surface-50">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md"
+                className="bg-white p-8 md:p-10 rounded-2xl shadow-soft w-full max-w-md border border-surface-100"
             >
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-800">Welcome Back</h2>
-                    <p className="text-gray-500 mt-2">Please sign in to your account</p>
+                    <h2 className="text-3xl font-bold text-surface-900 tracking-tight">Welcome Back</h2>
+                    <p className="text-surface-500 mt-2">Please sign in to your account</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-surface-700">Email Address</label>
                         <div className="relative">
-                            <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
                             <input
                                 type="email"
                                 name="email"
                                 required
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                className="pl-10 w-full input-field"
                                 placeholder="name@example.com"
                             />
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-surface-700">Password</label>
                         <div className="relative">
-                            <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
                             <input
                                 type="password"
                                 name="password"
                                 required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                className="pl-10 w-full input-field"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -79,16 +78,16 @@ const Login = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full btn-primary py-3 flex items-center justify-center gap-2 mt-2"
                     >
                         {loading ? 'Signing in...' : 'Sign In'}
                         {!loading && <FiArrowRight />}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center text-gray-600">
+                <div className="mt-8 text-center text-surface-500 text-sm">
                     Don't have an account?{' '}
-                    <Link to="/register" className="text-blue-600 font-semibold hover:text-blue-700">
+                    <Link to="/register" className="text-brand-600 font-semibold hover:text-brand-700 hover:underline">
                         Sign up
                     </Link>
                 </div>
