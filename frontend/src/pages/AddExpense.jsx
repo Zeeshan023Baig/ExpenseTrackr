@@ -64,7 +64,7 @@ const AddExpense = () => {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl border border-surface-200 shadow-sm">
+        <div className="card p-6 md:p-8">
           <ExpenseForm onSubmit={handleSubmit} />
         </div>
 

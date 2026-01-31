@@ -1,7 +1,8 @@
 import { useContext, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiType, FiDollarSign, FiTag } from 'react-icons/fi'
+import { FiType, FiTag } from 'react-icons/fi'
+import { FaRupeeSign } from 'react-icons/fa'
 import { ExpenseContext } from '../context/ExpenseContext'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
@@ -47,14 +48,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       onSubmit={handleSubmit}
-      className="card space-y-6"
+      className="space-y-6"
     >
       <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">
+        <label className="block text-sm font-bold text-surface-900 mb-2">
           Description
         </label>
         <div className="relative">
-          <FiType className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+          <FiType className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-lg" />
           <input
             type="text"
             name="description"
@@ -68,11 +69,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       <div className="grid grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-surface-900 mb-2">
             Amount (₹)
           </label>
           <div className="relative">
-            <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+            <FaRupeeSign className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-sm" />
             <input
               type="number"
               name="amount"
@@ -87,11 +88,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
+          <label className="block text-sm font-bold text-surface-900 mb-2">
             Category
           </label>
           <div className="relative">
-            <FiTag className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+            <FiTag className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-lg" />
             <select
               name="category"
               value={formData.category}
@@ -121,7 +122,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             whileTap={{ scale: 0.98 }}
             type="button"
             onClick={onCancel}
-            className="flex-1 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+            className="flex-1 py-3.5 bg-surface-100 text-surface-700 rounded-xl font-bold hover:bg-surface-200 transition-colors"
           >
             Cancel
           </motion.button>
