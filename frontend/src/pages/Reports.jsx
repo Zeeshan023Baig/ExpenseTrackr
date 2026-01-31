@@ -115,32 +115,33 @@ const Reports = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm hover:shadow-md transition-shadow"
+                className="card p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-surface-900">{category.name}</h3>
-                  <span className="bg-brand-50 text-brand-700 text-xs font-bold px-2 py-1 rounded-full">
+                  <span className="bg-brand-500/20 text-brand-300 text-xs font-bold px-2.5 py-1 rounded-full border border-brand-500/20">
                     {category.count} txns
                   </span>
                 </div>
 
-                <p className="text-2xl font-bold text-brand-600 mb-4">
+                <p className="text-3xl font-bold text-brand-400 mb-4 drop-shadow-sm">
                   ₹{category.amount.toFixed(2)}
                 </p>
 
                 {/* Progress Bar */}
-                <div className="relative w-full bg-surface-100 rounded-full h-2 overflow-hidden mb-2">
+                <div className="relative w-full bg-surface-200/50 rounded-full h-2 overflow-hidden mb-2">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(category.amount / totalExpenses) * 100}%` }}
                     transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className="h-full bg-brand-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-brand-600 to-brand-400 rounded-full"
                   ></motion.div>
                 </div>
 
-                <p className="text-xs font-medium text-surface-500">
-                  {((category.amount / totalExpenses) * 100).toFixed(1)}% of total
-                </p>
+                <div className="flex justify-between items-center text-xs font-medium text-surface-400 mt-3">
+                  <span>Contribution</span>
+                  <span>{((category.amount / totalExpenses) * 100).toFixed(1)}%</span>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -165,15 +166,15 @@ const Reports = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm hover:shadow-md transition-shadow"
+                className="card p-6 flex flex-col justify-between"
               >
-                <p className="text-sm font-semibold text-surface-500 uppercase tracking-wide mb-2">
+                <p className="text-sm font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent uppercase tracking-wider mb-2">
                   {new Date(data.month + '-01').toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long'
                   })}
                 </p>
-                <p className="text-2xl font-bold text-surface-900">
+                <p className="text-3xl font-bold text-surface-900 tracking-tight">
                   ₹{data.amount.toFixed(2)}
                 </p>
               </motion.div>
