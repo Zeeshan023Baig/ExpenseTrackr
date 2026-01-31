@@ -2,7 +2,7 @@ import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiLightbulb } from 'react-icons/fi'
+import { FiInfo } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
 import { ExpenseForm } from '../components'
 
@@ -48,7 +48,7 @@ const AddExpense = () => {
         className="mt-8 bg-white/50 backdrop-blur-sm border border-blue-100 rounded-2xl p-6 shadow-sm"
       >
         <div className="flex items-center gap-2 mb-3 text-blue-700">
-          <FiLightbulb className="w-5 h-5" />
+          <FiInfo className="w-5 h-5" />
           <h3 className="font-bold">Pro Tips</h3>
         </div>
         <ul className="space-y-2 text-sm text-gray-600 font-medium">
