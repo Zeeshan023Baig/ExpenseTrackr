@@ -65,7 +65,7 @@ const Dashboard = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3"
+          className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-2 tracking-tight"
         >
           Welcome Back! 👋
         </motion.h1>
