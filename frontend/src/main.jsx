@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component {
             >
               Refresh Page
             </button>
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <details className="mt-6 text-left">
                 <summary className="cursor-pointer font-bold text-red-600 mb-3">Error Details</summary>
                 <pre className="bg-gray-200 p-4 rounded-lg text-xs overflow-auto max-h-48 text-gray-800">
@@ -71,7 +71,7 @@ if (!rootElement) {
 }
 
 // Performance monitoring (optional - for development)
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
   // Measure Web Vitals
   const reportWebVitals = (metric) => {
     console.log('Web Vital:', metric)
@@ -88,7 +88,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Service Worker registration (optional - for PWA support)
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
