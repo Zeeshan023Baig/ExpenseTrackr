@@ -34,12 +34,12 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
     >
       <div className="flex-1">
         <div className="flex items-center gap-3 mb-2">
-          <h3 className="font-semibold text-lg text-gray-800">{expense.description}</h3>
+          <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{expense.description}</h3>
           <span className={`text-xs font-semibold px-2 py-1 rounded ${getCategoryColor(expense.category)}`}>
             {expense.category}
           </span>
         </div>
-        <p className="text-sm text-gray-500 mb-2">{formatDate(expense.createdAt)}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{formatDate(expense.createdAt)}</p>
         <p className="text-2xl font-bold text-blue-600">₹{expense.amount.toFixed(2)}</p>
       </div>
       <div className="flex gap-2">
