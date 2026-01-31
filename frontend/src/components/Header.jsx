@@ -34,20 +34,27 @@ const Header = () => {
             <div className="text-xl font-bold text-surface-900 tracking-tight">ExpenseTrackr</div>
           </motion.div>
 
-          {/* Desktop Navigation - Centered */}
+          {/* Desktop Navigation - Centered & Distributed */}
           {isAuthenticated && (
             <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-              <div className="flex items-center gap-2 bg-surface-100/50 dark:bg-surface-800/50 p-1.5 rounded-full border border-surface-200 dark:border-surface-700 backdrop-blur-sm">
+              <div className="flex items-center gap-10 lg:gap-14">
                 {navItems.map((item) => (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${isActive(item.path)
-                      ? 'bg-white dark:bg-surface-700 text-brand-600 dark:text-brand-400 shadow-sm'
-                      : 'text-surface-500 hover:text-surface-900 dark:hover:text-surface-200 hover:bg-white/50 dark:hover:bg-surface-700/50'
+                    className={`relative text-sm font-bold tracking-wide transition-all duration-300 ${isActive(item.path)
+                      ? 'text-brand-600 dark:text-brand-400 scale-105'
+                      : 'text-surface-500 hover:text-surface-900 dark:hover:text-surface-200 hover:scale-105'
                       }`}
                   >
                     {item.label}
+                    {isActive(item.path) && (
+                      <motion.div
+                        layoutId="nav-pill"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-600 dark:bg-brand-400 rounded-full shadow-glow"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      />
+                    )}
                   </Link>
                 ))}
               </div>
