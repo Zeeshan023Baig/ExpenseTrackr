@@ -34,14 +34,14 @@ class ErrorBoundary extends React.Component {
             >
               Refresh Page
             </button>
-            {import.meta.env.DEV && (
-              <details className="mt-6 text-left">
-                <summary className="cursor-pointer font-bold text-red-600 mb-3">Error Details</summary>
-                <pre className="bg-gray-200 p-4 rounded-lg text-xs overflow-auto max-h-48 text-gray-800">
-                  {this.state.error?.toString()}
-                </pre>
-              </details>
-            )}
+            <details className="mt-6 text-left">
+              <summary className="cursor-pointer font-bold text-red-600 mb-3">Error Details</summary>
+              <pre className="bg-gray-200 p-4 rounded-lg text-xs overflow-auto max-h-48 text-gray-800 whitespace-pre-wrap">
+                {this.state.error?.toString()}
+                {'\n\n'}
+                {this.state.error?.componentStack}
+              </pre>
+            </details>
           </div>
         </div>
       )
