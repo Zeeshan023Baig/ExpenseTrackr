@@ -2,10 +2,10 @@ import { motion } from 'framer-motion'
 
 const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-200',
-    green: 'bg-green-50 text-green-600 dark:bg-green-900/40 dark:text-green-200',
-    red: 'bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-200',
-    purple: 'bg-purple-50 text-purple-600 dark:bg-purple-900/40 dark:text-purple-200'
+    blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-100',
+    green: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-100',
+    red: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-100',
+    purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-100'
   }
 
   return (
@@ -16,10 +16,10 @@ const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => {
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium opacity-75">{title}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
+          <p className="text-sm font-bold">{title}</p>
+          <p className="text-3xl font-black mt-2">{value}</p>
         </div>
-        {Icon && <Icon size={40} className="opacity-20" />}
+        {Icon && <Icon size={40} className="opacity-50" />}
       </div>
     </motion.div>
   )
