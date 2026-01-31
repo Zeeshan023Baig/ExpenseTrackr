@@ -35,30 +35,31 @@
 
   /* Dark Mode Overrides */
   /* Dark Mode Overrides */
+  /* Dark Mode Overrides */
   .dark {
-    /* Surface Colors (Dark Mode - Inverted) - Using Deep Zinc/Black */
-    --surface-50: 9 9 11;
-    /* Zinc 950 - Deepest Background */
-    --surface-100: 24 24 27;
-    /* Zinc 900 - Card Background */
-    --surface-200: 39 39 42;
-    /* Zinc 800 - Borders/Separators */
-    --surface-300: 63 63 70;
-    /* Zinc 700 - UI Elements */
-    --surface-400: 82 82 91;
-    /* Zinc 600 - Muted Text */
-    --surface-500: 113 113 122;
-    /* Zinc 500 - Secondary Text */
+    /* Surface Colors (Dark Mode - Pure Black Theme) */
+    --surface-50: 0 0 0;
+    /* Pure Black */
+    --surface-100: 9 9 11;
+    /* Zinc 950 - Cards (Very Dark) */
+    --surface-200: 24 24 27;
+    /* Zinc 900 - Borders */
+    --surface-300: 39 39 42;
+    /* Zinc 800 */
+    --surface-400: 63 63 70;
+    /* Zinc 700 */
+    --surface-500: 82 82 91;
+    /* Zinc 600 */
     --surface-600: 161 161 170;
-    /* Zinc 400 - Icons/Highlights */
+    /* Zinc 400 */
     --surface-700: 212 212 216;
-    /* Zinc 300 - Primary Text */
+    /* Zinc 300 */
     --surface-800: 228 228 231;
-    /* Zinc 200 - Headings */
+    /* Zinc 200 */
     --surface-900: 244 244 245;
-    /* Zinc 100 - Bright White Text */
+    /* Zinc 100 - Text High Contrast */
     --surface-950: 255 255 255;
-    /* Pure White */
+    /* White */
   }
 
   /* Color Themes */

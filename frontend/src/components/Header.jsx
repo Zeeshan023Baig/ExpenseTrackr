@@ -59,7 +59,6 @@ const Header = () => {
                   <div className="hidden lg:block text-sm font-medium text-surface-600 dark:text-surface-300 mr-2">
                     <span className="text-surface-400 dark:text-surface-500 font-normal">Signed in as</span> {user?.username}
                   </div>
-                  <ColorPicker />
                   <ThemeToggle />
                   <div className="h-6 w-px bg-surface-200 dark:bg-surface-700 mx-1"></div>
                   <button
@@ -136,7 +135,6 @@ const Header = () => {
                   <div className="px-4 py-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between mt-2">
                     <span className="text-sm font-medium text-surface-500">Appearance</span>
                     <div className="flex bg-surface-50 dark:bg-surface-800 rounded-lg p-1 gap-2">
-                      <ColorPicker />
                       <ThemeToggle />
                     </div>
                   </div>
