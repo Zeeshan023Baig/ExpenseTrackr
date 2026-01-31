@@ -34,27 +34,30 @@ const Header = () => {
             <div className="text-xl font-bold text-surface-900 tracking-tight">ExpenseTrackr</div>
           </motion.div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Desktop Navigation - Centered */}
+          {isAuthenticated && (
+            <nav className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+              <div className="flex items-center gap-2 bg-surface-100/50 dark:bg-surface-800/50 p-1.5 rounded-full border border-surface-200 dark:border-surface-700 backdrop-blur-sm">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${isActive(item.path)
+                      ? 'bg-white dark:bg-surface-700 text-brand-600 dark:text-brand-400 shadow-sm'
+                      : 'text-surface-500 hover:text-surface-900 dark:hover:text-surface-200 hover:bg-white/50 dark:hover:bg-surface-700/50'
+                      }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          )}
+
+          {/* Desktop Profile & Actions - Right */}
+          <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <div className="flex bg-surface-100 p-1 rounded-xl">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${isActive(item.path)
-                        ? 'bg-white text-brand-600 shadow-sm'
-                        : 'text-surface-600 hover:text-surface-900 hover:bg-surface-200/50'
-                        }`}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-
-                <div className="h-8 w-px bg-surface-200 mx-4"></div>
-
                 <div className="flex items-center gap-3">
                   <div className="hidden lg:block text-sm font-medium text-surface-600 dark:text-surface-300 mr-2">
                     <span className="text-surface-400 dark:text-surface-500 font-normal">Signed in as</span> {user?.username}
@@ -87,7 +90,7 @@ const Header = () => {
                 </Link>
               </div>
             )}
-          </nav>
+          </div>
 
           {/* Mobile Menu Button */}
           <motion.button
