@@ -23,6 +23,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #f0f4ff 100%);
   min-height: 100vh;
+  @apply dark:bg-gray-950;
 }
 
 :root {
@@ -32,7 +33,7 @@ body {
   --warning: #f59e0b;
   --success: #10b981;
   --info: #0ea5e9;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -72,6 +73,7 @@ body {
 }
 
 @layer components {
+
   /* Buttons */
   .btn-primary {
     @apply px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
@@ -99,7 +101,7 @@ body {
 
   /* Cards */
   .card {
-    @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:border-blue-200;
+    @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 hover:border-blue-200 dark:bg-gray-800 dark:border-gray-700;
   }
 
   .card-gradient {
@@ -112,7 +114,7 @@ body {
 
   /* Input Fields */
   .input-field {
-    @apply w-full px-6 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium hover:border-blue-300;
+    @apply w-full px-6 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium hover:border-blue-300 dark:bg-gray-800 dark:text-white dark:border-gray-700;
   }
 
   .input-field-lg {
@@ -120,7 +122,7 @@ body {
   }
 
   .textarea-field {
-    @apply w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium resize-none;
+    @apply w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium resize-none dark:bg-gray-800 dark:text-white dark:border-gray-700;
   }
 
   /* Labels */
@@ -266,6 +268,7 @@ body {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -277,6 +280,7 @@ body {
       opacity: 0;
       transform: translateY(-20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -288,6 +292,7 @@ body {
       opacity: 0;
       transform: translateX(-20px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -299,6 +304,7 @@ body {
       opacity: 0;
       transform: translateX(20px);
     }
+
     to {
       opacity: 1;
       transform: translateX(0);
@@ -309,6 +315,7 @@ body {
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -319,6 +326,7 @@ body {
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -326,9 +334,12 @@ body {
   }
 
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
     }
+
     50% {
       box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
     }
@@ -338,6 +349,7 @@ body {
     0% {
       background-position: -1000px 0;
     }
+
     100% {
       background-position: 1000px 0;
     }
@@ -373,12 +385,10 @@ body {
 
   .animate-shimmer {
     animation: shimmer 2s infinite;
-    background: linear-gradient(
-      to right,
-      #f0f0f0 0%,
-      #fff 50%,
-      #f0f0f0 100%
-    );
+    background: linear-gradient(to right,
+        #f0f0f0 0%,
+        #fff 50%,
+        #f0f0f0 100%);
     background-size: 1000px 100%;
   }
 
@@ -501,6 +511,7 @@ body {
 
 /* Utilities for common patterns */
 @layer utilities {
+
   /* Spacing */
   .gap-xs {
     @apply gap-2;
@@ -567,19 +578,7 @@ body {
 
 /* Dark Mode Support (Optional) */
 @media (prefers-color-scheme: dark) {
-  body {
-    @apply bg-gray-950;
-  }
-
-  .card {
-    @apply bg-gray-900 border-gray-800;
-  }
-
-  input,
-  textarea,
-  select {
-    @apply bg-gray-800 text-white border-gray-700;
-  }
+  /* Global dark mode overrides if needed, most handled via @apply dark: in classes */
 }
 
 /* Print Styles */
