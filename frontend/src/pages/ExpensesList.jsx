@@ -29,7 +29,7 @@ const ExpensesList = () => {
 
   const sortedExpenses = useMemo(() => {
     const sorted = [...filteredExpenses]
-    
+
     switch (sortBy) {
       case 'newest':
         return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -95,67 +95,41 @@ const ExpensesList = () => {
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         {/* Search */}
-        <motion.div className="relative group">
-          <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
-            <motion.div
-              animate={{ scale: 1.1 }}
-              className="p-2 bg-blue-100 rounded-lg"
-            >
-              <FiSearch className="text-blue-600" size={18} />
-            </motion.div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
             Search
           </label>
-          <motion.div
-            animate={{
-              boxShadow: searchTerm ? '0 0 20px rgba(59, 130, 246, 0.3)' : '0 0 0px rgba(59, 130, 246, 0)'
-            }}
-            className="rounded-2xl overflow-hidden"
-          >
+          <div className="relative">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
             <input
               type="text"
               placeholder="Search by description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/60 backdrop-blur-sm placeholder-gray-400 transition-all duration-300 font-medium"
+              className="input-field pl-11"
             />
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
 
         {/* Sort */}
-        <motion.div className="relative group">
-          <label className="block text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wider">
-            <motion.div
-              animate={{ scale: 1.1 }}
-              className="p-2 bg-indigo-100 rounded-lg"
-            >
-              <FiArrowDown className="text-indigo-600" size={18} />
-            </motion.div>
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
             Sort By
           </label>
-          <motion.div
-            animate={{
-              boxShadow: '0 0 0px rgba(79, 70, 229, 0)'
-            }}
-            className="rounded-2xl overflow-hidden"
-          >
+          <div className="relative">
+            <FiArrowDown className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white/60 backdrop-blur-sm transition-all duration-300 font-medium text-gray-800 appearance-none cursor-pointer"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 1.5rem center',
-                paddingRight: '2.5rem'
-              }}
+              className="input-field pl-11 appearance-none cursor-pointer"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="highest">Highest Amount</option>
               <option value="lowest">Lowest Amount</option>
             </select>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Category Filter */}
@@ -171,22 +145,26 @@ const ExpensesList = () => {
       {filteredExpenses.length > 0 && (
         <motion.div
           variants={itemVariants}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-8 shadow-xl"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 p-8 shadow-xl shadow-blue-500/20"
         >
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400 rounded-full opacity-5"
+            className="absolute -top-20 -right-20 w-60 h-60 bg-white rounded-full opacity-10 blur-3xl"
           ></motion.div>
 
-          <div className="relative z-10">
-            <p className="text-lg font-bold text-blue-900 mb-2">Summary</p>
-            <p className="text-4xl font-black text-blue-600 mb-2">
-              ₹{totalAmount}
-            </p>
-            <p className="text-sm font-semibold text-blue-700 uppercase tracking-wider">
-              {filteredExpenses.length} expense{filteredExpenses.length !== 1 ? 's' : ''}
-            </p>
+          <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <p className="text-blue-100 font-bold mb-1 uppercase tracking-wider text-sm">Total Summary</p>
+              <p className="text-5xl font-black text-white">
+                ₹{totalAmount}
+              </p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+              <p className="text-sm font-bold text-white">
+                {filteredExpenses.length} expense{filteredExpenses.length !== 1 ? 's' : ''} found
+              </p>
+            </div>
           </div>
         </motion.div>
       )}
@@ -213,7 +191,7 @@ const ExpensesList = () => {
             >
               <ExpenseCard
                 expense={expense}
-                onEdit={() => {}}
+                onEdit={() => { }}
                 onDelete={handleDelete}
               />
             </motion.div>
