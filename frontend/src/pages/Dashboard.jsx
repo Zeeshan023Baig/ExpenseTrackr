@@ -67,12 +67,53 @@ const Dashboard = () => {
               Dashboard
             </h1>
             <p className="text-surface-500 mt-1">
-              Overview of your financial activity.
+              Overview of your financial activity
             </p>
           </div>
-          <div className="flex gap-3">
-            {/* Action buttons could go here */}
+          <div className="flex gap-2">
+            <Link to="/add" className="btn btn-primary shadow-glow flex items-center gap-2">
+              <FiPlus /> Add Expense
+            </Link>
           </div>
+        </motion.div>
+
+        {/* Budget Overview Bar */}
+        <motion.div variants={itemVariants} className="card p-6 border-l-4 border-l-brand-500 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <FiPieChart size={80} />
+          </div>
+          <div className="flex justify-between items-end mb-2 relative z-10">
+            <div>
+              <h3 className="text-sm font-semibold text-surface-500 uppercase tracking-wider">Monthly Budget</h3>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-3xl font-bold text-surface-900">₹{totalExpenses.toFixed(0)}</span>
+                <span className="text-surface-500 font-medium">of ₹{budget.toFixed(0)}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className={`text-lg font-bold ${totalExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
+                {((totalExpenses / budget) * 100).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+
+          <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className={`h-full rounded-full shadow-lg ${totalExpenses > budget
+                  ? 'bg-gradient-to-r from-red-500 to-red-600'
+                  : 'bg-gradient-to-r from-brand-500 to-purple-500'
+                }`}
+            />
+          </div>
+          {totalExpenses > budget && (
+            <p className="text-red-500 text-sm mt-2 font-medium flex items-center gap-1 relative z-10">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              You have exceeded your budget!
+            </p>
+          )}
         </motion.div>
 
         {/* Stats Section */}
