@@ -25,7 +25,7 @@ const AppContent = () => {
   const isAuthPage = ['/login', '/register'].includes(location.pathname)
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950 transition-colors duration-300 font-sans text-surface-900 dark:text-surface-50">
+    <div className="min-h-screen bg-surface-50 transition-colors duration-300 font-sans text-surface-900">
       {!isAuthPage && <Header />}
 
       <main className={!isAuthPage ? 'container mx-auto px-4 py-8 max-w-7xl' : ''}>
