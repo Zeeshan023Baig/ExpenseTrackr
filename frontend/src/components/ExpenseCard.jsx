@@ -4,13 +4,13 @@ import { FiTrash2, FiEdit2, FiCalendar } from 'react-icons/fi'
 const ExpenseCard = ({ expense, onEdit, onDelete }) => {
   const getCategoryColor = (category) => {
     const colors = {
-      Food: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-      Transportation: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-      Entertainment: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-      Utilities: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-      Healthcare: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-      Shopping: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-      Other: 'bg-surface-500/10 text-surface-400 border-surface-500/20'
+      Food: 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',
+      Transportation: 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20',
+      Entertainment: 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20',
+      Utilities: 'bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20',
+      Healthcare: 'bg-rose-50 text-red-700 border-red-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20',
+      Shopping: 'bg-pink-50 text-pink-700 border-pink-100 dark:bg-pink-500/10 dark:text-pink-400 dark:border-pink-500/20',
+      Other: 'bg-surface-100 text-surface-700 border-surface-200 dark:bg-surface-500/10 dark:text-surface-400 dark:border-surface-500/20'
     }
     return colors[category] || colors.Other
   }

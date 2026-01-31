@@ -63,7 +63,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-purple-600 dark:from-brand-400 dark:to-purple-400 bg-clip-text text-transparent tracking-tight">
               Dashboard
             </h1>
             <p className="text-surface-500 mt-1">

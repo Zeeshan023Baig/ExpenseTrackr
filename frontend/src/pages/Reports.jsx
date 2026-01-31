@@ -119,17 +119,17 @@ const Reports = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-surface-900">{category.name}</h3>
-                  <span className="bg-brand-500/20 text-brand-300 text-xs font-bold px-2.5 py-1 rounded-full border border-brand-500/20">
+                  <span className="bg-brand-50 text-brand-700 border border-brand-100 dark:bg-brand-500/20 dark:text-brand-300 text-xs font-bold px-2.5 py-1 rounded-full dark:border-brand-500/20">
                     {category.count} txns
                   </span>
                 </div>
 
-                <p className="text-3xl font-bold text-brand-400 mb-4 drop-shadow-sm">
+                <p className="text-3xl font-bold text-brand-600 dark:text-brand-400 mb-4 drop-shadow-sm">
                   ₹{category.amount.toFixed(2)}
                 </p>
 
                 {/* Progress Bar */}
-                <div className="relative w-full bg-surface-200/50 rounded-full h-2 overflow-hidden mb-2">
+                <div className="relative w-full bg-surface-100 dark:bg-surface-200/50 rounded-full h-2 overflow-hidden mb-2">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${(category.amount / totalExpenses) * 100}%` }}

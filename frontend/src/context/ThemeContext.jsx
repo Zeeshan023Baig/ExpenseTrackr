@@ -8,8 +8,8 @@ export const useTheme = () => useContext(ThemeContext)
 
 export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => {
-        // Enforce dark mode as default/only theme as requested
-        return 'dark'
+        const savedTheme = localStorage.getItem('theme')
+        return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     })
 
     // 'indigo' is the default brand color
