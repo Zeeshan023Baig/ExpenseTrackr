@@ -6,7 +6,7 @@ const StatCard = ({ title, value, icon: Icon, color = 'brand' }) => {
     green: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
     red: { bg: 'bg-rose-500/10', text: 'text-rose-400' },
     purple: { bg: 'bg-violet-500/10', text: 'text-violet-400' },
-    blue: { bg: 'bg-cyan-500/10', text: 'text-cyan-400' }
+    blue: { bg: 'bg-blue-500/10', text: 'text-blue-400' }
   }
 
   const activeStyle = styles[color] || styles.brand

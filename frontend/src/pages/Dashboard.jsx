@@ -81,25 +81,25 @@ const Dashboard = () => {
             title="Total Expenses"
             value={`₹${totalExpenses.toFixed(2)}`}
             icon={FiTrendingDown}
-            color="brand"
+            color="red"
           />
           <StatCard
             title="This Month"
             value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}`}
             icon={FiCalendar}
-            color="green"
+            color="blue"
           />
           <StatCard
             title="Average"
             value={`₹${averageExpense}`}
             icon={FiLayout}
-            color="purple"
+            color="green"
           />
           <StatCard
             title="Top Category"
             value={topCategory}
             icon={FiPieChart}
-            color="red"
+            color="purple"
           />
         </motion.div>
 
