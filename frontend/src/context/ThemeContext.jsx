@@ -8,8 +8,8 @@ export const useTheme = () => useContext(ThemeContext)
 
 export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => {
-        const savedTheme = localStorage.getItem('theme')
-        return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        // Enforce dark mode as default/only theme as requested
+        return 'dark'
     })
 
     // 'indigo' is the default brand color
@@ -63,8 +63,8 @@ export const ThemeToggle = () => {
         <button
             onClick={toggleTheme}
             className={`p-2 rounded-lg transition-all duration-200 ${theme === 'dark'
-                    ? 'bg-surface-800 text-yellow-400 hover:bg-surface-700'
-                    : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                ? 'bg-surface-800 text-yellow-400 hover:bg-surface-700'
+                : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
                 }`}
             aria-label="Toggle Dark Mode"
         >
