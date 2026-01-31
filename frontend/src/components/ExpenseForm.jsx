@@ -7,7 +7,7 @@ import { ExpenseContext } from '../context/ExpenseContext'
 import Tesseract from 'tesseract.js'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
-  const { categories } = useContext(ExpenseContext)
+  const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
   const [formData, setFormData] = useState(
     initialData || {
@@ -78,10 +78,16 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       return
     }
 
-    onSubmit(formData)
+    // Add category if it's new
+    const trimmedCategory = formData.category.trim()
+    if (trimmedCategory && !categories.includes(trimmedCategory)) {
+      addCategory(trimmedCategory)
+    }
+
+    onSubmit({ ...formData, category: trimmedCategory || 'Other' })
 
     if (!initialData) {
-      setFormData({ description: '', amount: '', category: 'Other' })
+      setFormData({ description: '', amount: '', category: '' })
     }
   }
 
@@ -128,14 +134,13 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           Description
         </label>
         <div className="relative">
-          <FiType className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-lg" />
           <input
             type="text"
             name="description"
             value={formData.description}
             onChange={handleChange}
             placeholder="e.g., Lunch at restaurant"
-            className="input-field pl-11"
+            className="input-field"
           />
         </div>
       </div>
@@ -146,7 +151,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             Amount (₹)
           </label>
           <div className="relative">
-            <FaRupeeSign className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-sm" />
             <input
               type="number"
               name="amount"
@@ -155,7 +159,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               placeholder="0.00"
               step="0.01"
               min="0"
-              className="input-field pl-11"
+              className="input-field"
             />
           </div>
         </div>
@@ -165,17 +169,20 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             Category
           </label>
           <div className="relative">
-            <FiTag className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400 text-lg" />
-            <select
+            <input
+              list="category-list"
+              type="text"
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="input-field pl-11 appearance-none"
-            >
+              placeholder="Select or type..."
+              className="input-field"
+            />
+            <datalist id="category-list">
               {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat} />
               ))}
-            </select>
+            </datalist>
           </div>
         </div>
       </div>

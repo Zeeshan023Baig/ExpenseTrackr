@@ -124,6 +124,13 @@ export const ExpenseProvider = ({ children }) => {
     })
   }, [expenses])
 
+  const addCategory = useCallback((category) => {
+    setCategories(prev => {
+      if (prev.includes(category)) return prev
+      return [...prev, category]
+    })
+  }, [])
+
   const value = {
     expenses,
     budget,
@@ -136,7 +143,8 @@ export const ExpenseProvider = ({ children }) => {
     updateUserBudget,
     getExpensesByCategory,
     getTotalExpenses,
-    getExpensesByDateRange
+    getExpensesByDateRange,
+    addCategory
   }
 
   return (
