@@ -4,13 +4,13 @@ import { FiTrash2, FiEdit2, FiCalendar } from 'react-icons/fi'
 const ExpenseCard = ({ expense, onEdit, onDelete }) => {
   const getCategoryColor = (category) => {
     const colors = {
-      Food: 'bg-orange-50 text-orange-700 border-orange-100',
-      Transportation: 'bg-blue-50 text-blue-700 border-blue-100',
-      Entertainment: 'bg-purple-50 text-purple-700 border-purple-100',
-      Utilities: 'bg-yellow-50 text-yellow-700 border-yellow-100',
-      Healthcare: 'bg-red-50 text-red-700 border-red-100',
-      Shopping: 'bg-pink-50 text-pink-700 border-pink-100',
-      Other: 'bg-surface-100 text-surface-700 border-surface-200'
+      Food: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+      Transportation: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      Entertainment: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+      Utilities: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+      Healthcare: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      Shopping: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+      Other: 'bg-surface-500/10 text-surface-400 border-surface-500/20'
     }
     return colors[category] || colors.Other
   }
@@ -29,7 +29,7 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -2 }}
-      className="bg-white p-5 rounded-xl border border-surface-200 shadow-sm hover:shadow-md transition-all group"
+      className="card p-5 group"
     >
       <div className="flex justify-between items-start">
         <div className="flex-1 space-y-3">

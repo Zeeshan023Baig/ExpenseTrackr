@@ -63,7 +63,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-surface-900 tracking-tight">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-400 to-purple-400 bg-clip-text text-transparent tracking-tight">
               Dashboard
             </h1>
             <p className="text-surface-500 mt-1">
@@ -106,7 +106,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Filter Section */}
           <motion.div variants={itemVariants} className="lg:col-span-1 space-y-4">
-            <div className="bg-white p-5 rounded-xl border border-surface-200 shadow-sm">
+            <div className="card p-5">
               <h3 className="font-bold text-surface-900 mb-4">Categories</h3>
               <CategoryFilter
                 categories={categories}
