@@ -53,7 +53,73 @@ const Dashboard = () => {
   }
 
   return (
+<<<<<<< HEAD
     <div className="layout-container py-8 space-y-10">
+=======
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-10"
+    >
+      {/* Welcome Section */}
+      <motion.div variants={itemVariants} className="text-center mb-8">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl md:text-5xl font-black bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent mb-2 tracking-tight"
+        >
+          Welcome Back! 👋
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-lg text-gray-600 font-medium"
+        >
+          Here's your expense overview for this month
+        </motion.p>
+      </motion.div>
+
+      {/* Stats Section */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Expenses"
+          value={`₹${totalExpenses.toFixed(2)}`}
+          icon={FiTrendingDown}
+          color="blue"
+        />
+        <StatCard
+          title="This Month"
+          value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}`}
+          icon={FiCalendar}
+          color="green"
+        />
+        <StatCard
+          title="Average Expense"
+          value={`₹${averageExpense}`}
+          icon={FiLayout}
+          color="purple"
+        />
+        <StatCard
+          title="Top Category"
+          value={topCategory}
+          icon={FiArrowRight}
+          color="red"
+        />
+      </motion.div>
+
+      {/* Filter Section */}
+      <motion.div variants={itemVariants}>
+        <CategoryFilter
+          categories={categories}
+          selected={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
+      </motion.div>
+
+      {/* Recent Expenses Section */}
+>>>>>>> eb1ab328adf6e2b6f6b094e43cf207515300648c
       <motion.div
         variants={containerVariants}
         initial="hidden"
