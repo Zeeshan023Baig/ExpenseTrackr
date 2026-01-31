@@ -2,10 +2,10 @@ import { motion } from 'framer-motion'
 
 const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-100',
-    green: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-100',
-    red: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-100',
-    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-100'
+    blue: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30',
+    green: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30',
+    red: 'bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-red-500/30',
+    purple: 'bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/30'
   }
 
   return (
