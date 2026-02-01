@@ -10,6 +10,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
   const [debugLogs, setDebugLogs] = useState([])
+  const [debugRaw, setDebugRaw] = useState('') // Store raw text
   const [formData, setFormData] = useState(
     initialData || {
       description: '',
@@ -19,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v48 loaded - Smart Fuzzy')
+    console.log('ExpenseForm v49 loaded - PSM 6 (Single Block)')
   }, [])
 
   const handleChange = (e) => {
@@ -35,15 +36,34 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning... (v48: Smart Fuzzy)', { id: 'scan' })
+    toast.loading('Scanning... (v49: Deep Scan)', { id: 'scan' })
+    setDebugRaw('')
+    setDebugLogs([])
 
     try {
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: m => console.log(m)
-      })
+      // USE WORKER API FOR CUSTOM PARAMETERS (PSM)
+      const worker = await Tesseract.createWorker("eng", 1, {
+        logger: m => console.log(m),
+      });
+
+      // PSM 6 = Assume a single uniform block of text.
+      // This forces Tesseract to read the large "20" as text, not graphics.
+      await worker.setParameters({
+        tessedit_pageseg_mode: '6',
+      });
+
+      const result = await worker.recognize(file);
+      await worker.terminate();
+
+      // DEBUG: Capture raw text
+      setDebugRaw(result.data.text)
+      console.log('--- RAW TEXT START ---')
+      console.log(result.data.text)
+      console.log('--- RAW TEXT END ---')
 
       const getAllLines = (data) => {
         if (data.lines && data.lines.length > 0) return data.lines
+        // If PSM 6 is used, lines should be directly available.
         if (data.blocks && data.blocks.length > 0) {
           return data.blocks.flatMap(block => {
             if (block.lines && block.lines.length > 0) return block.lines
@@ -54,7 +74,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           })
         }
         if (data.text) {
-          console.warn('No geometry lines found! Creating synthetic lines from text.')
           return data.text.split('\n').map(txt => ({
             text: txt,
             bbox: { y0: 0, y1: 0 }
@@ -67,13 +86,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       // Sort lines
       lines.sort((a, b) => (a.bbox?.y0 || 0) - (b.bbox?.y0 || 0))
 
-      console.log(`Scan complete. Found ${lines.length} lines.`)
-
       let candidates = []
 
-      // Enhanced Fuzzy Logic
-      // We only accept ambiguous chars like F, T, S if they are IMMEDIATELY followed by the number
-      // e.g. "F500" is likely "₹500". "HDFC" is likely a bank.
+      // Fuzzy Regex: markers surrounding number
       const fuzzyRegex = /^[?Z$FT7]\s?[\d]/
 
       const currencySymbols = ['₹', 'RS', 'INR']
@@ -88,24 +103,21 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
 
+        // Extract numbers
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
           matches.forEach(match => {
-            const numStr = match.replace(/[^\d.]/g, '')
+            let numStr = match.replace(/[^\d.]/g, '')
+            // Fix common OCR error: 'O' or 'o' or 'D' as '0' in numbers? 
+            // Risky, but maybe useful. Ignoring for now to stay safe.
+
             const num = parseFloat(numStr)
 
             if (isNaN(num) || num <= 0) return
 
             // 1. Currency Detection
             const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
-
-            // Fuzzy only checks the MATCH or immediate surrounding
-            // Check if the current match is prefixed by a fuzzy marker
-            const fuzzyMatch = lineText.match(fuzzyRegex) || match.match(/^[?Z$FT7]/)
-            // Better: Check if the line STARTS with a fuzzy marker followed by our number
-            // or if the match itself starts with it.
-            // Simplified: if line looks like "F 500", it's fuzzy. If "HDFC", it's not.
             const isFuzzyCandidate = /^[?Z$FT7]\s?\d/.test(lineText) || /^[?Z$FT7]\s?\d/.test(match)
             const hasFuzzy = isFuzzyCandidate && lineText.length < 15
 
@@ -116,35 +128,28 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (hasGeometry) {
               score += height
             } else {
-              // Fallback: Short lines win
-              if (lineText.length < 5) score += 50
-              else if (lineText.length < 10) score += 20
+              // Fallback priority for short lines
+              if (lineText.length < 8) score += 50
+              else if (lineText.length < 15) score += 20
             }
 
             // Currency Bonus
             if (hasExplicit) {
               score += 10000
             } else if (hasFuzzy) {
-              // Only apply fuzzy bonus if it really looks like a price, not part of a word
               score += 1000
-            }
-
-            // Context Bonus
-            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) {
-              score += 2000
             }
 
             // --- FILTERS ---
 
-            // A. Bank / Account killers
-            // "HDFC BANK 8997" -> "BANK" kills it.
+            // A. Bank / Account Match
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY', 'AIRTEL', 'AXIS']
             if (bankingKeywords.some(bk => lineText.includes(bk))) {
               if (!hasExplicit) score -= 10000
             }
 
             // B. Phone Numbers
-            if (lineText.includes('+91') || lineText.length > 12 && /^\d/.test(lineText)) {
+            if (lineText.includes('+91') || (lineText.length > 11 && /^\d/.test(lineText))) {
               if (!hasExplicit) score -= 5000
             }
 
@@ -154,7 +159,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               score -= 10000
             }
 
-            // D. Negative Context (ID, No, etc.)
+            // D. Negative Context
             const negativeContext = ['ID', 'REF', 'NO:', 'No.', 'TIME', 'DATE', 'UPI', 'BATTERY', 'SIGNAL']
             if (negativeContext.some(bad => lineText.includes(bad))) {
               if (!hasExplicit) score -= 5000
@@ -165,8 +170,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             // E. Date/Time
             if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
-              // Exception: if it's "Amount: 200", we keep it. But "8:34 PM" we kill.
-              // If it has explicit currency, we keep it.
               if (!hasExplicit) score -= 5000
             }
             if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
@@ -184,29 +187,25 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         }
       })
 
-      candidates.sort((a, b) => {
-        if (a.score !== b.score) return b.score - a.score
-        if (a.lineLength !== b.lineLength) return a.lineLength - b.lineLength
-        return a.value - b.value
-      })
-
-      // Filter out total garbage
+      candidates.sort((a, b) => b.score - a.score)
       const validCandidates = candidates.filter(c => c.score > -500)
 
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        console.log('--- OCR Candidates (v48) ---')
-        validCandidates.slice(0, 5).forEach((c, i) => {
-          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Len: ${c.lineLength} | "${c.text}"`)
-        })
+        // Tie-breaker: If top 2 have same score (e.g. both just height), pick shortest length
+        const topScore = validCandidates[0].score
+        const topTier = validCandidates.filter(c => c.score === topScore)
+        topTier.sort((a, b) => a.lineLength - b.lineLength)
 
-        const bestMatch = validCandidates[0]
+        const bestMatch = topTier[0]
+
+        console.log('--- Best Match ---', bestMatch)
         setFormData(prev => ({ ...prev, amount: bestMatch.value }))
         toast.success(`Extracted: ₹${bestMatch.value}`, { id: 'scan' })
 
       } else {
-        toast.error('No valid amount found', { id: 'scan' })
+        toast.error('No valid amount found. Check Raw Text.', { id: 'scan' })
       }
 
     } catch (error) {
@@ -269,17 +268,17 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v48)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v49)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
               </span>
             </div>
 
-            {/* DEBUG PANEL */}
+            {/* DEBUG PANEL MATCHES */}
             {debugLogs.length > 0 && (
               <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
-                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share if wrong)</p>
+                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Top 5)</p>
                 {debugLogs.map((log, i) => (
                   <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
                     #{i + 1}: ₹{log.value} (Sc: {log.score}) <br />
@@ -288,6 +287,15 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 ))}
               </div>
             )}
+
+            {/* DEBUG RAW TEXT */}
+            {debugRaw && (
+              <div className="mt-2 p-2 bg-gray-900 rounded text-[10px] text-left font-mono max-h-20 overflow-y-auto">
+                <p className="text-blue-400 border-b border-blue-900 pb-1 mb-1">RAW TEXT (Full Dump):</p>
+                <pre className="whitespace-pre-wrap text-gray-400">{debugRaw}</pre>
+              </div>
+            )}
+
           </div>
         </div>
       )}
