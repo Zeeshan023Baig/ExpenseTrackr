@@ -166,7 +166,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v6)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v7)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
