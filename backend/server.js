@@ -8,6 +8,7 @@ import expenseRoutes from "./routes/expenseRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import ocrRoutes from "./routes/ocrRoutes.js";
 
 dotenv.config();
 
