@@ -19,7 +19,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v46 loaded - OCR Fix Active')
+    console.log('ExpenseForm v47 loaded - Phone Filter')
   }, [])
 
   const handleChange = (e) => {
@@ -35,14 +35,13 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning... (v46: ID Filter)', { id: 'scan' })
+    toast.loading('Scanning... (v47: Phone Filter)', { id: 'scan' })
 
     try {
       const result = await Tesseract.recognize(file, 'eng', {
         logger: m => console.log(m)
       })
 
-      // START ROBUST EXTRACTOR
       const getAllLines = (data) => {
         if (data.lines && data.lines.length > 0) return data.lines
         if (data.blocks && data.blocks.length > 0) {
@@ -65,14 +64,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       }
 
       const lines = getAllLines(result.data)
-      // SORT BY VERTICAL POSITION (Critical for Layout Analysis)
       lines.sort((a, b) => (a.bbox?.y0 || 0) - (b.bbox?.y0 || 0))
 
       console.log(`Scan complete. Found ${lines.length} lines.`)
 
       let candidates = []
 
-      // Keywords
       const currencySymbols = ['₹', 'RS', 'INR']
       const fuzzyMarkers = ['?', 'Z', 'S', '$', 'F', 'T', '7']
 
@@ -80,15 +77,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // Context Lookbehind
         const prevLine = index > 0 ? lines[index - 1].text.toUpperCase() : ''
 
-        // 1. Calculate Line Height
         const bbox = lineObj.bbox || { y0: 0, y1: 0 }
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
 
-        // 2. Extract Numbers
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
@@ -98,52 +92,63 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0) return
 
-            // 3. Analyze Currency Presence
             const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
             const hasFuzzy = fuzzyMarkers.some(m => lineText.includes(m) && lineText.length < 15)
 
-            // 4. Scoring Logic
+            // SCORING
             let score = 0
 
-            // Height score
+            // 1. Height Score
             if (hasGeometry) {
               score += height
             } else {
-              if (lineText.length < 10) score += 20
+              // Fallback scoring: Short lines are better
+              // "20" (len 2) vs "9180569" (len 7)
+              if (lineText.length < 5) score += 50
+              else if (lineText.length < 10) score += 20
             }
 
-            // Currency bonanza
+            // 2. Currency Score
             if (hasExplicit) {
               score += 10000
             } else if (hasFuzzy) {
               score += 1000
             }
 
-            // Keyword Context
-            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT') || lineText.includes('PAYABLE')) {
+            // 3. Context Score
+            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) {
               score += 2000
             }
 
-            // --- FILTERS ---
+            // --- REJECTION FILTERS ---
 
-            // 1. Long Numbers (ID Killer)
+            // A. Explicit Phone Number patterns
+            if (lineText.includes('+91') || lineText.includes('PHONE') || lineText.includes('CALL')) {
+              if (!hasExplicit) score -= 10000
+            }
+
+            // B. Long Numbers (ID/Phone)
             const integerPart = numStr.split('.')[0]
             if (integerPart.length > 7) {
               score -= 10000
             }
 
-            // 2. Negative Keywords (Current Line)
-            const negativeContext = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'PHONE', 'MOBILE', 'BATTERY', 'SIGNAL', 'UPI']
+            // C. Line Length Penalty (Amounts are usually isolated)
+            // If the line has many words/chars but valid number, it's likely noise
+            if (lineText.length > 20 && !hasExplicit) {
+              score -= 100 // Slight penalty
+            }
+
+            // D. Negative Context
+            const negativeContext = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI', 'BATTERY', 'SIGNAL']
             if (negativeContext.some(bad => lineText.includes(bad))) {
               if (!hasExplicit) score -= 5000
             }
-
-            // 3. Negative Context (Previous Line) - Looking for "Transaction ID" label above value
             if (['ID', 'REF', 'UPI', 'NO', 'TRANSACTION'].some(bad => prevLine.includes(bad))) {
               if (!hasExplicit) score -= 5000
             }
 
-            // 4. Penalize likely dates/times
+            // E. Date/Time
             if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
               if (!hasExplicit) score -= 5000
             }
@@ -155,27 +160,32 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               value: num,
               score: score,
               height: height,
-              type: hasExplicit ? 'EXPLICIT' : (hasFuzzy ? 'FUZZY' : 'NONE'),
               text: lineText,
-              line: lineText,
-              prev: prevLine.substring(0, 10)
+              lineLength: lineText.length
             })
           })
         }
       })
 
-      // Sort by Score descending
-      candidates.sort((a, b) => b.score - a.score)
+      // Sort Priority:
+      // 1. Score (High wins)
+      // 2. Line Length (Short wins - implies isolated number like "20")
+      // 3. Value (Small wins? - ambiguous, but phone numbers are huge)
 
-      // Filter garbage (e.g. penalized IDs)
-      const validCandidates = candidates.filter(c => c.score > -1000)
+      candidates.sort((a, b) => {
+        if (a.score !== b.score) return b.score - a.score
+        if (a.lineLength !== b.lineLength) return a.lineLength - b.lineLength
+        return a.value - b.value // Prefer smaller value in ties (avoids phone numbers)
+      })
 
-      setDebugLogs(candidates.slice(0, 5)) // Show even bad ones in debug
+      const validCandidates = candidates.filter(c => c.score > -100)
+
+      setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        console.log('--- OCR Candidates (v46) ---')
+        console.log('--- OCR Candidates (v47) ---')
         validCandidates.slice(0, 5).forEach((c, i) => {
-          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Ht: ${c.height} | Prev: "${c.prev}"`)
+          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Len: ${c.lineLength} | "${c.text}"`)
         })
 
         const bestMatch = validCandidates[0]
@@ -183,7 +193,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         toast.success(`Extracted: ₹${bestMatch.value}`, { id: 'scan' })
 
       } else {
-        toast.error('No valid amount found (filtered IDs)', { id: 'scan' })
+        toast.error('No valid amount found', { id: 'scan' })
       }
 
     } catch (error) {
@@ -246,7 +256,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v46)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v47)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
