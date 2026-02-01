@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v50 loaded - Preprocessing')
+    console.log('ExpenseForm v51 loaded - Grayscale Only')
   }, [])
 
   const handleChange = (e) => {
@@ -31,10 +31,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING ---
-  // Tesseract works best with Black Text on White Background.
-  // Dark Mode screenshots (White Text on Black Bg) often fail.
-  // This function inverts and binarizes the image.
+  // --- IMAGE PREPROCESSING (v51) ---
+  // Improved: Convert to Grayscale + Invert (if dark).
+  // Do NOT manually threshold (binarize). Let Tesseract handle that.
+  // This preserves font edges regarding the Rupee symbol.
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -49,36 +49,32 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // 1. Calculate Average Brightness to detect Dark Mode
+        // 1. Calculate Average Brightness
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
         }
         const avgBrightness = totalBrightness / (data.length / 4)
-        const isDarkMode = avgBrightness < 128
+        const isDarkMode = avgBrightness < 100 // Adjusted threshold for detection
 
-        console.log(`Image Brightness: ${avgBrightness.toFixed(0)} | Mode: ${isDarkMode ? 'DARK (Inverting)' : 'LIGHT'}`)
+        console.log(`Image Brightness: ${avgBrightness.toFixed(0)} | Mode: ${isDarkMode ? 'DARK -> INVERT' : 'LIGHT'}`)
 
-        // 2. Binarize & Normalize
-        // We want: High brightness -> White (255), Low brightness -> Black (0)
-        // If Dark Mode: Low brightness (bg) -> White, High brightness (text) -> Black
-
+        // 2. Grayscale + Invert
         for (let i = 0; i < data.length; i += 4) {
-          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3
+          const r = data[i]
+          const g = data[i + 1]
+          const b = data[i + 2]
 
-          let newVal;
-          if (isDarkMode) {
-            // Dark Mode: Light pixels (text) become Black. Dark pixels (bg) become White.
-            newVal = avg > 90 ? 0 : 255
-          } else {
-            // Light Mode: Light pixels (bg) become White. Dark pixels (text) become Black.
-            newVal = avg > 160 ? 255 : 0
-            // Note: Thresholds (90/160) are heuristic
-          }
+          const gray = (r + g + b) / 3
 
-          data[i] = newVal
-          data[i + 1] = newVal
-          data[i + 2] = newVal
+          // Invert if Dark Mode to get Black text on White bg
+          // Otherwise keep as is (assuming Light Mode is already Dark text on White bg)
+          // Note: If Light mode has White text on Light bg (low contrast), Tesseract handles it well in Grayscale
+          const finalVal = isDarkMode ? (255 - gray) : gray
+
+          data[i] = finalVal
+          data[i + 1] = finalVal
+          data[i + 2] = finalVal
         }
 
         ctx.putImageData(imgData, 0, 0)
@@ -95,36 +91,31 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Optimizing image & scanning... (v50)', { id: 'scan' })
+    toast.loading('Optimizing image & scanning... (v51)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
     try {
-      // 1. Preprocess
       const optimizedBlob = await preprocessImage(file)
 
-      // 2. OCR
       const worker = await Tesseract.createWorker("eng", 1, {
         logger: m => console.log(m),
       });
 
-      // PSM 4 (Single Column) or 6 (Single Block)
-      // v50: Trying PSM 4 which handles variable sizes better than 6 sometimes
+      // PSM 6 = Single Block (often better for isolated receipts than 4)
+      // v51: Reverting to 6 as 4 might be splitting the Rupee from the Amount
       await worker.setParameters({
-        tessedit_pageseg_mode: '4', // 4 = Single Column of text
-        tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' // Restrict chars slightly
+        tessedit_pageseg_mode: '6',
+        tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
 
-      // We pass the BLOB, not the original file
       const result = await worker.recognize(optimizedBlob);
       await worker.terminate();
 
-      // DEBUG
       setDebugRaw(result.data.text)
       console.log('--- RAW TEXT ---', result.data.text)
 
       const getAllLines = (data) => {
-        // With PSM 4, checks blocks/lines
         if (data.lines && data.lines.length > 0) return data.lines
         if (data.blocks && data.blocks.length > 0) {
           return data.blocks.flatMap(block => {
@@ -172,12 +163,16 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (hasExplicit) score += 10000
             else if (isFuzzy) score += 1000
 
+            // Context
+            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) score += 2000
+
             // Filters
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
             if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
             if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
+            // Strict length check
             if (numStr.split('.')[0].length > 7) score -= 10000
 
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
@@ -185,6 +180,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (negs.some(bad => prevLine.includes(bad)) && !hasExplicit) score -= 5000
 
             if (lineText.includes(':') && !hasExplicit) score -= 5000
+
+            // Shadow Candidate Logic:
+            // If we found '2700' (starts with 2) and suspected it's '700'
+            // Only purely heuristic support here if Tesseract fails even with grayscale
+            // But we'll trust Grayscale to fix the '2' -> '₹' issue first.
 
             candidates.push({ value: num, score: score, text: lineText, height })
           })
@@ -196,7 +196,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        const best = validCandidates[0]
+
+        // Final tie-breaker: If top candidates have same score (likely fallback mode)
+        // Prefer shorter one
+        const topScore = validCandidates[0].score
+        const topTier = validCandidates.filter(c => c.score >= topScore - 10) // slight buffer
+        topTier.sort((a, b) => a.text.length - b.text.length)
+
+        const best = topTier[0]
         setFormData(prev => ({ ...prev, amount: best.value }))
         toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
       } else {
@@ -263,7 +270,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v50)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v51)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
