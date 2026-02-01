@@ -9,6 +9,7 @@ import Tesseract from 'tesseract.js'
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
+  const [debugLogs, setDebugLogs] = useState([]) // New Debug State
   const [formData, setFormData] = useState(
     initialData || {
       description: '',
@@ -131,8 +132,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         return b.score - a.score || b.value - a.value
       })
 
+      setDebugLogs(candidates.slice(0, 5)) // Show top 5 to user
+
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine v37 ---')
+        console.log('--- OCR Decision Engine v38 ---')
         candidates.slice(0, 5).forEach((c, idx) => {
           console.log(`${idx + 1}. ₹${c.value} | Expl: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
         })
@@ -208,12 +211,25 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v37)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v38)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
               </span>
             </div>
+
+            {/* DEBUG PANEL */}
+            {debugLogs.length > 0 && (
+              <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
+                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share this if wrong)</p>
+                {debugLogs.map((log, i) => (
+                  <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : 'text-surface-300'}`}>
+                    #{i + 1}: ₹{log.value} (Score: {log.score}) <br />
+                    <span className="opacity-50">Context: "{log.line.substring(0, 20)}..."</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
