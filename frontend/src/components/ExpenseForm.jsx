@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v54 loaded - Zone Cropping')
+    console.log('ExpenseForm v55 loaded - Height Supremacy')
   }, [])
 
   const handleChange = (e) => {
@@ -31,9 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v54 - CROP) ---
-  // We crop the image to the "Zone of Truth" (Top 15% to Top 65%).
-  // This physically removes the Status Bar, Recipient Phone (+91), and Footer noise.
+  // --- IMAGE PREPROCESSING (v55 - CROP + ENHANCE) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -45,9 +43,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
         const canvas = document.createElement('canvas')
 
-        // CROP ZONE DEFINITION
-        // Start Y: 15% down (Skips Status Bar + Recipient Name/Phone)
-        // End Y: 60% down (Includes Amount, Skips Bank Details/IDs)
+        // CROP ZONE: Top 15% to Top 60%
         const CROP_TOP = 0.15
         const CROP_BOTTOM = 0.60
         const cropHeightPercent = CROP_BOTTOM - CROP_TOP
@@ -58,19 +54,16 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         ctx.imageSmoothingEnabled = true
         ctx.imageSmoothingQuality = 'high'
 
-        // Draw cropped portion
-        // sourceY = img.height * 0.15
-        // sourceH = img.height * (0.60 - 0.15)
         ctx.drawImage(
           img,
-          0, img.height * CROP_TOP, img.width, img.height * cropHeightPercent, // Source crop
-          0, 0, targetWidth, canvas.height // Dest size
+          0, img.height * CROP_TOP, img.width, img.height * cropHeightPercent,
+          0, 0, targetWidth, canvas.height
         )
 
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // Brightness & Dark Mode (on cropped area)
+        // Brightness Check
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
@@ -78,7 +71,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v54): Cropped Zone | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v55): Cropped | DarkMode: ${isDarkMode}`)
 
         // Contrast + Grayscale
         const contrast = 1.3
@@ -113,7 +106,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Focusing on amount center... (v54)', { id: 'scan' })
+    toast.loading('Finding largest number... (v55)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -147,12 +140,19 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       }
 
       const lines = getAllLines(result.data)
-      // No need for complex geometric sorting relative to full image, 
-      // because we CROLLED it. The top of this image is the "Start of Zone".
+      // Sort lines
       lines.sort((a, b) => (a.bbox?.y0 || 0) - (b.bbox?.y0 || 0))
 
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
+
+      // 1. FIRST PASS: Find Max Height
+      let maxHeight = 0;
+      lines.forEach(line => {
+        const h = (line.bbox?.y1 - line.bbox?.y0) || 0
+        if (h > maxHeight) maxHeight = h
+      })
+      console.log('Max Height Found:', maxHeight)
 
       lines.forEach((lineObj, index) => {
         const lineText = lineObj.text.trim().toUpperCase()
@@ -178,28 +178,34 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             let score = 0
 
-            // 1. Height
-            if (hasGeometry) score += height
-            else if (lineText.length < 8) score += 50
+            // 1. Height Supremacy
+            // If this is the biggest text (or close to it), it wins.
+            if (hasGeometry) {
+              if (height > maxHeight * 0.8) score += 10000 // Top tier (80-100% size)
+              else if (height > maxHeight * 0.5) score += 2000 // Mid tier (50-80% size)
+              else score -= 5000 // Tiny text is junk (e.g. IDs, phone numbers)
+            }
 
             // 2. Currency
-            if (hasExplicit) score += 10000
+            if (hasExplicit) score += 5000
             else if (isFuzzy) score += 1000
 
-            // Filters & Penalties
+            // 3. Filters
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
             if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
-            // If we still see '91', kill it.
-            if (num === 91) score -= 10000
+            // HARD KILL: '91'
+            if (num === 91) score -= 20000 // DEAD
             if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
             if (numStr.split('.')[0].length > 7) score -= 10000
 
+            // Year check
+            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) score -= 500
+
+            // Negative words
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
             if (negs.some(bad => lineText.includes(bad)) && !hasExplicit) score -= 5000
-
-            if (lineText.includes(':') && !hasExplicit) score -= 5000
 
             candidates.push({ value: num, score: score, text: lineText, height })
           })
@@ -207,17 +213,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       candidates.sort((a, b) => b.score - a.score)
-      const validCandidates = candidates.filter(c => c.score > -500)
+      const validCandidates = candidates.filter(c => c.score > -1000)
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        // Fallback tie-breaker
-        const topScore = validCandidates[0].score
-        const topTier = validCandidates.filter(c => c.score >= topScore - 100)
-        // Prefer shorter text if tied
-        topTier.sort((a, b) => a.text.length - b.text.length)
-
-        const best = topTier[0]
+        const best = validCandidates[0]
         setFormData(prev => ({ ...prev, amount: best.value }))
         toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
       } else {
@@ -284,7 +284,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v54)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v55)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
@@ -296,7 +296,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share if wrong)</p>
                 {debugLogs.map((log, i) => (
                   <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
-                    #{i + 1}: ₹{log.value} (Sc: {log.score}) <br />
+                    #{i + 1}: ₹{log.value} (Sc: {log.score} | H: {log.height.toFixed(0)}) <br />
                     <span className="opacity-50">"{log.text.substring(0, 15)}..."</span>
                   </div>
                 ))}
