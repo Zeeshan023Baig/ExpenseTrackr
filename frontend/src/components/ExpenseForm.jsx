@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v52 loaded - Center Focus')
+    console.log('ExpenseForm v53 loaded - Upscale + Contrast')
   }, [])
 
   const handleChange = (e) => {
@@ -31,21 +31,35 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v51/v52) ---
+  // --- IMAGE PREPROCESSING (v53) ---
+  // 1. Upscale 2x or 3x (Fixes Low DPI screenshots)
+  // 2. High Contrast detection
+  // 3. Grayscale + Invert
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
+        // v53: UPSCALING
+        // Standardize width to at least 2000px for good OCR
+        const targetWidth = Math.max(img.width * 2, 2000)
+        const scaleFactor = targetWidth / img.width
+        const targetHeight = img.height * scaleFactor
+
         const canvas = document.createElement('canvas')
-        canvas.width = img.width
-        canvas.height = img.height
+        canvas.width = targetWidth
+        canvas.height = targetHeight
         const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0)
+
+        // Quality scaling
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
 
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
+        // Analyze brightness
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
@@ -53,23 +67,35 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image Brightness: ${avgBrightness.toFixed(0)} | Mode: ${isDarkMode ? 'DARK -> INVERT' : 'LIGHT'}`)
+        console.log(`Image (v53): ${canvas.width}x${canvas.height} | Brightness: ${avgBrightness.toFixed(0)} | DarkMode: ${isDarkMode}`)
+
+        // Contrast Factor (Simple geometric stretch)
+        const contrast = 1.2 // Boost contrast by 20%
+        const intercept = 128 * (1 - contrast)
 
         for (let i = 0; i < data.length; i += 4) {
-          const r = data[i]
-          const g = data[i + 1]
-          const b = data[i + 2]
-          const gray = (r + g + b) / 3
-          const finalVal = isDarkMode ? (255 - gray) : gray
-          data[i] = finalVal
-          data[i + 1] = finalVal
-          data[i + 2] = finalVal
+          let r = data[i]
+          let g = data[i + 1]
+          let b = data[i + 2]
+
+          // Grayscale
+          let gray = (r * 0.299 + g * 0.587 + b * 0.114) // Luminance formula
+
+          // Invert if Dark Mode
+          if (isDarkMode) gray = 255 - gray
+
+          // Apply Contrast
+          gray = gray * contrast + intercept
+          gray = Math.min(255, Math.max(0, gray)) // Clamp
+
+          data[i] = gray
+          data[i + 1] = gray
+          data[i + 2] = gray
         }
 
         ctx.putImageData(imgData, 0, 0)
 
         canvas.toBlob((blob) => {
-          // Return blob AND dimensions
           blob.width = canvas.width
           blob.height = canvas.height
           resolve(blob)
@@ -83,21 +109,20 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Locating central amount... (v52)', { id: 'scan' })
+    toast.loading('Enhancing & Scanning... (v53)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
     try {
       const optimizedBlob = await preprocessImage(file)
-      const imgHeight = optimizedBlob.height || 1000 // approx fallback
+      const imgHeight = optimizedBlob.height
 
       const worker = await Tesseract.createWorker("eng", 1, {
         logger: m => console.log(m),
       });
 
-      // PSM 6 = Single Block
       await worker.setParameters({
-        tessedit_pageseg_mode: '6',
+        tessedit_pageseg_mode: '6', // Single block is robust
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
 
@@ -134,7 +159,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const bbox = lineObj.bbox || { y0: 0, y1: 0 }
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
-        const relativeY = bbox.y0 / imgHeight // 0.0 (top) to 1.0 (bottom)
+        const relativeY = bbox.y0 / imgHeight
 
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
@@ -166,8 +191,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               // Bottom Details (Bottom 40%) - Penalty
               if (relativeY > 0.6) score -= 2000
 
-              // Center Helper (20% to 50%) - Boost
-              if (relativeY > 0.15 && relativeY < 0.5) score += 5000
+              // Center Helper (20% to 50%) - Boost heavily
+              if (relativeY > 0.15 && relativeY < 0.5) score += 8000
             }
 
             // 4. Filters & Penalties
@@ -187,6 +212,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (lineText.includes(':') && !hasExplicit) score -= 5000
 
+            // If "497" is persistently appearing, it might be noise.
+            // Explicit filter for this specific number if it's a known artifact, but better to solve generally.
+
             candidates.push({
               value: num,
               score: score,
@@ -203,9 +231,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        // Fallback: Pick shorter text if scores tied
+        // Tie breaker
         const topScore = validCandidates[0].score
-        const topTier = validCandidates.filter(c => c.score >= topScore - 10)
+        const topTier = validCandidates.filter(c => c.score >= topScore - 100)
         topTier.sort((a, b) => a.text.length - b.text.length)
 
         const best = topTier[0]
@@ -275,7 +303,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v52)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v53)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
