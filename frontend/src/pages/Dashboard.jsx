@@ -145,54 +145,42 @@ const Dashboard = () => {
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Filter Section */}
-          <motion.div variants={itemVariants} className="lg:col-span-1 space-y-4">
-            <div className="card p-5">
-              <h3 className="font-bold text-surface-900 mb-4">Categories</h3>
-              <CategoryFilter
-                categories={categories}
-                selected={selectedCategory}
-                onSelect={setSelectedCategory}
-              />
-            </div>
-          </motion.div>
 
-          {/* Recent Expenses Section */}
-          <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-surface-900">
-                {selectedCategory ? `${selectedCategory} Expenses` : 'Recent Transactions'}
-              </h2>
-            </div>
+        {/* Recent Expenses Section (Full Width now) */}
+        <motion.div variants={itemVariants} className="lg:col-span-3 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-surface-900">
+              {selectedCategory ? `${selectedCategory} Expenses` : 'Recent Transactions'}
+            </h2>
+          </div>
 
-            {filteredExpenses.length === 0 ? (
-              <EmptyState message={selectedCategory ? `No ${selectedCategory} expenses found` : 'No expenses yet. Start tracking!'} />
-            ) : (
-              <motion.div className="space-y-3">
-                {[...filteredExpenses]
-                  .reverse()
-                  .slice(0, 5)
-                  .map((expense, index) => (
-                    <motion.div
-                      key={expense.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <ExpenseCard
-                        expense={expense}
-                        onEdit={() => { }}
-                        onDelete={deleteExpense}
-                      />
-                    </motion.div>
-                  ))}
-              </motion.div>
-            )}
-          </motion.div>
-        </div>
-      </motion.div>
+          {filteredExpenses.length === 0 ? (
+            <EmptyState message={selectedCategory ? `No ${selectedCategory} expenses found` : 'No expenses yet. Start tracking!'} />
+          ) : (
+            <motion.div className="space-y-3">
+              {[...filteredExpenses]
+                .reverse()
+                .slice(0, 5)
+                .map((expense, index) => (
+                  <motion.div
+                    key={expense.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <ExpenseCard
+                      expense={expense}
+                      onEdit={() => { }}
+                      onDelete={deleteExpense}
+                    />
+                  </motion.div>
+                ))}
+            </motion.div>
+          )}
+        </motion.div>
     </div>
+      </motion.div >
+    </div >
   )
 }
 

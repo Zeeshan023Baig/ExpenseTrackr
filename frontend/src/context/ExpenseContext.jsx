@@ -38,6 +38,12 @@ export const ExpenseProvider = ({ children }) => {
 
       setExpenses(Array.isArray(expensesRes.data) ? expensesRes.data : [])
       setBudget(budgetRes.data.budget || 0)
+
+      // Dynamic Categories: Extract unique categories from existing expenses
+      const existingCategories = expensesRes.data.map(e => e.category);
+      const uniqueCategories = [...new Set([...categories, ...existingCategories])];
+      setCategories(uniqueCategories.sort());
+
       setError(null)
     } catch (err) {
       console.error('Error loading data:', err)
