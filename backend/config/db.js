@@ -32,6 +32,14 @@ const connectDB = async () => {
 
         await sequelize.sync(); // Schema verified
 
+        // Force migration for Category ENUM -> VARCHAR (Fix for custom categories)
+        try {
+            await sequelize.query("ALTER TABLE Expenses MODIFY COLUMN category VARCHAR(255) NOT NULL;");
+            console.log("Schema migration (Category -> VARCHAR) executed.");
+        } catch (err) {
+            console.log("Schema migration skipped/error (safe to ignore if already altered):", err.message);
+        }
+
         console.log("Database Synced...");
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);
