@@ -38,75 +38,92 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m)
       })
 
-      // We now use 'lines' to access geometry (bbox) for font size estimation.
-      const lines = result.data.lines
-      console.log('scanned lines:', lines.length)
+      // DEBUG: Log available keys to see what we got
+      console.log('Tesseract Result Keys:', Object.keys(result.data))
 
       let candidates = []
-
-      // Keywords for currency detection
       const currencySymbols = ['₹', 'RS', 'INR']
 
-      lines.forEach((lineObj, index) => {
-        const lineText = lineObj.text.trim().toUpperCase()
-        if (!lineText) return
+      // STRATEGY A: Geometry-based (Preferred)
+      if (result.data.lines && result.data.lines.length > 0) {
+        console.log('Using Lines strategy with', result.data.lines.length, 'lines')
+        const lines = result.data.lines
 
-        // 1. Calculate Line Height (proxy for font size)
-        const bbox = lineObj.bbox
-        const height = bbox.y1 - bbox.y0
+        lines.forEach((lineObj, index) => {
+          const lineText = lineObj.text.trim().toUpperCase()
+          if (!lineText) return
 
-        // 2. Check for Currency Symbol
-        // We look for explicit symbols.
-        const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
+          // Safety check for bbox
+          const bbox = lineObj.bbox || { y0: 0, y1: 10 }
+          const height = bbox.y1 - bbox.y0
 
-        // 3. Extract Number
-        // Regex looks for patterns effectively, including potentially unspaced symbols like ₹500
-        const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
+          const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
+          const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
-        if (matches) {
-          matches.forEach(match => {
-            const numStr = match.replace(/[^\d.]/g, '')
-            const num = parseFloat(numStr)
+          if (matches) {
+            matches.forEach(match => {
+              const numStr = match.replace(/[^\d.]/g, '')
+              const num = parseFloat(numStr)
 
-            if (isNaN(num) || num <= 0) return
+              if (isNaN(num) || num <= 0) return
 
-            // Scoring Logic:
-            // Base score comes from Height.
-            // HUGE bonus for having a currency symbol.
-            let score = height
+              let score = height
+              if (hasCurrency) score += 10000
+              if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) score += 50
 
-            if (hasCurrency) {
-              score += 10000 // Massive boost for symbols
-            }
-
-            // Context bonus (optional, but good for "Total")
-            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT') || lineText.includes('PAID')) {
-              score += 50
-            }
-
-            candidates.push({
-              value: num,
-              score: score,
-              height: height,
-              hasCurrency: hasCurrency,
-              text: lineText,
-              line: lineText
+              candidates.push({
+                value: num,
+                score: score,
+                height: height,
+                hasCurrency: hasCurrency,
+                text: lineText,
+                line: lineText
+              })
             })
-          })
-        }
-      })
+          }
+        })
+      }
+      // STRATEGY B: Fallback Text-based (If geometry fails)
+      else {
+        console.warn('Lines data missing! Falling back to simple text regex.')
+        const text = result.data.text || ''
+        const lines = text.split('\n')
+
+        lines.forEach(line => {
+          const lineText = line.trim().toUpperCase()
+          const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
+          const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
+
+          if (matches) {
+            matches.forEach(match => {
+              const numStr = match.replace(/[^\d.]/g, '')
+              const num = parseFloat(numStr)
+              if (isNaN(num) || num <= 0) return
+
+              // Simple scoring fallback
+              let score = 0
+              if (hasCurrency) score += 10000
+
+              candidates.push({
+                value: num,
+                score: score,
+                height: 0,
+                hasCurrency: hasCurrency,
+                text: lineText,
+                line: lineText
+              })
+            })
+          }
+        })
+      }
 
       // Sort by Score descending
-      // Logic:
-      // 1. Lines with Symbols will have score > 10000.
-      // 2. Among them, the one with largest 'height' wins.
-      // 3. If no symbols found, we fall back to largest text (height).
       candidates.sort((a, b) => b.score - a.score)
 
       setDebugLogs(candidates.slice(0, 5))
 
       if (candidates.length > 0) {
-        console.log('--- OCR Candidates (Height + Symbol) ---')
+        console.log('--- OCR Candidates ---')
         candidates.slice(0, 5).forEach((c, i) => {
           console.log(`#${i + 1}: ₹${c.value} | Height: ${c.height} | Sym: ${c.hasCurrency} | Text: "${c.text}"`)
         })
