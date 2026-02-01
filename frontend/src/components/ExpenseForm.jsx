@@ -10,7 +10,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
   const [debugLogs, setDebugLogs] = useState([])
-  const [debugRaw, setDebugRaw] = useState('') // Store raw text
+  const [debugRaw, setDebugRaw] = useState('')
   const [formData, setFormData] = useState(
     initialData || {
       description: '',
@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v49 loaded - PSM 6 (Single Block)')
+    console.log('ExpenseForm v50 loaded - Preprocessing')
   }, [])
 
   const handleChange = (e) => {
@@ -31,66 +31,114 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
+  // --- IMAGE PREPROCESSING ---
+  // Tesseract works best with Black Text on White Background.
+  // Dark Mode screenshots (White Text on Black Bg) often fail.
+  // This function inverts and binarizes the image.
+  const preprocessImage = (file) => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.src = URL.createObjectURL(file)
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0)
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const data = imgData.data
+
+        // 1. Calculate Average Brightness to detect Dark Mode
+        let totalBrightness = 0
+        for (let i = 0; i < data.length; i += 4) {
+          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
+        }
+        const avgBrightness = totalBrightness / (data.length / 4)
+        const isDarkMode = avgBrightness < 128
+
+        console.log(`Image Brightness: ${avgBrightness.toFixed(0)} | Mode: ${isDarkMode ? 'DARK (Inverting)' : 'LIGHT'}`)
+
+        // 2. Binarize & Normalize
+        // We want: High brightness -> White (255), Low brightness -> Black (0)
+        // If Dark Mode: Low brightness (bg) -> White, High brightness (text) -> Black
+
+        for (let i = 0; i < data.length; i += 4) {
+          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3
+
+          let newVal;
+          if (isDarkMode) {
+            // Dark Mode: Light pixels (text) become Black. Dark pixels (bg) become White.
+            newVal = avg > 90 ? 0 : 255
+          } else {
+            // Light Mode: Light pixels (bg) become White. Dark pixels (text) become Black.
+            newVal = avg > 160 ? 255 : 0
+            // Note: Thresholds (90/160) are heuristic
+          }
+
+          data[i] = newVal
+          data[i + 1] = newVal
+          data[i + 2] = newVal
+        }
+
+        ctx.putImageData(imgData, 0, 0)
+
+        canvas.toBlob((blob) => {
+          resolve(blob)
+        }, 'image/png')
+      }
+    })
+  }
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning... (v49: Deep Scan)', { id: 'scan' })
+    toast.loading('Optimizing image & scanning... (v50)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
     try {
-      // USE WORKER API FOR CUSTOM PARAMETERS (PSM)
+      // 1. Preprocess
+      const optimizedBlob = await preprocessImage(file)
+
+      // 2. OCR
       const worker = await Tesseract.createWorker("eng", 1, {
         logger: m => console.log(m),
       });
 
-      // PSM 6 = Assume a single uniform block of text.
-      // This forces Tesseract to read the large "20" as text, not graphics.
+      // PSM 4 (Single Column) or 6 (Single Block)
+      // v50: Trying PSM 4 which handles variable sizes better than 6 sometimes
       await worker.setParameters({
-        tessedit_pageseg_mode: '6',
+        tessedit_pageseg_mode: '4', // 4 = Single Column of text
+        tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' // Restrict chars slightly
       });
 
-      const result = await worker.recognize(file);
+      // We pass the BLOB, not the original file
+      const result = await worker.recognize(optimizedBlob);
       await worker.terminate();
 
-      // DEBUG: Capture raw text
+      // DEBUG
       setDebugRaw(result.data.text)
-      console.log('--- RAW TEXT START ---')
-      console.log(result.data.text)
-      console.log('--- RAW TEXT END ---')
+      console.log('--- RAW TEXT ---', result.data.text)
 
       const getAllLines = (data) => {
+        // With PSM 4, checks blocks/lines
         if (data.lines && data.lines.length > 0) return data.lines
-        // If PSM 6 is used, lines should be directly available.
         if (data.blocks && data.blocks.length > 0) {
           return data.blocks.flatMap(block => {
             if (block.lines && block.lines.length > 0) return block.lines
-            if (block.paragraphs && block.paragraphs.length > 0) {
-              return block.paragraphs.flatMap(p => p.lines || [])
-            }
             return []
           })
         }
-        if (data.text) {
-          return data.text.split('\n').map(txt => ({
-            text: txt,
-            bbox: { y0: 0, y1: 0 }
-          }))
-        }
-        return []
+        return data.text ? data.text.split('\n').map(t => ({ text: t, bbox: { y0: 0 } })) : []
       }
 
       const lines = getAllLines(result.data)
-      // Sort lines
       lines.sort((a, b) => (a.bbox?.y0 || 0) - (b.bbox?.y0 || 0))
 
       let candidates = []
-
-      // Fuzzy Regex: markers surrounding number
-      const fuzzyRegex = /^[?Z$FT7]\s?[\d]/
-
       const currencySymbols = ['₹', 'RS', 'INR']
 
       lines.forEach((lineObj, index) => {
@@ -98,119 +146,66 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         if (!lineText) return
 
         const prevLine = index > 0 ? lines[index - 1].text.toUpperCase() : ''
-
         const bbox = lineObj.bbox || { y0: 0, y1: 0 }
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
 
-        // Extract numbers
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
           matches.forEach(match => {
-            let numStr = match.replace(/[^\d.]/g, '')
-            // Fix common OCR error: 'O' or 'o' or 'D' as '0' in numbers? 
-            // Risky, but maybe useful. Ignoring for now to stay safe.
-
+            const numStr = match.replace(/[^\d.]/g, '')
             const num = parseFloat(numStr)
 
             if (isNaN(num) || num <= 0) return
 
-            // 1. Currency Detection
             const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
-            const isFuzzyCandidate = /^[?Z$FT7]\s?\d/.test(lineText) || /^[?Z$FT7]\s?\d/.test(match)
-            const hasFuzzy = isFuzzyCandidate && lineText.length < 15
+            const isFuzzy = /^[?Z$FT7]\s?\d/.test(lineText)
 
-            // SCORING
             let score = 0
 
-            // Height Score
-            if (hasGeometry) {
-              score += height
-            } else {
-              // Fallback priority for short lines
-              if (lineText.length < 8) score += 50
-              else if (lineText.length < 15) score += 20
-            }
+            // Height
+            if (hasGeometry) score += height
+            else if (lineText.length < 8) score += 50
 
-            // Currency Bonus
-            if (hasExplicit) {
-              score += 10000
-            } else if (hasFuzzy) {
-              score += 1000
-            }
+            // Currency
+            if (hasExplicit) score += 10000
+            else if (isFuzzy) score += 1000
 
-            // --- FILTERS ---
+            // Filters
+            const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
+            if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
-            // A. Bank / Account Match
-            const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY', 'AIRTEL', 'AXIS']
-            if (bankingKeywords.some(bk => lineText.includes(bk))) {
-              if (!hasExplicit) score -= 10000
-            }
+            if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
-            // B. Phone Numbers
-            if (lineText.includes('+91') || (lineText.length > 11 && /^\d/.test(lineText))) {
-              if (!hasExplicit) score -= 5000
-            }
+            if (numStr.split('.')[0].length > 7) score -= 10000
 
-            // C. Long Numbers (ID/Phone)
-            const integerPart = numStr.split('.')[0]
-            if (integerPart.length > 7) {
-              score -= 10000
-            }
+            const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
+            if (negs.some(bad => lineText.includes(bad)) && !hasExplicit) score -= 5000
+            if (negs.some(bad => prevLine.includes(bad)) && !hasExplicit) score -= 5000
 
-            // D. Negative Context
-            const negativeContext = ['ID', 'REF', 'NO:', 'No.', 'TIME', 'DATE', 'UPI', 'BATTERY', 'SIGNAL']
-            if (negativeContext.some(bad => lineText.includes(bad))) {
-              if (!hasExplicit) score -= 5000
-            }
-            if (['ID', 'REF', 'UPI', 'NO', 'TRANSACTION'].some(bad => prevLine.includes(bad))) {
-              if (!hasExplicit) score -= 5000
-            }
+            if (lineText.includes(':') && !hasExplicit) score -= 5000
 
-            // E. Date/Time
-            if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
-              if (!hasExplicit) score -= 5000
-            }
-            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
-              score -= 500
-            }
-
-            candidates.push({
-              value: num,
-              score: score,
-              height: height,
-              text: lineText,
-              lineLength: lineText.length
-            })
+            candidates.push({ value: num, score: score, text: lineText, height })
           })
         }
       })
 
       candidates.sort((a, b) => b.score - a.score)
       const validCandidates = candidates.filter(c => c.score > -500)
-
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-        // Tie-breaker: If top 2 have same score (e.g. both just height), pick shortest length
-        const topScore = validCandidates[0].score
-        const topTier = validCandidates.filter(c => c.score === topScore)
-        topTier.sort((a, b) => a.lineLength - b.lineLength)
-
-        const bestMatch = topTier[0]
-
-        console.log('--- Best Match ---', bestMatch)
-        setFormData(prev => ({ ...prev, amount: bestMatch.value }))
-        toast.success(`Extracted: ₹${bestMatch.value}`, { id: 'scan' })
-
+        const best = validCandidates[0]
+        setFormData(prev => ({ ...prev, amount: best.value }))
+        toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
       } else {
-        toast.error('No valid amount found. Check Raw Text.', { id: 'scan' })
+        toast.error('No valid amount found.', { id: 'scan' })
       }
 
     } catch (error) {
       console.error(error)
-      toast.error('Failed to scan receipt', { id: 'scan' })
+      toast.error('Scan failed', { id: 'scan' })
     } finally {
       setIsScanning(false)
     }
@@ -268,34 +263,31 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v49)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v50)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
               </span>
             </div>
 
-            {/* DEBUG PANEL MATCHES */}
             {debugLogs.length > 0 && (
               <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
-                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Top 5)</p>
+                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS</p>
                 {debugLogs.map((log, i) => (
                   <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
                     #{i + 1}: ₹{log.value} (Sc: {log.score}) <br />
-                    <span className="opacity-50">Line: "{log.text.substring(0, 15)}..."</span>
+                    <span className="opacity-50">"{log.text.substring(0, 15)}..."</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* DEBUG RAW TEXT */}
             {debugRaw && (
               <div className="mt-2 p-2 bg-gray-900 rounded text-[10px] text-left font-mono max-h-20 overflow-y-auto">
-                <p className="text-blue-400 border-b border-blue-900 pb-1 mb-1">RAW TEXT (Full Dump):</p>
+                <p className="text-blue-400 border-b border-blue-900 pb-1 mb-1">RAW TEXT:</p>
                 <pre className="whitespace-pre-wrap text-gray-400">{debugRaw}</pre>
               </div>
             )}
-
           </div>
         </div>
       )}
