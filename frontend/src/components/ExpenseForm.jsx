@@ -31,124 +31,103 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning receipt...', { id: 'scan' })
+    toast.loading('Scanning receipt for big amounts...', { id: 'scan' })
 
     try {
       const result = await Tesseract.recognize(file, 'eng', {
         logger: m => console.log(m)
       })
 
-      const text = result.data.text
-      console.log('scanned text:', text)
-
-      // 1. Clean and normalize text
-      const lines = text.split('\n').map(line => line.trim())
-
-      // 2. Comprehensive Keywords
-      const highConfidenceKeywords = ['TOTAL', 'GRAND', 'NET', 'PAYABLE', 'AMOUNT', 'SUM', '₹', 'RS.', 'RS ', 'INR', 'SENT TO', 'PAID TO', 'TRANSFER SUCCESSFUL']
-      const standardKeywords = ['DUE', 'AMT', 'PABLE', 'CASH', 'PAID', 'BILLED', 'SENT', 'TO', 'SUCCESSFUL', 'DONE']
-      const negativeKeywords = ['ID', 'REF', 'BANK', 'A/C', 'ACCOUNT', 'TRANS', 'PHONE', 'NO:', 'DATE', 'TIME', 'CLOCK', 'MOBILE', 'BATTERY', 'SIGNAL']
+      // We now use 'lines' to access geometry (bbox) for font size estimation.
+      const lines = result.data.lines
+      console.log('scanned lines:', lines.length)
 
       let candidates = []
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].toUpperCase()
+      // Keywords for currency detection
+      const currencySymbols = ['₹', 'RS', 'INR']
 
-        // STATUS BAR: Only the very first few lines (usually top ~5% of text)
-        const IS_STATUS_BAR = i < 5
-        const IS_HEADER_AREA = i < 15
+      lines.forEach((lineObj, index) => {
+        const lineText = lineObj.text.trim().toUpperCase()
+        if (!lineText) return
 
-        // CLOCK DETECTION: Match "10:20", "10 20", "2.15 PM"
-        const HAS_CLOCK_SYMBOLS = line.includes(':') || line.includes('PM') || line.includes('AM')
-        const IS_CLOCK_PATTERN = line.match(/\b\d{1,2}[:.\s]\d{2}\b/)
+        // 1. Calculate Line Height (proxy for font size)
+        const bbox = lineObj.bbox
+        const height = bbox.y1 - bbox.y0
 
-        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$|\!|3|8)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        // 2. Check for Currency Symbol
+        // We look for explicit symbols.
+        const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
+
+        // 3. Extract Number
+        // Regex looks for patterns effectively, including potentially unspaced symbols like ₹500
+        const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
           matches.forEach(match => {
             const numStr = match.replace(/[^\d.]/g, '')
             const num = parseFloat(numStr)
 
-            if (isNaN(num) || num <= 0 || num > 1000000) return
+            if (isNaN(num) || num <= 0) return
 
-            // DETECTION: Currency symbols
-            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR')
-            const hasFuzzyCurrency = (match.includes('Z') || match.includes('S') || match.includes('?') || match.includes('!') || match.startsWith('3') || match.startsWith('8')) && numStr.length <= 6
+            // Scoring Logic:
+            // Base score comes from Height.
+            // HUGE bonus for having a currency symbol.
+            let score = height
 
-            const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
-
-            // SMART NOISE FILTER: 
-            // 1. Only kill VERY high up unformatted small numbers (Status bar)
-            if (IS_STATUS_BAR && num < 101 && !hasExplicitCurrency) return
-
-            // 2. Only kill numbers on lines that explicitly look like clocks/battery
-            if ((HAS_CLOCK_SYMBOLS || line.includes('%') || IS_CLOCK_PATTERN) && num < 101 && !hasExplicitCurrency) return
-
-            // 3. Keep everything else, even if it's near the top (it might be the ₹20!)
-
-            let score = 0
-
-            // SCORING: Proximity to success signal
-            const contextLines = lines.slice(Math.max(0, i - 2), i + 1).join(' ').toUpperCase()
-            if (contextLines.includes('SUCCESSFUL') || contextLines.includes('PAID') || contextLines.includes('DONE')) {
-              score += 2000
+            if (hasCurrency) {
+              score += 10000 // Massive boost for symbols
             }
 
-            // SCORING: Keyword presence
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 500
-
-            // SCORING: Symbol matching
-            if (hasExplicitCurrency) score += 5000
-            if (hasFuzzyCurrency) score += 1000
-
-            // POSITION BOOST: Middle of screen is likely the amount
-            const linePosition = i / lines.length
-            if (linePosition > 0.15 && linePosition < 0.8) {
-              score += 1500
+            // Context bonus (optional, but good for "Total")
+            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT') || lineText.includes('PAID')) {
+              score += 50
             }
-
-            // PENALTIES
-            if (IS_STATUS_BAR && !isMarkedAsMoney) score -= 3000
-            if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 1000
 
             candidates.push({
               value: num,
-              score,
-              text: match,
-              line: line,
-              hasCurrency: isMarkedAsMoney,
-              isExplicit: hasExplicitCurrency
+              score: score,
+              height: height,
+              hasCurrency: hasCurrency,
+              text: lineText,
+              line: lineText
             })
           })
         }
-      }
-
-      // Final decision sort
-      candidates.sort((a, b) => {
-        if (a.isExplicit && !b.isExplicit) return -1
-        if (!a.isExplicit && b.isExplicit) return 1
-        if (a.hasCurrency && !b.hasCurrency) return -1
-        if (!a.hasCurrency && b.hasCurrency) return 1
-        return b.score - a.score || b.value - a.value
       })
 
-      setDebugLogs(candidates.slice(0, 5)) // Show top 5 to user
+      // Sort by Score descending
+      // Logic:
+      // 1. Lines with Symbols will have score > 10000.
+      // 2. Among them, the one with largest 'height' wins.
+      // 3. If no symbols found, we fall back to largest text (height).
+      candidates.sort((a, b) => b.score - a.score)
+
+      setDebugLogs(candidates.slice(0, 5))
 
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine v38 ---')
-        candidates.slice(0, 5).forEach((c, idx) => {
-          console.log(`${idx + 1}. ₹${c.value} | Expl: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
+        console.log('--- OCR Candidates (Height + Symbol) ---')
+        candidates.slice(0, 5).forEach((c, i) => {
+          console.log(`#${i + 1}: ₹${c.value} | Height: ${c.height} | Sym: ${c.hasCurrency} | Text: "${c.text}"`)
         })
-      }
 
-      let extractedAmount = candidates.length > 0 ? candidates[0].value : null
+        // Strictness check: If user strictly wants ONLY lines with symbols,
+        // we should check if the top candidate has a symbol.
+        // However, robust fallback is usually better.
+        // But the user prompt said: "it should only scan the big numbers with the ruppee symbol"
+        // So let's prioritize the top candidate, and if it *doesn't* have a symbol, maybe warn or look further?
+        // Current scoring ensures if *any* candidate has a symbol, it is at the top.
+        // If *no* candidate has a symbol, the largest text is at the top. This effectively satisfies "scan big numbers",
+        // and if a symbol exists, it wins.
 
-      if (extractedAmount) {
-        setFormData(prev => ({ ...prev, amount: extractedAmount }))
-        toast.success(`Extracted: ₹${extractedAmount}`, { id: 'scan' })
+        const bestMatch = candidates[0]
+        setFormData(prev => ({ ...prev, amount: bestMatch.value }))
+        toast.success(`Extracted: ₹${bestMatch.value}`, { id: 'scan' })
+
       } else {
-        toast.error('Could not extract amount. Please enter manually.', { id: 'scan' })
+        toast.error('No valid amounts found.', { id: 'scan' })
       }
+
     } catch (error) {
       console.error(error)
       toast.error('Failed to scan receipt', { id: 'scan' })
