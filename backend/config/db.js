@@ -30,7 +30,7 @@ const connectDB = async () => {
         await sequelize.authenticate();
         console.log("MySQL Connected...");
 
-        await sequelize.sync(); // remove alter:true
+        await sequelize.sync({ alter: true });
 
         console.log("Database Synced...");
     } catch (error) {

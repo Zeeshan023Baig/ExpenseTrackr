@@ -22,6 +22,7 @@ const getExpenses = async (req, res) => {
 // @access  Private
 const addExpense = async (req, res) => {
     try {
+        console.log('[DEBUG] addExpense payload:', req.body);
         const { description, amount, category, date } = req.body;
 
         if (!description || !amount || !category) {

@@ -20,7 +20,7 @@ const Expense = sequelize.define('Expense', {
         }
     },
     category: {
-        type: DataTypes.ENUM('Food', 'Transportation', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'),
+        type: DataTypes.STRING,
         allowNull: false
     },
     date: {
