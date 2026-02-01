@@ -108,7 +108,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             // Currency bonanza
             if (hasExplicit) {
-              score += 5000
+              score += 10000
             } else if (hasFuzzy) {
               score += 1000
             }
@@ -118,7 +118,24 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               score += 2000
             }
 
-            // Penalize likely dates/times/phones
+            // --- FAILURE FILTERS (The "Transaction ID" Killer) ---
+
+            // 1. Long numbers are almost never amounts (unless usually rich, or commas used)
+            // Example: 117919183698 is an ID. 500.00 is an amount.
+            // Rule: If > 7 integer digits and NO decimal point, it's likely an ID/Phone
+            const integerPart = numStr.split('.')[0]
+            if (integerPart.length > 7) {
+              score -= 10000 // Kill it
+            }
+
+            // 2. Negative Keywords
+            // context often says "UPI transaction ID", "Ref No", "Mobile No"
+            const negativeContext = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'PHONE', 'MOBILE', 'BATTERY', 'SIGNAL', 'UPI']
+            if (negativeContext.some(bad => lineText.includes(bad))) {
+              if (!hasExplicit) score -= 5000
+            }
+
+            // 3. Penalize likely dates/times/phones
             if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
               if (!hasExplicit) score -= 5000
             }
@@ -145,7 +162,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (candidates.length > 0) {
-        console.log('--- OCR Candidates (v42 Fuzzy) ---')
+        console.log('--- OCR Candidates (v43 ID Filter) ---')
         candidates.slice(0, 5).forEach((c, i) => {
           console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Ht: ${c.height} | Type: ${c.type} | "${c.text}"`)
         })
