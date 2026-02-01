@@ -52,12 +52,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
+        const IS_DANGER_SECTION = i < 20
 
-        // Mobile Status Bar + GPay Header can take up to 25% of the initial text lines
-        const IS_DANGER_ZONE = i < 20
-        const IS_CLOCK_LINE = line.includes(':') || line.includes('PM') || line.includes('AM')
+        // 1. CLOCK TRAP: If a line has two small numbers (0-59) and no symbol, it's a clock (e.g., 14 42)
+        const lineNumbers = line.match(/\b\d{1,2}\b/g) || []
+        const looksLikeClockLine = lineNumbers.length >= 2 && lineNumbers.every(n => parseInt(n) < 60)
+        const HAS_CLOCK_SYMBOLS = line.includes(':') || line.includes('PM') || line.includes('AM')
 
-        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$|\!|3)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$|\!|3|8)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
@@ -68,44 +70,44 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             // DETECTION: Currency symbols
             const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR')
-            // Fuzzy: Sometimes ₹ is read as 'Z', 'S', '?', '!', or '3' when blurry
-            const hasFuzzyCurrency = (match.includes('Z') || match.includes('S') || match.includes('?') || match.includes('!') || match.startsWith('3')) && numStr.length <= 6
+            const hasFuzzyCurrency = (match.includes('Z') || match.includes('S') || match.includes('?') || match.includes('!') || match.startsWith('3') || match.startsWith('8')) && numStr.length <= 6
 
             const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
 
             // AGGRESSIVE CLOCK BLOCKING
-            // If it's a small number (<100) and in the top section or on a clock line, 
-            // and it DOESN'T have a clear currency symbol, we kill it immediately.
-            if ((IS_DANGER_ZONE || IS_CLOCK_LINE) && num < 100 && !hasExplicitCurrency) {
+            // If it's a small number on a clock line or in the top zone without money markers, KILL IT.
+            if ((HAS_CLOCK_SYMBOLS || looksLikeClockLine || (IS_DANGER_SECTION && num < 60)) && !hasExplicitCurrency) {
               return
             }
 
-            // FILTER: Phone numbers, IDs (long numbers without decimals/symbols)
+            // FILTER: Phone numbers / IDs
             if (numStr.length >= 7 && !numStr.includes('.') && !isMarkedAsMoney) return
 
             let score = 0
 
-            // 1. SUCCESS ANCHORING: If the previous line or current line has "SUCCESSFUL" or "PAID"
-            // This is the #1 signal in GPay/PhonePe
+            // 1. SUCCESS CONTEXT (Huge boost)
             const contextLines = lines.slice(Math.max(0, i - 2), i + 1).join(' ').toUpperCase()
             if (contextLines.includes('SUCCESSFUL') || contextLines.includes('PAID') || contextLines.includes('DONE')) {
-              score += 500
+              score += 1000
             }
 
             // 2. KEYWORD SIGNALS
             if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 200
-            if (standardKeywords.some(kw => line.includes(kw))) score += 100
 
-            // 3. SYMBOL PRIORITY (The "King" factor)
-            if (hasExplicitCurrency) score += 2000 // Absurdly high to beat noise
-            if (hasFuzzyCurrency) score += 300
+            // 3. SYMBOL PRIORITY
+            if (hasExplicitCurrency) score += 3000 // Absolute Winner
+            if (hasFuzzyCurrency) score += 500
 
-            // 4. POSITION BOOST
+            // 4. BIG NUMBER BIAS: Payment amounts are usually the largest text on screen
+            // If it's the largest number we've seen so far, give it a tiny nudge
+            score += Math.min(num / 10, 200)
+
+            // 5. POSITION BIAS (Middle of the image is the sweet spot)
             const linePosition = i / lines.length
-            if (linePosition > 0.2 && linePosition < 0.7) score += 200 // Middle of screen boost
+            if (linePosition > 0.3 && linePosition < 0.6) score += 500 // Very central boost
 
-            // 5. PENALTIES
-            if (IS_DANGER_ZONE && !isMarkedAsMoney) score -= 1000 // Kill clock/battery noise
+            // 6. PENALTIES
+            if (IS_DANGER_SECTION && !isMarkedAsMoney) score -= 1500
             if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 500
 
             candidates.push({
@@ -120,7 +122,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         }
       }
 
-      // Priority sort: EXPLICIT SYMBOLS > FUZZY SYMBOLS > SCORED NOISE
+      // Priority sort: EXPLICIT > FUZZY > HIGH SCORE
       candidates.sort((a, b) => {
         if (a.isExplicit && !b.isExplicit) return -1
         if (!a.isExplicit && b.isExplicit) return 1
@@ -130,9 +132,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       if (candidates.length > 0) {
-        console.log('--- OCR Engine (v34: GPay Specialist) ---')
+        console.log('--- OCR Decision Engine v35 (Nuclear Fix) ---')
         candidates.slice(0, 5).forEach((c, idx) => {
-          console.log(`${idx + 1}. ₹${c.value} | Explicit: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
+          console.log(`${idx + 1}. ₹${c.value} | Expl: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
         })
       }
 
@@ -206,7 +208,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v34)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v35)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
