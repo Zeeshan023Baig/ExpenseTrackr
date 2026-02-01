@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v61 loaded - Wide Crop + Comma Fix')
+    console.log('ExpenseForm v62 loaded - Smart Height + Panic Mode')
   }, [])
 
   const handleChange = (e) => {
@@ -31,21 +31,17 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v61) ---
+  // --- IMAGE PREPROCESSING (v61/62) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
-        // 2.0x Upscaling
         const targetWidth = Math.max(img.width * 2.0, 2000)
         const scaleFactor = targetWidth / img.width
         const targetHeight = img.height * scaleFactor
 
         const canvas = document.createElement('canvas')
-
-        // WIDER CROP (v61): Top 10% to 70%
-        // This ensures "20" or "700" aren't cut off if scrolling differs.
         const CROP_TOP = 0.10
         const CROP_BOTTOM = 0.70
         const cropHeightPercent = CROP_BOTTOM - CROP_TOP
@@ -69,7 +65,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // Brightness check
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
@@ -77,11 +72,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v61): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v62): Cropped | DarkMode: ${isDarkMode}`)
 
-        // Mild Contrast + Invert
-        // v60 removed contrast, v59 had it.
-        // Let's add a VERY MILD contrast (1.1) to help edges without destroying details.
         const contrast = 1.1
         const intercept = 128 * (1 - contrast)
 
@@ -96,7 +88,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             gray = 255 - gray
           }
 
-          // Mild Contrast
           gray = gray * contrast + intercept
           gray = Math.min(255, Math.max(0, gray))
 
@@ -120,7 +111,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning (v61: Wide Crop)...', { id: 'scan' })
+    toast.loading('Analysing sizes... (v62)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -131,7 +122,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
-      // PSM 6 (Single Block). Most stable for amounts.
       await worker.setParameters({
         tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -144,7 +134,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + rawText)
       console.log('--- RAW TEXT ---', rawText)
 
-      // LINE SYNTHESIS
       const words = result.data.words || []
       const manualLines = []
       words.sort((a, b) => {
@@ -176,20 +165,22 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
 
+      // 1. SMART MAX HEIGHT Calculation (v62)
+      // Only consider lines that actually contain DIGITS for max height.
+      // This prevents a giant Checkmark or Icon from setting the bar too high.
       let maxHeight = 0;
       lines.forEach(line => {
-        const h = (line.bbox.y1 - line.bbox.y0)
-        if (h > maxHeight) maxHeight = h
+        if (/\d/.test(line.text)) { // Must have numbers to set the height record
+          const h = (line.bbox.y1 - line.bbox.y0)
+          if (h > maxHeight) maxHeight = h
+        }
       })
-      console.log('Max Height:', maxHeight)
+      console.log('Smart Max Height:', maxHeight)
 
       lines.forEach((lineObj, index) => {
         let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // v61: COMMA & SPACE HANDLING
-        // Handle "1 000" or "1, 000" or "1,000"
-        // If line is mostly digits/symbols, strip ALL spaces
         const digitCount = (lineText.match(/\d/g) || []).length
         const totalCount = lineText.length
         if (digitCount > 0 && digitCount / totalCount > 0.4) {
@@ -198,10 +189,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
         const bbox = lineObj.bbox
         const height = bbox.y1 - bbox.y0
-        const isBig = height > maxHeight * 0.5
+
+        // v62: Lowered threshold to 30% to be safer
+        const isBig = height > maxHeight * 0.3
 
         if (isBig) {
-          // Typo Fixes
           if (/^[?73Z]\d+/.test(lineText)) {
             lineText = lineText.replace(/^[?Z]/, '₹')
             if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
@@ -210,12 +202,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
         const hasGeometry = height > 0
 
-        // Regex matches numbers with commas: "1,000", "5,400.50"
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
           matches.forEach(match => {
-            // Remove commas for value parsing: "1,000" -> "1000"
             const numStr = match.replace(/[^\d.]/g, '')
             const num = parseFloat(numStr)
 
@@ -229,8 +219,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             // 1. Height Supremacy
             if (hasGeometry && maxHeight > 5) {
               if (height > maxHeight * 0.8) score += 10000
-              else if (height > maxHeight * 0.5) score += 2000
-              else score -= 5000
+              else if (height > maxHeight * 0.5) score += 5000
+              else if (height > maxHeight * 0.3) score += 1000 // Accepted
+              else score -= 5000 // Tiny
             }
 
             // 2. Currency
@@ -260,14 +251,22 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       candidates.sort((a, b) => b.score - a.score)
-      const validCandidates = candidates.filter(c => c.score > -2000)
       setDebugLogs(candidates.slice(0, 5))
+
+      // v62: PANIC LOOKUP
+      // If we filtered everyone out (score < -2000), check if we have ANY candidates at all?
+      // If we have candidates but they all suck, picking the "Least Worst" might be better than nothing.
+      // But let's stick to valid threshold for now.
+      const validCandidates = candidates.filter(c => c.score > -2000)
 
       if (validCandidates.length > 0) {
         setFormData(prev => ({ ...prev, amount: validCandidates[0].value }))
         toast.success(`Extracted: ₹${validCandidates[0].value}`, { id: 'scan' })
       } else {
-        toast.error('No valid amount found.', { id: 'scan' })
+        // Panic Mode: Just take the biggest number detected regardless of score?
+        // No, that risks phone numbers.
+        // Just report failure.
+        toast.error('No clear amount found.', { id: 'scan' })
       }
 
     } catch (error) {
@@ -330,7 +329,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v61)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v62)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
