@@ -53,16 +53,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
 
-        // Mobile Status Bar usually occupies the top 10-15% of the screen
-        const IS_VERY_TOP = i < 8
-        const IS_HEADER_AREA = i < 15
+        // Mobile Status Bar + GPay Header can take up to 25% of the initial text lines
+        const IS_DANGER_ZONE = i < 20
+        const IS_CLOCK_LINE = line.includes(':') || line.includes('PM') || line.includes('AM')
 
-        // CRITICAL: Better clock detection (14:42, 14 42, 2.45 PM)
-        const HAS_CLOCK_SYMBOL = line.includes(':') || line.includes('PM') || line.includes('AM')
-        // Match patterns like "10:20" or "10 20" or "10.20 PM"
-        const IS_CLOCK_PATTERN = line.match(/\b\d{1,2}[:.\s]\d{2}\b/)
-
-        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$)?[^\d]?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$|\!|3)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
@@ -71,47 +66,47 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // DETECTION: Currency symbols (Explicit vs Fuzzy)
-            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR') || match.includes('$')
-            // Fuzzy: Sometimes ₹ is read as 'S', 'Z', '?', or even '3' when blurry
-            const hasFuzzyCurrency = (match.includes('S') || match.includes('Z') || match.includes('?')) && numStr.length <= 6
+            // DETECTION: Currency symbols
+            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR')
+            // Fuzzy: Sometimes ₹ is read as 'Z', 'S', '?', '!', or '3' when blurry
+            const hasFuzzyCurrency = (match.includes('Z') || match.includes('S') || match.includes('?') || match.includes('!') || match.startsWith('3')) && numStr.length <= 6
 
             const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
 
-            // AGGRESSIVE CLOCK/STATUS NOISE TRAP
-            // 1. If it's a small number on a line that looks like a clock, it's noise.
-            if ((HAS_CLOCK_SYMBOL || IS_CLOCK_PATTERN) && num < 100 && !hasExplicitCurrency) return
-
-            // 2. If it's at the very top (status bar) and < 100, it's almost certainly the clock or battery.
-            if (IS_VERY_TOP && num < 100 && !hasExplicitCurrency) return
-
-            // 3. If it's in the header area and < 60, ignore unless it has a clear symbol.
-            if (IS_HEADER_AREA && num < 60 && !isMarkedAsMoney) return
+            // AGGRESSIVE CLOCK BLOCKING
+            // If it's a small number (<100) and in the top section or on a clock line, 
+            // and it DOESN'T have a clear currency symbol, we kill it immediately.
+            if ((IS_DANGER_ZONE || IS_CLOCK_LINE) && num < 100 && !hasExplicitCurrency) {
+              return
+            }
 
             // FILTER: Phone numbers, IDs (long numbers without decimals/symbols)
             if (numStr.length >= 7 && !numStr.includes('.') && !isMarkedAsMoney) return
 
             let score = 0
 
-            // SCORING: Proximity to success keywords (GPay / PhonePe)
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 150
-            if (line.includes('SUCCESSFUL') || line.includes('DONE') || line.includes('PAID')) score += 100
-            if (standardKeywords.some(kw => line.includes(kw))) score += 50
-
-            // SCORING: Symbol Priority
-            if (hasExplicitCurrency) score += 700
-            if (hasFuzzyCurrency) score += 150
-
-            // SCORING: Center Image Boost (Amount is usually in the middle)
-            // If the line is roughly in the middle 60% of the image
-            const linePosition = i / lines.length
-            if (linePosition > 0.2 && linePosition < 0.8) {
-              score += 100
+            // 1. SUCCESS ANCHORING: If the previous line or current line has "SUCCESSFUL" or "PAID"
+            // This is the #1 signal in GPay/PhonePe
+            const contextLines = lines.slice(Math.max(0, i - 2), i + 1).join(' ').toUpperCase()
+            if (contextLines.includes('SUCCESSFUL') || contextLines.includes('PAID') || contextLines.includes('DONE')) {
+              score += 500
             }
 
-            // PENALTY: Header/Footer noise
-            if (IS_HEADER_AREA && !isMarkedAsMoney) score -= 400
-            if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 300
+            // 2. KEYWORD SIGNALS
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 200
+            if (standardKeywords.some(kw => line.includes(kw))) score += 100
+
+            // 3. SYMBOL PRIORITY (The "King" factor)
+            if (hasExplicitCurrency) score += 2000 // Absurdly high to beat noise
+            if (hasFuzzyCurrency) score += 300
+
+            // 4. POSITION BOOST
+            const linePosition = i / lines.length
+            if (linePosition > 0.2 && linePosition < 0.7) score += 200 // Middle of screen boost
+
+            // 5. PENALTIES
+            if (IS_DANGER_ZONE && !isMarkedAsMoney) score -= 1000 // Kill clock/battery noise
+            if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 500
 
             candidates.push({
               value: num,
@@ -125,15 +120,17 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         }
       }
 
-      // Priority sort: Candidates with EXPLICIT symbols (₹) rank first
+      // Priority sort: EXPLICIT SYMBOLS > FUZZY SYMBOLS > SCORED NOISE
       candidates.sort((a, b) => {
         if (a.isExplicit && !b.isExplicit) return -1
         if (!a.isExplicit && b.isExplicit) return 1
+        if (a.hasCurrency && !b.hasCurrency) return -1
+        if (!a.hasCurrency && b.hasCurrency) return 1
         return b.score - a.score || b.value - a.value
       })
 
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine v33 ---')
+        console.log('--- OCR Engine (v34: GPay Specialist) ---')
         candidates.slice(0, 5).forEach((c, idx) => {
           console.log(`${idx + 1}. ₹${c.value} | Explicit: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
         })
@@ -209,7 +206,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v33)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v34)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
