@@ -52,10 +52,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        // Status bar area can sometimes be messy, extending the "top" range
-        const IS_TOP_SECTION = i < 10
+        // Aggressive status bar filter (top 15 lines for various screen sizes)
+        const IS_STATUS_BAR_AREA = i < 12
 
-        const matches = line.match(/(?:₹|RS|INR)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        const matches = line.match(/(?:₹|RS|INR|RS.)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
@@ -64,58 +64,51 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // THE MINUTE TRAP: Aggressively target clock minutes (0-59)
-            // If it's a small number at the top without a symbol, it's 99% noise
             const hasExplicitCurrency = match.includes('₹') || match.toUpperCase().includes('RS')
-            if (IS_TOP_SECTION && num < 60 && !hasExplicitCurrency) {
-              return // Skip immediately
+
+            // FILTER: Clock / Notification Noise
+            // If it's 0-59 (minutes) and at the top without a symbol, or on a line with clock markers
+            const isClockLike = line.includes(':') || line.includes('PM') || line.includes('AM') || line.includes('%')
+            if ((IS_STATUS_BAR_AREA || isClockLike) && num < 60 && !hasExplicitCurrency) {
+              return
             }
 
-            // FILTER: Typical Time noise (Clock colons, AM/PM)
-            const isTypicalTime = line.includes(':') || line.includes(' PM') || line.includes(' AM')
-            if (isTypicalTime && num < 60 && !hasExplicitCurrency) return
-
-            // FILTER: Battery and other status bar labels
-            if (line.includes('%') && !hasExplicitCurrency) return
-
-            // FILTER: Likely IDs, Phone numbers (unlabeled 5+ digits)
+            // FILTER: Long numbers (Phone/IDs)
             if (numStr.length >= 5 && !numStr.includes('.') && !hasExplicitCurrency) return
 
-            // FILTER: Years
-            if (num >= 2100 || (num >= 2020 && num <= 2030)) return
+            // FILTER: Common noise near keywords
+            if (negativeKeywords.some(kw => line.includes(kw)) && !hasExplicitCurrency) return
 
             let score = 0
 
             // SCORING
             if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 80
-            if (line.includes('SUCCESSFUL') || line.includes('DONE')) score += 50
+            if (line.includes('SUCCESSFUL') || line.includes('DONE') || line.includes('PAID')) score += 60
             if (standardKeywords.some(kw => line.includes(kw))) score += 30
 
-            // THE ULTIMATE WINNER: Symbol check
-            if (match.includes('₹')) score += 300 // Even bigger weight
+            // Symbol match (for internal score tie-breaking)
+            if (match.includes('₹')) score += 300
             if (match.toUpperCase().includes('RS')) score += 100
 
             if (numStr.includes('.')) score += 20
+            if (IS_STATUS_BAR_AREA && !hasExplicitCurrency) score -= 200
 
-            // PENALTY: Header noise
-            if (IS_TOP_SECTION && !hasExplicitCurrency) score -= 150
-
-            // PENALTY: Negative context
-            if (negativeKeywords.some(kw => line.includes(kw))) score -= 200
-
-            candidates.push({ value: num, score, text: match, line: line })
+            candidates.push({ value: num, score, text: match, line: line, hasCurrency: hasExplicitCurrency })
           })
         }
       }
 
-      // Final sort
-      candidates.sort((a, b) => b.score - a.score || b.value - a.value)
+      // THE ULTIMATE PRIORITY: If a candidate has a currency symbol, it always beats one without.
+      candidates.sort((a, b) => {
+        if (a.hasCurrency && !b.hasCurrency) return -1
+        if (!a.hasCurrency && b.hasCurrency) return 1
+        return b.score - a.score || b.value - a.value
+      })
 
-      // LOGS: Very useful for debugging why 20 is losing to something else
       if (candidates.length > 0) {
-        console.log('--- OCR Amount Candidates (Top 5) ---')
+        console.log('--- OCR Decision Engine (v28) ---')
         candidates.slice(0, 5).forEach((c, idx) => {
-          console.log(`${idx + 1}. Amount: ${c.value} | Score: ${c.score} | Context: "${c.line}"`)
+          console.log(`${idx + 1}. Amount: ₹${c.value} | HasSymbol: ${c.hasCurrency} | Score: ${c.score} | Context: "${c.line}"`)
         })
       }
 
@@ -189,7 +182,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v27)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v28)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
