@@ -3,6 +3,10 @@ import fs from "fs";
 
 export const scanReceipt = async (filePath, mimeType) => {
     try {
+        // Debug Log
+        console.log('[Gemini OCR] Scanning file...');
+        console.log('[Gemini OCR] Key check:', process.env.GEMINI_API_KEY ? 'Found' : 'Missing');
+
         // Lazy load key to ensure dotenv is ready
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
