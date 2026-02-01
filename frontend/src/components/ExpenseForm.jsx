@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v51 loaded - Grayscale Only')
+    console.log('ExpenseForm v52 loaded - Center Focus')
   }, [])
 
   const handleChange = (e) => {
@@ -31,10 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v51) ---
-  // Improved: Convert to Grayscale + Invert (if dark).
-  // Do NOT manually threshold (binarize). Let Tesseract handle that.
-  // This preserves font edges regarding the Rupee symbol.
+  // --- IMAGE PREPROCESSING (v51/v52) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -49,29 +46,21 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // 1. Calculate Average Brightness
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
         }
         const avgBrightness = totalBrightness / (data.length / 4)
-        const isDarkMode = avgBrightness < 100 // Adjusted threshold for detection
+        const isDarkMode = avgBrightness < 100
 
         console.log(`Image Brightness: ${avgBrightness.toFixed(0)} | Mode: ${isDarkMode ? 'DARK -> INVERT' : 'LIGHT'}`)
 
-        // 2. Grayscale + Invert
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
-
           const gray = (r + g + b) / 3
-
-          // Invert if Dark Mode to get Black text on White bg
-          // Otherwise keep as is (assuming Light Mode is already Dark text on White bg)
-          // Note: If Light mode has White text on Light bg (low contrast), Tesseract handles it well in Grayscale
           const finalVal = isDarkMode ? (255 - gray) : gray
-
           data[i] = finalVal
           data[i + 1] = finalVal
           data[i + 2] = finalVal
@@ -80,6 +69,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         ctx.putImageData(imgData, 0, 0)
 
         canvas.toBlob((blob) => {
+          // Return blob AND dimensions
+          blob.width = canvas.width
+          blob.height = canvas.height
           resolve(blob)
         }, 'image/png')
       }
@@ -91,19 +83,19 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Optimizing image & scanning... (v51)', { id: 'scan' })
+    toast.loading('Locating central amount... (v52)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
     try {
       const optimizedBlob = await preprocessImage(file)
+      const imgHeight = optimizedBlob.height || 1000 // approx fallback
 
       const worker = await Tesseract.createWorker("eng", 1, {
         logger: m => console.log(m),
       });
 
-      // PSM 6 = Single Block (often better for isolated receipts than 4)
-      // v51: Reverting to 6 as 4 might be splitting the Rupee from the Amount
+      // PSM 6 = Single Block
       await worker.setParameters({
         tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -137,9 +129,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         if (!lineText) return
 
         const prevLine = index > 0 ? lines[index - 1].text.toUpperCase() : ''
+
+        // geometry
         const bbox = lineObj.bbox || { y0: 0, y1: 0 }
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
+        const relativeY = bbox.y0 / imgHeight // 0.0 (top) to 1.0 (bottom)
 
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
@@ -155,25 +150,36 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             let score = 0
 
-            // Height
+            // 1. Height
             if (hasGeometry) score += height
             else if (lineText.length < 8) score += 50
 
-            // Currency
+            // 2. Currency
             if (hasExplicit) score += 10000
             else if (isFuzzy) score += 1000
 
-            // Context
-            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) score += 2000
+            // 3. GEOMETRIC SCORING (v52 Center Bias)
+            if (hasGeometry) {
+              // Status Bar (Top 10%) - Kill
+              if (relativeY < 0.1) score -= 5000
 
-            // Filters
+              // Bottom Details (Bottom 40%) - Penalty
+              if (relativeY > 0.6) score -= 2000
+
+              // Center Helper (20% to 50%) - Boost
+              if (relativeY > 0.15 && relativeY < 0.5) score += 5000
+            }
+
+            // 4. Filters & Penalties
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
             if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
             if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
-            // Strict length check
             if (numStr.split('.')[0].length > 7) score -= 10000
+
+            // Year check (2026 -> 2026)
+            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) score -= 500
 
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
             if (negs.some(bad => lineText.includes(bad)) && !hasExplicit) score -= 5000
@@ -181,12 +187,13 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (lineText.includes(':') && !hasExplicit) score -= 5000
 
-            // Shadow Candidate Logic:
-            // If we found '2700' (starts with 2) and suspected it's '700'
-            // Only purely heuristic support here if Tesseract fails even with grayscale
-            // But we'll trust Grayscale to fix the '2' -> '₹' issue first.
-
-            candidates.push({ value: num, score: score, text: lineText, height })
+            candidates.push({
+              value: num,
+              score: score,
+              text: lineText,
+              height,
+              pos: relativeY.toFixed(2)
+            })
           })
         }
       })
@@ -196,11 +203,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-
-        // Final tie-breaker: If top candidates have same score (likely fallback mode)
-        // Prefer shorter one
+        // Fallback: Pick shorter text if scores tied
         const topScore = validCandidates[0].score
-        const topTier = validCandidates.filter(c => c.score >= topScore - 10) // slight buffer
+        const topTier = validCandidates.filter(c => c.score >= topScore - 10)
         topTier.sort((a, b) => a.text.length - b.text.length)
 
         const best = topTier[0]
@@ -270,7 +275,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v51)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v52)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
@@ -279,10 +284,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             {debugLogs.length > 0 && (
               <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
-                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS</p>
+                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share if wrong)</p>
                 {debugLogs.map((log, i) => (
                   <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
-                    #{i + 1}: ₹{log.value} (Sc: {log.score}) <br />
+                    #{i + 1}: ₹{log.value} (Sc: {log.score} | Y: {log.pos}) <br />
                     <span className="opacity-50">"{log.text.substring(0, 15)}..."</span>
                   </div>
                 ))}
