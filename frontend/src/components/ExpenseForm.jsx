@@ -40,23 +40,61 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       const text = result.data.text
       console.log('scanned text:', text)
 
-      // Regex to find currency amounts (e.g., 500.00, 1,200.50)
-      // This is a simple heuristic: find the largest number which is usually the total
-      const amounts = text.match(/[\d,]+\.\d{2}/g)
+      // 1. Clean and normalize text
+      const lines = text.split('\n').map(line => line.trim().toUpperCase())
 
-      if (amounts && amounts.length > 0) {
-        // Clean strings (remove commas) and convert to float
-        const parsedAmounts = amounts.map(a => parseFloat(a.replace(/,/g, '')))
-        const maxAmount = Math.max(...parsedAmounts)
+      // 2. Look for keywords that usually precede the total
+      const totalKeywords = ['TOTAL', 'GRAND TOTAL', 'NET AMOUNT', 'PAYABLE', 'AMOUNT DUE', 'SUM', 'TOTAL:', 'RS', 'INR']
+      let extractedAmount = null
 
-        setFormData(prev => ({ ...prev, amount: maxAmount }))
-        toast.success(`Found amount: ₹${maxAmount}`, { id: 'scan' })
+      // Strategy A: Look for numbers on the same line or next line as keywords
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        const hasKeyword = totalKeywords.some(kw => line.includes(kw))
+
+        if (hasKeyword) {
+          // Find potential numbers in this line or the next
+          const searchArea = line + (lines[i + 1] || '')
+          const matches = searchArea.match(/[\d,]+(\.\d{1,2})?/g)
+
+          if (matches) {
+            const potentials = matches
+              .map(m => parseFloat(m.replace(/,/g, '')))
+              .filter(n => n > 0 && n < 1000000) // Sanity check
+
+            if (potentials.length > 0) {
+              // Usually the last number in "Total" context is the value
+              extractedAmount = potentials[potentials.length - 1]
+              break
+            }
+          }
+        }
+      }
+
+      // Strategy B: Fallback to largest number (excluding likely dates)
+      if (!extractedAmount) {
+        const allMatches = text.match(/[\d,]+(\.\d{1,2})?/g)
+        if (allMatches) {
+          const validNumbers = allMatches
+            .map(m => parseFloat(m.replace(/,/g, '')))
+            .filter(n => {
+              // Filter out obvious years (e.g., 2023, 2024, 2025)
+              if (n >= 2000 && n <= 2100) return false
+              return n > 0 && n < 1000000
+            })
+
+          if (validNumbers.length > 0) {
+            extractedAmount = Math.max(...validNumbers)
+          }
+        }
+      }
+
+      if (extractedAmount) {
+        setFormData(prev => ({ ...prev, amount: extractedAmount }))
+        toast.success(`Found amount: ₹${extractedAmount}`, { id: 'scan' })
       } else {
         toast.error('Could not extract amount. Please enter manually.', { id: 'scan' })
       }
-
-      // Try to guess description (first line or business name logic could go here)
-      // For now, just notifying success
     } catch (error) {
       console.error(error)
       toast.error('Failed to scan receipt', { id: 'scan' })
