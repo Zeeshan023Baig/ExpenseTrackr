@@ -69,7 +69,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             const hasCurrencyContext = match.includes('₹') || match.toUpperCase().includes('RS')
             if (numStr.length >= 5 && !numStr.includes('.') && !hasCurrencyContext) return
 
-            // FILTER: Likely Years
+            // FILTER: Likely Years (2020-2030)
             if (num >= 2100 || (num >= 2020 && num <= 2030)) return
 
             let score = 0
@@ -166,7 +166,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v2)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v3)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
