@@ -38,84 +38,106 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m)
       })
 
-      // DEBUG: Log available keys to see what we got
-      console.log('Tesseract Result Keys:', Object.keys(result.data))
+      // START ROBUST EXTRACTOR
+      // Helper: recursive line extraction
+      const getAllLines = (data) => {
+        if (data.lines && data.lines.length > 0) return data.lines
+        if (data.blocks && data.blocks.length > 0) {
+          return data.blocks.flatMap(block => {
+            if (block.lines && block.lines.length > 0) return block.lines
+            if (block.paragraphs && block.paragraphs.length > 0) {
+              return block.paragraphs.flatMap(p => p.lines || [])
+            }
+            return []
+          })
+        }
+        // Fallback: Create fake line objects from text
+        if (data.text) {
+          console.warn('No geometry lines found! Creating synthetic lines from text.')
+          return data.text.split('\n').map(txt => ({
+            text: txt,
+            bbox: { y0: 0, y1: 0 } // No height info available
+          }))
+        }
+        return []
+      }
+
+      const lines = getAllLines(result.data)
+      console.log(`Scan complete. Found ${lines.length} lines.`)
 
       let candidates = []
+
+      // Keywords for currency detection (Strict & Fuzzy)
       const currencySymbols = ['₹', 'RS', 'INR']
+      // Fuzzy markers: chars often confused for ₹ in this font context
+      const fuzzyMarkers = ['?', 'Z', 'S', '$', 'F', 'T', '7']
 
-      // STRATEGY A: Geometry-based (Preferred)
-      if (result.data.lines && result.data.lines.length > 0) {
-        console.log('Using Lines strategy with', result.data.lines.length, 'lines')
-        const lines = result.data.lines
+      lines.forEach((lineObj, index) => {
+        const lineText = lineObj.text.trim().toUpperCase()
+        if (!lineText) return
 
-        lines.forEach((lineObj, index) => {
-          const lineText = lineObj.text.trim().toUpperCase()
-          if (!lineText) return
+        // 1. Calculate Line Height (proxy for font size)
+        const bbox = lineObj.bbox || { y0: 0, y1: 0 }
+        const height = bbox.y1 - bbox.y0
+        const hasGeometry = height > 0
 
-          // Safety check for bbox
-          const bbox = lineObj.bbox || { y0: 0, y1: 10 }
-          const height = bbox.y1 - bbox.y0
+        // 2. Extract Numbers
+        const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
-          const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
-          const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
+        if (matches) {
+          matches.forEach(match => {
+            const numStr = match.replace(/[^\d.]/g, '')
+            const num = parseFloat(numStr)
 
-          if (matches) {
-            matches.forEach(match => {
-              const numStr = match.replace(/[^\d.]/g, '')
-              const num = parseFloat(numStr)
+            if (isNaN(num) || num <= 0) return
 
-              if (isNaN(num) || num <= 0) return
+            // 3. Analyze Currency Presence
+            const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
+            const hasFuzzy = fuzzyMarkers.some(m => lineText.includes(m) && lineText.length < 15)
 
-              let score = height
-              if (hasCurrency) score += 10000
-              if (lineText.includes('TOTAL') || lineText.includes('AMOUNT')) score += 50
+            // 4. Scoring Logic
+            let score = 0
 
-              candidates.push({
-                value: num,
-                score: score,
-                height: height,
-                hasCurrency: hasCurrency,
-                text: lineText,
-                line: lineText
-              })
+            // Height score (primary signal for "Big" numbers)
+            if (hasGeometry) {
+              score += height
+            } else {
+              // Fallback scoring if no geometry: prefer short lines (likely just the price)
+              if (lineText.length < 10) score += 20
+            }
+
+            // Currency bonanza
+            if (hasExplicit) {
+              score += 5000
+            } else if (hasFuzzy) {
+              score += 1000
+            }
+
+            // Keyword Context
+            if (lineText.includes('TOTAL') || lineText.includes('AMOUNT') || lineText.includes('PAYABLE')) {
+              score += 2000
+            }
+
+            // Penalize likely dates/times/phones
+            if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
+              if (!hasExplicit) score -= 5000
+            }
+            // Year filter (numbers 1900-2100 often years)
+            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
+              score -= 500
+            }
+
+            candidates.push({
+              value: num,
+              score: score,
+              height: height,
+              type: hasExplicit ? 'EXPLICIT' : (hasFuzzy ? 'FUZZY' : 'NONE'),
+              text: lineText,
+              line: lineText
             })
-          }
-        })
-      }
-      // STRATEGY B: Fallback Text-based (If geometry fails)
-      else {
-        console.warn('Lines data missing! Falling back to simple text regex.')
-        const text = result.data.text || ''
-        const lines = text.split('\n')
-
-        lines.forEach(line => {
-          const lineText = line.trim().toUpperCase()
-          const hasCurrency = currencySymbols.some(sym => lineText.includes(sym))
-          const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
-
-          if (matches) {
-            matches.forEach(match => {
-              const numStr = match.replace(/[^\d.]/g, '')
-              const num = parseFloat(numStr)
-              if (isNaN(num) || num <= 0) return
-
-              // Simple scoring fallback
-              let score = 0
-              if (hasCurrency) score += 10000
-
-              candidates.push({
-                value: num,
-                score: score,
-                height: 0,
-                hasCurrency: hasCurrency,
-                text: lineText,
-                line: lineText
-              })
-            })
-          }
-        })
-      }
+          })
+        }
+      })
 
       // Sort by Score descending
       candidates.sort((a, b) => b.score - a.score)
@@ -123,19 +145,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (candidates.length > 0) {
-        console.log('--- OCR Candidates ---')
+        console.log('--- OCR Candidates (v42 Fuzzy) ---')
         candidates.slice(0, 5).forEach((c, i) => {
-          console.log(`#${i + 1}: ₹${c.value} | Height: ${c.height} | Sym: ${c.hasCurrency} | Text: "${c.text}"`)
+          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Ht: ${c.height} | Type: ${c.type} | "${c.text}"`)
         })
-
-        // Strictness check: If user strictly wants ONLY lines with symbols,
-        // we should check if the top candidate has a symbol.
-        // However, robust fallback is usually better.
-        // But the user prompt said: "it should only scan the big numbers with the ruppee symbol"
-        // So let's prioritize the top candidate, and if it *doesn't* have a symbol, maybe warn or look further?
-        // Current scoring ensures if *any* candidate has a symbol, it is at the top.
-        // If *no* candidate has a symbol, the largest text is at the top. This effectively satisfies "scan big numbers",
-        // and if a symbol exists, it wins.
 
         const bestMatch = candidates[0]
         setFormData(prev => ({ ...prev, amount: bestMatch.value }))
@@ -220,7 +233,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share this if wrong)</p>
                 {debugLogs.map((log, i) => (
                   <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : 'text-surface-300'}`}>
-                    #{i + 1}: ₹{log.value} (Score: {log.score}) <br />
+                    #{i + 1}: ₹{log.value} (Height: {log.height.toFixed(0)}) <br />
                     <span className="opacity-50">Context: "{log.line.substring(0, 20)}..."</span>
                   </div>
                 ))}
