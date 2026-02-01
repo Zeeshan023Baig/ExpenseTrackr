@@ -52,7 +52,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        const IS_HEADER_LINE = i < 4 // Status bar and header often take more space
+        // Status bar area is usually the first 15% of lines but at least the first 5
+        const IS_VERY_TOP = i < 5
 
         const matches = line.match(/(?:₹|RS|INR)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
@@ -63,8 +64,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // FILTER: Time/Date noise
-            // Clock (14:42), Battery (80%), or small header numbers
+            // AGGRESSIVE TIME & STATUS BAR FILTER
+            // Most clock digits are at the very top. If we see a small number 
+            // at the very top without a currency symbol, we kill it.
+            if (IS_VERY_TOP && num < 60 && !match.includes('₹') && !match.toUpperCase().includes('RS')) {
+              return
+            }
+
+            // FILTER: Typical Time noise (Clock, AM/PM)
             const isTypicalTime = line.includes(':') || line.includes(' PM') || line.includes(' AM')
             if (isTypicalTime && num < 60 && !match.includes('₹')) return
             if (line.includes('%') && !match.includes('₹')) return
@@ -80,13 +87,19 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             // SCORING
             if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 70
+            // Extra boost for common GPay/Uppi success markers
+            if (line.includes('SUCCESSFUL') || line.includes('DONE')) score += 50
+
             if (standardKeywords.some(kw => line.includes(kw))) score += 30
-            if (match.includes('₹')) score += 120 // Even more weight for ₹
-            if (match.toUpperCase().includes('RS')) score += 70
+
+            // THE ULTIMATE WINNER: If it has the symbol, it is almost certainly the amount
+            if (match.includes('₹')) score += 250 // Massive weight
+            if (match.toUpperCase().includes('RS')) score += 100
+
             if (numStr.includes('.')) score += 20
 
             // PENALTY: Header noise
-            if (IS_HEADER_LINE && !hasCurrencyContext) score -= 60
+            if (IS_VERY_TOP && !hasCurrencyContext) score -= 100
 
             // PENALTY: Negative context
             if (negativeKeywords.some(kw => line.includes(kw))) score -= 150
@@ -177,7 +190,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v25)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v26)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
