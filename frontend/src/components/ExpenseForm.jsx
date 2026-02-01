@@ -43,35 +43,56 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       // 1. Clean and normalize text
       const lines = text.split('\n').map(line => line.trim())
 
-      // 2. Comprehensive Keyword List
-      const totalKeywords = ['TOTAL', 'GRAND', 'NET', 'PAYABLE', 'DUE', 'AMOUNT', 'SUM', 'RS', 'INR', 'AMT', 'PABLE', 'CASH', 'PAID', 'BILLED']
+      // 2. Comprehensive Keywords
+      const highConfidenceKeywords = ['TOTAL', 'GRAND', 'NET', 'PAYABLE', 'AMOUNT', 'SUM', '₹', 'RS.', 'RS ', 'INR']
+      const standardKeywords = ['DUE', 'AMT', 'PABLE', 'CASH', 'PAID', 'BILLED', 'SENT', 'TO']
+      const negativeKeywords = ['ID', 'REF', 'BANK', 'A/C', 'ACCOUNT', 'TRANS', 'PHONE', 'NO:', 'DATE']
 
       let candidates = []
 
-      // Extract all potential numbers with context
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        const matches = line.match(/[\d,]+(\.\d{1,2})?/g)
+
+        // Find numbers (including those with currency symbols nearby)
+        // RegEx captures the number and optional prefix symbols
+        const matches = line.match(/(?:₹|RS|INR)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
-            const num = parseFloat(match.replace(/,/g, ''))
+            const numStr = match.replace(/[^\d.]/g, '')
+            const num = parseFloat(numStr)
+
             if (isNaN(num) || num <= 0 || num > 1000000) return
-            if (num >= 2000 && num <= 2100) return // Skip likely years
 
-            // Calculate confidence score
+            // FILTER: Likely IDs, Phone numbers, or Account numbers
+            if (numStr.length > 7 && !numStr.includes('.')) return
+
+            // FILTER: Likely Years
+            if (num >= 2020 && num <= 2100) return
+
             let score = 0
-            if (totalKeywords.some(kw => line.includes(kw))) score += 50
-            if (line.includes('TOTAL') || line.includes('GRAND')) score += 30
-            if (match.includes('.')) score += 10 // Real currencies usually have decimals
 
-            candidates.push({ value: num, score, lineIdx: i })
+            // SCORING: Proximity to signals
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 60
+            if (standardKeywords.some(kw => line.includes(kw))) score += 30
+
+            // SCORING: Direct currency symbol match
+            if (match.includes('₹') || match.toUpperCase().includes('RS')) score += 50
+
+            // SCORING: Decimals (real totals often have them)
+            if (numStr.includes('.')) score += 15
+
+            // PENALTY: Negative context (IDs, Bank names, etc.)
+            if (negativeKeywords.some(kw => line.includes(kw))) score -= 100
+
+            candidates.push({ value: num, score, text: match })
           })
         }
       }
 
-      // Sort by score (desc) then by value (desc)
+      // Sort: Highest score first, then largest value
       candidates.sort((a, b) => b.score - a.score || b.value - a.value)
+      console.log('Candidates found:', candidates)
 
       let extractedAmount = candidates.length > 0 ? candidates[0].value : null
 
