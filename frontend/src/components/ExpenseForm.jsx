@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v57 loaded - Words Synthesis')
+    console.log('ExpenseForm v58 loaded - Pattern Correction')
   }, [])
 
   const handleChange = (e) => {
@@ -31,7 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v57) ---
+  // --- IMAGE PREPROCESSING (v57 Base) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -42,8 +42,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const targetHeight = img.height * scaleFactor
 
         const canvas = document.createElement('canvas')
-
-        // Relaxed Crop: Top 12% to 65% (Give a bit more room at top)
         const CROP_TOP = 0.12
         const CROP_BOTTOM = 0.65
         const cropHeightPercent = CROP_BOTTOM - CROP_TOP
@@ -61,13 +59,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         ctx.drawImage(
           img,
           0, img.height * CROP_TOP, img.width, img.height * cropHeightPercent,
-          0, 0, canvas.width, canvas.height // No padding this time, clear canvas
+          0, 0, canvas.width, canvas.height
         )
 
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // Brightness check
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
@@ -75,19 +72,15 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v57): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v58): Cropped | DarkMode: ${isDarkMode}`)
 
-        // Grayscale + Invert
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
 
           let gray = (r * 0.299 + g * 0.587 + b * 0.114)
-
-          if (isDarkMode) {
-            gray = 255 - gray
-          }
+          if (isDarkMode) gray = 255 - gray
 
           data[i] = gray
           data[i + 1] = gray
@@ -109,7 +102,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Analyzing structure... (v57)', { id: 'scan' })
+    toast.loading('Analyzing numbers... (v58)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -120,7 +113,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
-      // PSM 11 (Sparse) or 6 (Block). Let's stick to 11 for "Words" robustness
       await worker.setParameters({
         tessedit_pageseg_mode: '11',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -132,69 +124,82 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + result.data.text)
       console.log('--- RAW TEXT ---', result.data.text)
 
-      // --- MANUAL LINE SYNTHESIS ---
-      // Instead of trusting `data.lines`, we build them from `data.words`.
-      // This is the robust fix for "Height: NaN".
+      // LINE SYNTHESIS (Robust)
       const words = result.data.words || []
-
-      // Group words into lines based on Y-overlap
       const manualLines = []
-
-      // Sort words by Y then X
       words.sort((a, b) => {
         const ay = a.bbox.y0
         const by = b.bbox.y0
-        if (Math.abs(ay - by) < 10) return a.bbox.x0 - b.bbox.x0 // Same lineish
+        if (Math.abs(ay - by) < 10) return a.bbox.x0 - b.bbox.x0
         return ay - by
       })
 
       words.forEach(word => {
-        // Find a line this word fits into
-        // A word fits if its vertical center is close to the line's vertical center
         const wordMidY = (word.bbox.y0 + word.bbox.y1) / 2
-
         const matchingLine = manualLines.find(line => {
-          const lineMidY = (line.bbox.y0 + line.bbox.y1) / 2
           const lineHeight = line.bbox.y1 - line.bbox.y0
-          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.5) // Within 50% overlap
+          const lineMidY = (line.bbox.y0 + line.bbox.y1) / 2
+          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.6) // 60% overlap
         })
-
         if (matchingLine) {
           matchingLine.text += ' ' + word.text
           matchingLine.bbox.x1 = Math.max(matchingLine.bbox.x1, word.bbox.x1)
           matchingLine.bbox.y0 = Math.min(matchingLine.bbox.y0, word.bbox.y0)
           matchingLine.bbox.y1 = Math.max(matchingLine.bbox.y1, word.bbox.y1)
         } else {
-          // Start new line
-          manualLines.push({
-            text: word.text,
-            bbox: { ...word.bbox }
-          })
+          manualLines.push({ text: word.text, bbox: { ...word.bbox } })
         }
       })
 
-      console.log(`Synthesized ${manualLines.length} lines from words.`)
-
-      // Now use `manualLines` as our source
       const lines = manualLines
 
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
 
-      // 1. FIRST PASS: Find Max Height
+      // 1. Max Height Calc
       let maxHeight = 0;
       lines.forEach(line => {
         const h = (line.bbox.y1 - line.bbox.y0)
         if (h > maxHeight) maxHeight = h
       })
-      console.log('Max Height Found:', maxHeight)
+      console.log('Max Height:', maxHeight)
 
       lines.forEach((lineObj, index) => {
-        const lineText = lineObj.text.trim().toUpperCase()
+        let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
+        // --- v58 PATTERN CORRECTION ---
+        // 1. Remove Spaces in apparent numbers: "1 000" -> "1000"
+        // But be careful not to merge "12 Jan" -> "12Jan".
+        // Heuristic: If line contains mostly digits/symbols, strip spaces.
+        const digitCount = (lineText.match(/\d/g) || []).length
+        const totalCount = lineText.length
+        if (digitCount / totalCount > 0.5) {
+          // It's mostly numbers. Safe to strip spaces.
+          lineText = lineText.replace(/\s+/g, '')
+        }
+
+        // 2. Fix common currency typos at start
+        // "31000" where "3" is "₹"
+        // "7500" where "7" is "₹"
+        // "?500" where "?" is "₹"
+        // Only apply if we have geometry and it's BIG (Amount)
         const bbox = lineObj.bbox
         const height = bbox.y1 - bbox.y0
+        const isBig = height > maxHeight * 0.5
+
+        if (isBig) {
+          // Check for zombie prefixes
+          if (/^[?73Z]\d+/.test(lineText)) {
+            // Heuristic: "31000" -> "₹1000" is VERY risky.
+            // But "?1000" -> "₹1000" is safe.
+            // "71000" -> ?? "7" is often read for "₹".
+            // Let's replace '?' and 'Z' safely.
+            lineText = lineText.replace(/^[?Z]/, '₹')
+          }
+        }
+        // -----------------------------
+
         const hasGeometry = height > 0
 
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
@@ -207,7 +212,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (isNaN(num) || num <= 0) return
 
             const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
-            const isFuzzy = /^[?Z$FT7]\s?\d/.test(lineText)
+            const isFuzzy = /^[?Z$FT7]\s?\d/.test(lineText) || lineText.startsWith('₹')
 
             let score = 0
 
@@ -215,7 +220,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (hasGeometry && maxHeight > 5) {
               if (height > maxHeight * 0.8) score += 10000
               else if (height > maxHeight * 0.5) score += 2000
-              else score -= 5000 // Too small
+              else score -= 5000
             }
 
             // 2. Currency
@@ -226,15 +231,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
             if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
-            // HARD KILL: '91' and '4'
             if (num === 91 || num === 4 || num === 5) score -= 20000
             if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
             if (numStr.split('.')[0].length > 7) score -= 10000
 
-            // Year check (Unless HUGE)
+            // Year check
             if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
-              if (height < maxHeight * 0.8) score -= 500 // Only penalize if not HUGE
+              if (height < maxHeight * 0.8) score -= 500
             }
 
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
@@ -253,7 +257,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
         const best = validCandidates[0]
         if (best.value < 10 && best.score <= 0) {
-          // If we found '4' (score 0), and best candidate is trash, warn.
           toast.error('Could not clearly read amount.', { id: 'scan' })
         } else {
           setFormData(prev => ({ ...prev, amount: best.value }))
@@ -324,7 +327,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v57)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v58)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
