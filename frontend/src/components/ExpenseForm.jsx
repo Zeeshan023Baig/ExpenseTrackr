@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v60 loaded - PSM 4 + Simple Preproc')
+    console.log('ExpenseForm v61 loaded - Wide Crop + Comma Fix')
   }, [])
 
   const handleChange = (e) => {
@@ -31,20 +31,23 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v60) ---
+  // --- IMAGE PREPROCESSING (v61) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
-        // v60: Return to 2.0x upscaling for maximum clarity
+        // 2.0x Upscaling
         const targetWidth = Math.max(img.width * 2.0, 2000)
         const scaleFactor = targetWidth / img.width
         const targetHeight = img.height * scaleFactor
 
         const canvas = document.createElement('canvas')
-        const CROP_TOP = 0.12
-        const CROP_BOTTOM = 0.65
+
+        // WIDER CROP (v61): Top 10% to 70%
+        // This ensures "20" or "700" aren't cut off if scrolling differs.
+        const CROP_TOP = 0.10
+        const CROP_BOTTOM = 0.70
         const cropHeightPercent = CROP_BOTTOM - CROP_TOP
 
         canvas.width = targetWidth
@@ -66,6 +69,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
+        // Brightness check
         let totalBrightness = 0
         for (let i = 0; i < data.length; i += 4) {
           totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
@@ -73,10 +77,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v60): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v61): Cropped | DarkMode: ${isDarkMode}`)
 
-        // v60: NO Manual Contrast Boosting. Just Grayscale + Invert.
-        // This avoids washing out light text.
+        // Mild Contrast + Invert
+        // v60 removed contrast, v59 had it.
+        // Let's add a VERY MILD contrast (1.1) to help edges without destroying details.
+        const contrast = 1.1
+        const intercept = 128 * (1 - contrast)
+
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
@@ -87,6 +95,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           if (isDarkMode) {
             gray = 255 - gray
           }
+
+          // Mild Contrast
+          gray = gray * contrast + intercept
+          gray = Math.min(255, Math.max(0, gray))
 
           data[i] = gray
           data[i + 1] = gray
@@ -108,7 +120,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Reading numbers... (v60: PSM 4)', { id: 'scan' })
+    toast.loading('Scanning (v61: Wide Crop)...', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -119,10 +131,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
-      // PSM 4: Single Column.
-      // Better than PSM 6 for cropped receipts.
+      // PSM 6 (Single Block). Most stable for amounts.
       await worker.setParameters({
-        tessedit_pageseg_mode: '4',
+        tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
 
@@ -132,12 +143,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       const rawText = result.data.text
       setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + rawText)
       console.log('--- RAW TEXT ---', rawText)
-
-      if (!rawText || rawText.trim().length === 0) {
-        toast.error('OCR saw nothing. Try better lighting.', { id: 'scan' })
-        setIsScanning(false)
-        return
-      }
 
       // LINE SYNTHESIS
       const words = result.data.words || []
@@ -182,10 +187,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // Pattern Correction
+        // v61: COMMA & SPACE HANDLING
+        // Handle "1 000" or "1, 000" or "1,000"
+        // If line is mostly digits/symbols, strip ALL spaces
         const digitCount = (lineText.match(/\d/g) || []).length
         const totalCount = lineText.length
-        if (digitCount / totalCount > 0.5) {
+        if (digitCount > 0 && digitCount / totalCount > 0.4) {
           lineText = lineText.replace(/\s+/g, '')
         }
 
@@ -194,6 +201,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const isBig = height > maxHeight * 0.5
 
         if (isBig) {
+          // Typo Fixes
           if (/^[?73Z]\d+/.test(lineText)) {
             lineText = lineText.replace(/^[?Z]/, '₹')
             if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
@@ -202,10 +210,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
         const hasGeometry = height > 0
 
+        // Regex matches numbers with commas: "1,000", "5,400.50"
         const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
 
         if (matches) {
           matches.forEach(match => {
+            // Remove commas for value parsing: "1,000" -> "1000"
             const numStr = match.replace(/[^\d.]/g, '')
             const num = parseFloat(numStr)
 
@@ -224,7 +234,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             }
 
             // 2. Currency
-            if (hasExplicit) score += 20000 // MASSIVE BOOST for explicit currency
+            if (hasExplicit) score += 5000
             else if (isFuzzy) score += 1000
 
             // 3. Filters
@@ -250,19 +260,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       candidates.sort((a, b) => b.score - a.score)
-      const validCandidates = candidates.filter(c => c.score > -2000) // Lowered threshold slightly
+      const validCandidates = candidates.filter(c => c.score > -2000)
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-
-        const best = validCandidates[0]
-        if (best.value < 10 && best.score <= 0) {
-          toast.error('Scan unclear.', { id: 'scan' })
-        } else {
-          setFormData(prev => ({ ...prev, amount: best.value }))
-          toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
-        }
-
+        setFormData(prev => ({ ...prev, amount: validCandidates[0].value }))
+        toast.success(`Extracted: ₹${validCandidates[0].value}`, { id: 'scan' })
       } else {
         toast.error('No valid amount found.', { id: 'scan' })
       }
@@ -327,7 +330,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v60)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v61)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
