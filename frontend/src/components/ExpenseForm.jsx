@@ -52,13 +52,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        const IS_DANGER_SECTION = i < 15
 
-        // 1. IMPROVED CLOCK & BATTERY TRAP
-        // Extract numbers while ignoring percentage signs for the trap logic
-        const lineNumbersOnly = line.replace(/%/g, '').match(/\b\d{1,2}\b/g) || []
-        const isClockOrBatteryLine = (lineNumbersOnly.length >= 2 && lineNumbersOnly.every(n => parseInt(n) < 101)) || line.includes('%')
+        // STATUS BAR: Only the very first few lines (usually top ~5% of text)
+        const IS_STATUS_BAR = i < 5
+        const IS_HEADER_AREA = i < 15
+
+        // CLOCK DETECTION: Match "10:20", "10 20", "2.15 PM"
         const HAS_CLOCK_SYMBOLS = line.includes(':') || line.includes('PM') || line.includes('AM')
+        const IS_CLOCK_PATTERN = line.match(/\b\d{1,2}[:.\s]\d{2}\b/)
 
         const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$|\!|3|8)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
@@ -75,38 +76,38 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
 
-            // AGGRESSIVE NOISE SUPPRESSION
-            // Skip numbers that look like clock/battery metadata unless they have an EXPLICIT currency sign
-            if ((HAS_CLOCK_SYMBOLS || isClockOrBatteryLine || (IS_DANGER_SECTION && num < 101)) && !hasExplicitCurrency) {
-              return
-            }
+            // SMART NOISE FILTER: 
+            // 1. Only kill VERY high up unformatted small numbers (Status bar)
+            if (IS_STATUS_BAR && num < 101 && !hasExplicitCurrency) return
 
-            // FILTER: Phone numbers / IDs
-            if (numStr.length >= 7 && !numStr.includes('.') && !isMarkedAsMoney) return
+            // 2. Only kill numbers on lines that explicitly look like clocks/battery
+            if ((HAS_CLOCK_SYMBOLS || line.includes('%') || IS_CLOCK_PATTERN) && num < 101 && !hasExplicitCurrency) return
+
+            // 3. Keep everything else, even if it's near the top (it might be the ₹20!)
 
             let score = 0
 
-            // 1. SUCCESS CONTEXT (Highest signal)
+            // SCORING: Proximity to success signal
             const contextLines = lines.slice(Math.max(0, i - 2), i + 1).join(' ').toUpperCase()
             if (contextLines.includes('SUCCESSFUL') || contextLines.includes('PAID') || contextLines.includes('DONE')) {
+              score += 2000
+            }
+
+            // SCORING: Keyword presence
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 500
+
+            // SCORING: Symbol matching
+            if (hasExplicitCurrency) score += 5000
+            if (hasFuzzyCurrency) score += 1000
+
+            // POSITION BOOST: Middle of screen is likely the amount
+            const linePosition = i / lines.length
+            if (linePosition > 0.15 && linePosition < 0.8) {
               score += 1500
             }
 
-            // 2. KEYWORD SIGNALS
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 300
-
-            // 3. SYMBOL PRIORITY (The "King" factor)
-            if (hasExplicitCurrency) score += 5000
-            if (hasFuzzyCurrency) score += 800
-
-            // 4. POSITION BIAS (Middle of the image is the sweet spot)
-            const linePosition = i / lines.length
-            if (linePosition > 0.25 && linePosition < 0.75) {
-              score += 1000 // Huge boost for center-screen numbers
-            }
-
-            // 5. PENALTIES
-            if (IS_DANGER_SECTION && !isMarkedAsMoney) score -= 2000
+            // PENALTIES
+            if (IS_STATUS_BAR && !isMarkedAsMoney) score -= 3000
             if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 1000
 
             candidates.push({
@@ -121,7 +122,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         }
       }
 
-      // Priority sort: EXPLICIT > FUZZY > HIGH SCORE
+      // Final decision sort
       candidates.sort((a, b) => {
         if (a.isExplicit && !b.isExplicit) return -1
         if (!a.isExplicit && b.isExplicit) return 1
@@ -131,7 +132,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine v36 ---')
+        console.log('--- OCR Decision Engine v37 ---')
         candidates.slice(0, 5).forEach((c, idx) => {
           console.log(`${idx + 1}. ₹${c.value} | Expl: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
         })
@@ -207,7 +208,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v36)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v37)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
