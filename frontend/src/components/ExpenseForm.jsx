@@ -52,10 +52,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        // Aggressive status bar filter (top 15 lines for various screen sizes)
-        const IS_STATUS_BAR_AREA = i < 12
+        // Aggressive status bar filter (top 15-20% of typical mobile screen)
+        const IS_TOP_SECTION = i < 15
 
-        const matches = line.match(/(?:₹|RS|INR|RS.)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
@@ -64,51 +64,68 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            const hasExplicitCurrency = match.includes('₹') || match.toUpperCase().includes('RS')
+            // Fuzzy Currency Detection: Tesseract often misreads ₹ as 'Z', 'S', '?' or '3'
+            // If the number is preceded by common misreads, we treat it with importance
+            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR')
+            const hasFuzzyCurrency = (match.startsWith('Z') || match.startsWith('S')) && numStr.length <= 6
 
-            // FILTER: Clock / Notification Noise
-            // If it's 0-59 (minutes) and at the top without a symbol, or on a line with clock markers
-            const isClockLike = line.includes(':') || line.includes('PM') || line.includes('AM') || line.includes('%')
-            if ((IS_STATUS_BAR_AREA || isClockLike) && num < 60 && !hasExplicitCurrency) {
+            const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
+
+            // AGGRESSIVE TIME FILTER: 
+            // If a number < 60 is in the top section and NOT marked as money, it IS the clock. Kill it.
+            if (IS_TOP_SECTION && num < 60 && !isMarkedAsMoney) {
               return
             }
 
-            // FILTER: Long numbers (Phone/IDs)
-            if (numStr.length >= 5 && !numStr.includes('.') && !hasExplicitCurrency) return
+            // FILTER: Clock colons, AM/PM, Battery %
+            const isClockLine = line.includes(':') || line.includes('PM') || line.includes('AM') || line.includes('%')
+            if (isClockLine && num < 100 && !isMarkedAsMoney) return
 
-            // FILTER: Common noise near keywords
-            if (negativeKeywords.some(kw => line.includes(kw)) && !hasExplicitCurrency) return
+            // FILTER: Long numbers (Phone/IDs)
+            if (numStr.length >= 7 && !numStr.includes('.') && !isMarkedAsMoney) return
 
             let score = 0
 
             // SCORING
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 80
-            if (line.includes('SUCCESSFUL') || line.includes('DONE') || line.includes('PAID')) score += 60
-            if (standardKeywords.some(kw => line.includes(kw))) score += 30
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 100
+            if (line.includes('SUCCESSFUL') || line.includes('PAID') || line.includes('DONE')) score += 80
+            if (standardKeywords.some(kw => line.includes(kw))) score += 40
 
-            // Symbol match (for internal score tie-breaking)
-            if (match.includes('₹')) score += 300
-            if (match.toUpperCase().includes('RS')) score += 100
+            // Symbol match weighting
+            if (hasExplicitCurrency) score += 400
+            if (hasFuzzyCurrency) score += 100
 
-            if (numStr.includes('.')) score += 20
-            if (IS_STATUS_BAR_AREA && !hasExplicitCurrency) score -= 200
+            if (numStr.includes('.')) score += 30
 
-            candidates.push({ value: num, score, text: match, line: line, hasCurrency: hasExplicitCurrency })
+            // Penalty for top section if not money
+            if (IS_TOP_SECTION && !isMarkedAsMoney) score -= 300
+
+            // PENALTY: Negative context
+            if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 250
+
+            candidates.push({
+              value: num,
+              score,
+              text: match,
+              line: line,
+              hasCurrency: isMarkedAsMoney
+            })
           })
         }
       }
 
-      // THE ULTIMATE PRIORITY: If a candidate has a currency symbol, it always beats one without.
+      // Priority sort
       candidates.sort((a, b) => {
+        // Absolute priority for currency marked numbers
         if (a.hasCurrency && !b.hasCurrency) return -1
         if (!a.hasCurrency && b.hasCurrency) return 1
         return b.score - a.score || b.value - a.value
       })
 
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine (v28) ---')
+        console.log('--- OCR Decision Engine (v29) ---')
         candidates.slice(0, 5).forEach((c, idx) => {
-          console.log(`${idx + 1}. Amount: ₹${c.value} | HasSymbol: ${c.hasCurrency} | Score: ${c.score} | Context: "${c.line}"`)
+          console.log(`${idx + 1}. ₹${c.value} | Marked: ${c.hasCurrency} | Score: ${c.score} | Context: "${c.line}"`)
         })
       }
 
@@ -182,7 +199,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v28)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v29)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
