@@ -41,57 +41,43 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       console.log('scanned text:', text)
 
       // 1. Clean and normalize text
-      const lines = text.split('\n').map(line => line.trim().toUpperCase())
+      const lines = text.split('\n').map(line => line.trim())
 
-      // 2. Look for keywords that usually precede the total
-      const totalKeywords = ['TOTAL', 'GRAND TOTAL', 'NET AMOUNT', 'PAYABLE', 'AMOUNT DUE', 'SUM', 'TOTAL:', 'RS', 'INR']
-      let extractedAmount = null
+      // 2. Comprehensive Keyword List
+      const totalKeywords = ['TOTAL', 'GRAND', 'NET', 'PAYABLE', 'DUE', 'AMOUNT', 'SUM', 'RS', 'INR', 'AMT', 'PABLE', 'CASH', 'PAID', 'BILLED']
 
-      // Strategy A: Look for numbers on the same line or next line as keywords
+      let candidates = []
+
+      // Extract all potential numbers with context
       for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-        const hasKeyword = totalKeywords.some(kw => line.includes(kw))
+        const line = lines[i].toUpperCase()
+        const matches = line.match(/[\d,]+(\.\d{1,2})?/g)
 
-        if (hasKeyword) {
-          // Find potential numbers in this line or the next
-          const searchArea = line + (lines[i + 1] || '')
-          const matches = searchArea.match(/[\d,]+(\.\d{1,2})?/g)
+        if (matches) {
+          matches.forEach(match => {
+            const num = parseFloat(match.replace(/,/g, ''))
+            if (isNaN(num) || num <= 0 || num > 1000000) return
+            if (num >= 2000 && num <= 2100) return // Skip likely years
 
-          if (matches) {
-            const potentials = matches
-              .map(m => parseFloat(m.replace(/,/g, '')))
-              .filter(n => n > 0 && n < 1000000) // Sanity check
+            // Calculate confidence score
+            let score = 0
+            if (totalKeywords.some(kw => line.includes(kw))) score += 50
+            if (line.includes('TOTAL') || line.includes('GRAND')) score += 30
+            if (match.includes('.')) score += 10 // Real currencies usually have decimals
 
-            if (potentials.length > 0) {
-              // Usually the last number in "Total" context is the value
-              extractedAmount = potentials[potentials.length - 1]
-              break
-            }
-          }
+            candidates.push({ value: num, score, lineIdx: i })
+          })
         }
       }
 
-      // Strategy B: Fallback to largest number (excluding likely dates)
-      if (!extractedAmount) {
-        const allMatches = text.match(/[\d,]+(\.\d{1,2})?/g)
-        if (allMatches) {
-          const validNumbers = allMatches
-            .map(m => parseFloat(m.replace(/,/g, '')))
-            .filter(n => {
-              // Filter out obvious years (e.g., 2023, 2024, 2025)
-              if (n >= 2000 && n <= 2100) return false
-              return n > 0 && n < 1000000
-            })
+      // Sort by score (desc) then by value (desc)
+      candidates.sort((a, b) => b.score - a.score || b.value - a.value)
 
-          if (validNumbers.length > 0) {
-            extractedAmount = Math.max(...validNumbers)
-          }
-        }
-      }
+      let extractedAmount = candidates.length > 0 ? candidates[0].value : null
 
       if (extractedAmount) {
         setFormData(prev => ({ ...prev, amount: extractedAmount }))
-        toast.success(`Found amount: ₹${extractedAmount}`, { id: 'scan' })
+        toast.success(`Extracted: ₹${extractedAmount}`, { id: 'scan' })
       } else {
         toast.error('Could not extract amount. Please enter manually.', { id: 'scan' })
       }
