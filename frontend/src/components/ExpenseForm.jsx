@@ -53,7 +53,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setFormData(prev => ({
         ...prev,
         amount: amount || prev.amount,
-        description: merchant ? `Payment to ${merchant}` : prev.description,
+        // description: kept as is (user wants to type it)
         category: category && categories.includes(category) ? category : (category || prev.category),
         date: date || prev.date
       }))
