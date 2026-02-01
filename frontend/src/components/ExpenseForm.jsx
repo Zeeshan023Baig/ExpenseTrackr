@@ -52,9 +52,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-
-        // Skip very first few lines if they are likely status bar (Time, Battery, etc.)
-        const IS_HEADER_LINE = i < 3
+        const IS_HEADER_LINE = i < 4 // Status bar and header often take more space
 
         const matches = line.match(/(?:₹|RS|INR)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
@@ -65,44 +63,49 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // NEW FILTER: Often Time (XX:YY) or Date (DD/MM)
-            // If the line contains a colon and this number is small, it's very likely noise (minutes/hours)
-            if (line.includes(':') && num < 60 && !match.includes('₹')) return
+            // FILTER: Time/Date noise
+            // Clock (14:42), Battery (80%), or small header numbers
+            const isTypicalTime = line.includes(':') || line.includes(' PM') || line.includes(' AM')
+            if (isTypicalTime && num < 60 && !match.includes('₹')) return
+            if (line.includes('%') && !match.includes('₹')) return
 
-            // FILTER: Likely IDs, Phone numbers, or Account numbers
+            // FILTER: Likely IDs, Phone numbers
             const hasCurrencyContext = match.includes('₹') || match.toUpperCase().includes('RS')
             if (numStr.length >= 5 && !numStr.includes('.') && !hasCurrencyContext) return
 
-            // FILTER: Likely Years (2020-2030)
+            // FILTER: Years
             if (num >= 2100 || (num >= 2020 && num <= 2030)) return
 
             let score = 0
 
-            // SCORING: Proximity to signals
+            // SCORING
             if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 70
             if (standardKeywords.some(kw => line.includes(kw))) score += 30
-
-            // SCORING: Direct currency symbol match (HUGE BOOST)
-            if (match.includes('₹')) score += 100
+            if (match.includes('₹')) score += 120 // Even more weight for ₹
             if (match.toUpperCase().includes('RS')) score += 70
-
-            // SCORING: Decimals (real totals often have them)
             if (numStr.includes('.')) score += 20
 
-            // PENALTY: Header/Status Bar area (Times often live here)
-            if (IS_HEADER_LINE && !hasCurrencyContext) score -= 40
+            // PENALTY: Header noise
+            if (IS_HEADER_LINE && !hasCurrencyContext) score -= 60
 
             // PENALTY: Negative context
             if (negativeKeywords.some(kw => line.includes(kw))) score -= 150
 
-            candidates.push({ value: num, score, text: match })
+            candidates.push({ value: num, score, text: match, line: line })
           })
         }
       }
 
-      // Sort: Highest score first, then largest value
+      // Final sort
       candidates.sort((a, b) => b.score - a.score || b.value - a.value)
-      console.log('Candidates found:', candidates)
+
+      // LOGS: Very useful for debugging why 20 is losing to something else
+      if (candidates.length > 0) {
+        console.log('--- OCR Amount Candidates (Top 5) ---')
+        candidates.slice(0, 5).forEach((c, idx) => {
+          console.log(`${idx + 1}. Amount: ${c.value} | Score: ${c.score} | Context: "${c.line}"`)
+        })
+      }
 
       let extractedAmount = candidates.length > 0 ? candidates[0].value : null
 
@@ -174,7 +177,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v24)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v25)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
