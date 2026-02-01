@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v56 loaded - Padding + PSM 11')
+    console.log('ExpenseForm v57 loaded - Words Synthesis')
   }, [])
 
   const handleChange = (e) => {
@@ -31,77 +31,54 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v56 - PADDING + CROP) ---
+  // --- IMAGE PREPROCESSING (v57) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
-        // v56: Reduced upscaling to 1.5x to be safer/faster
         const targetWidth = Math.max(img.width * 1.5, 1500)
         const scaleFactor = targetWidth / img.width
         const targetHeight = img.height * scaleFactor
 
         const canvas = document.createElement('canvas')
 
-        const CROP_TOP = 0.15
-        const CROP_BOTTOM = 0.60
+        // Relaxed Crop: Top 12% to 65% (Give a bit more room at top)
+        const CROP_TOP = 0.12
+        const CROP_BOTTOM = 0.65
         const cropHeightPercent = CROP_BOTTOM - CROP_TOP
-        const cropHeight = targetHeight * cropHeightPercent
 
-        // PADDING: Add 50px white padding around the crop
-        const PADDING = 50
-        canvas.width = targetWidth + (PADDING * 2)
-        canvas.height = cropHeight + (PADDING * 2)
+        canvas.width = targetWidth
+        canvas.height = targetHeight * cropHeightPercent
 
         const ctx = canvas.getContext('2d')
-        ctx.fillStyle = '#FFFFFF' // White background for padding
+        ctx.fillStyle = '#FFFFFF'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         ctx.imageSmoothingEnabled = true
         ctx.imageSmoothingQuality = 'high'
 
-        // Draw centered in padding
         ctx.drawImage(
           img,
           0, img.height * CROP_TOP, img.width, img.height * cropHeightPercent,
-          PADDING, PADDING, targetWidth, cropHeight
+          0, 0, canvas.width, canvas.height // No padding this time, clear canvas
         )
 
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // Brightness on Valid Area (skipping padding for calc)
-        // We sample only the center to guess mode correctly
+        // Brightness check
         let totalBrightness = 0
-        let pixelCount = 0
-        const sampleStart = (PADDING * canvas.width * 4) // Start after top padding roughly
-        const sampleEnd = data.length - (PADDING * canvas.width * 4)
-
-        for (let i = sampleStart; i < sampleEnd; i += 16) { // step 16 optimization
-          if (data[i + 3] > 0) { // Check alpha
-            totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
-            pixelCount++
-          }
+        for (let i = 0; i < data.length; i += 4) {
+          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
         }
-        const avgBrightness = pixelCount > 0 ? totalBrightness / pixelCount : 128
+        const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v56): Padded | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v57): Cropped | DarkMode: ${isDarkMode}`)
 
         // Grayscale + Invert
-        // Note: We don't want to invert the PADDING (White).
-        // The Padding is already White (255,255,255).
-        // If DarkMode is true, we want BG to become White.
-        // So we only invert if the pixel was part of the original image...
-        // Actually, easiest is to ensure logic maps "Dark BG" -> "White".
-        // Padding is White. So Padding stays White.
-
         for (let i = 0; i < data.length; i += 4) {
-          // If this is PADDING (White), keep it White.
-          // Heuristic: If we just drew white, it's white.
-          // But simpler: just apply the transform.
-
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
@@ -109,43 +86,18 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           let gray = (r * 0.299 + g * 0.587 + b * 0.114)
 
           if (isDarkMode) {
-            // Invert: Black(0) -> White(255). White(255) -> Black(0).
-            // BUT! The Padding is White (255). It would become Black (0).
-            // We DON'T want a black border.
-            // So we must handle padding separately or just fill padding with Black if DarkMode?
-            // No, Tesseract wants White background.
-            // So, if DarkMode: we Invert the Image Content, but keep Padding White.
-            // Since we processed the whole canvas, the Padding (255) became (0).
-            // We can just clobber the padding again at the end, or cleaner:
             gray = 255 - gray
           }
-
-          // Contrast (Gentle)
-          // gray = ((gray - 128) * 1.1) + 128
 
           data[i] = gray
           data[i + 1] = gray
           data[i + 2] = gray
-          data[i + 3] = 255 // Alpha opaque
         }
 
         ctx.putImageData(imgData, 0, 0)
 
-        // Re-paint white padding if we inverted it to black
-        if (isDarkMode) {
-          ctx.fillStyle = '#FFFFFF'
-          // Top
-          ctx.fillRect(0, 0, canvas.width, PADDING)
-          // Bottom
-          ctx.fillRect(0, canvas.height - PADDING, canvas.width, PADDING)
-          // Left
-          ctx.fillRect(0, 0, PADDING, canvas.height)
-          // Right
-          ctx.fillRect(canvas.width - PADDING, 0, PADDING, canvas.height)
-        }
-
         canvas.toBlob((blob) => {
-          blob.isDarkMode = isDarkMode // Attach metadata for debug
+          blob.isDarkMode = isDarkMode
           resolve(blob)
         }, 'image/png')
       }
@@ -157,7 +109,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning (v56: PSM 11)...', { id: 'scan' })
+    toast.loading('Analyzing structure... (v57)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -168,8 +120,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
-      // PSM 11: Sparse Text. Great for receipts/invoices. 
-      // Adds segmentation robustness over PSM 6.
+      // PSM 11 (Sparse) or 6 (Block). Let's stick to 11 for "Words" robustness
       await worker.setParameters({
         tessedit_pageseg_mode: '11',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -181,51 +132,68 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + result.data.text)
       console.log('--- RAW TEXT ---', result.data.text)
 
-      const getAllLines = (data) => {
-        if (data.lines && data.lines.length > 0) return data.lines
-        // PSM 11 might populate different structures
-        if (data.blocks && data.blocks.length > 0) {
-          return data.blocks.flatMap(block => {
-            if (block.lines && block.lines.length > 0) return block.lines
-            return []
+      // --- MANUAL LINE SYNTHESIS ---
+      // Instead of trusting `data.lines`, we build them from `data.words`.
+      // This is the robust fix for "Height: NaN".
+      const words = result.data.words || []
+
+      // Group words into lines based on Y-overlap
+      const manualLines = []
+
+      // Sort words by Y then X
+      words.sort((a, b) => {
+        const ay = a.bbox.y0
+        const by = b.bbox.y0
+        if (Math.abs(ay - by) < 10) return a.bbox.x0 - b.bbox.x0 // Same lineish
+        return ay - by
+      })
+
+      words.forEach(word => {
+        // Find a line this word fits into
+        // A word fits if its vertical center is close to the line's vertical center
+        const wordMidY = (word.bbox.y0 + word.bbox.y1) / 2
+
+        const matchingLine = manualLines.find(line => {
+          const lineMidY = (line.bbox.y0 + line.bbox.y1) / 2
+          const lineHeight = line.bbox.y1 - line.bbox.y0
+          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.5) // Within 50% overlap
+        })
+
+        if (matchingLine) {
+          matchingLine.text += ' ' + word.text
+          matchingLine.bbox.x1 = Math.max(matchingLine.bbox.x1, word.bbox.x1)
+          matchingLine.bbox.y0 = Math.min(matchingLine.bbox.y0, word.bbox.y0)
+          matchingLine.bbox.y1 = Math.max(matchingLine.bbox.y1, word.bbox.y1)
+        } else {
+          // Start new line
+          manualLines.push({
+            text: word.text,
+            bbox: { ...word.bbox }
           })
         }
-        // If still empty, use words?
-        if (data.words && data.words.length > 0) {
-          // Synthesize line-like objects from words
-          return data.words; // Treat words as lines primarily for height check
-        }
+      })
 
-        return data.text ? data.text.split('\n').map(t => ({ text: t, bbox: { y0: 0 } })) : []
-      }
+      console.log(`Synthesized ${manualLines.length} lines from words.`)
 
-      let lines = getAllLines(result.data)
-
-      // Filter empty
-      lines = lines.filter(l => l.text && l.text.trim().length > 0)
+      // Now use `manualLines` as our source
+      const lines = manualLines
 
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
 
       // 1. FIRST PASS: Find Max Height
       let maxHeight = 0;
-      let hasGeom = false
-
       lines.forEach(line => {
-        const bbox = line.bbox || { y0: 0, y1: 0 }
-        const h = bbox.y1 - bbox.y0
-        if (h > 0) {
-          if (h > maxHeight) maxHeight = h
-          hasGeom = true
-        }
+        const h = (line.bbox.y1 - line.bbox.y0)
+        if (h > maxHeight) maxHeight = h
       })
-      console.log('Max Height Found:', maxHeight, 'Has Geometry:', hasGeom)
+      console.log('Max Height Found:', maxHeight)
 
       lines.forEach((lineObj, index) => {
         const lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        const bbox = lineObj.bbox || { y0: 0, y1: 0 }
+        const bbox = lineObj.bbox
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
 
@@ -245,18 +213,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             // 1. Height Supremacy
             if (hasGeometry && maxHeight > 5) {
-              // If it's big, it's the winner.
               if (height > maxHeight * 0.8) score += 10000
               else if (height > maxHeight * 0.5) score += 2000
-              else {
-                // It is SMALL.
-                // If we found a MaxHeight (Amount), and this is tiny, it's likely noise (Date, ID, Phone).
-                // KILL IT.
-                score -= 5000
-              }
-            } else {
-              // Fallback if no geometry (should not happen with PSM 11 + Padding)
-              if (lineText.length < 8) score += 50
+              else score -= 5000 // Too small
             }
 
             // 2. Currency
@@ -267,16 +226,17 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
             if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
 
-            // HARD KILL: '91'
-            if (num === 91) score -= 20000
+            // HARD KILL: '91' and '4'
+            if (num === 91 || num === 4 || num === 5) score -= 20000
             if (lineText.includes('+91') && !hasExplicit) score -= 5000
 
             if (numStr.split('.')[0].length > 7) score -= 10000
 
-            // Year check (Only if text is small. Big 2000 is likely an amount)
-            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy && height < maxHeight * 0.5) score -= 500
+            // Year check (Unless HUGE)
+            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
+              if (height < maxHeight * 0.8) score -= 500 // Only penalize if not HUGE
+            }
 
-            // Negative words
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
             if (negs.some(bad => lineText.includes(bad)) && !hasExplicit) score -= 5000
 
@@ -291,10 +251,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       if (validCandidates.length > 0) {
 
-        // Final sanity check: If the winner is '1' and score is 0, ignore it.
         const best = validCandidates[0]
-        if (best.value === 1 && best.score <= 0) {
-          toast.error('Scanning ambiguous. Please type amount.', { id: 'scan' })
+        if (best.value < 10 && best.score <= 0) {
+          // If we found '4' (score 0), and best candidate is trash, warn.
+          toast.error('Could not clearly read amount.', { id: 'scan' })
         } else {
           setFormData(prev => ({ ...prev, amount: best.value }))
           toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
@@ -364,7 +324,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v56)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v57)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
