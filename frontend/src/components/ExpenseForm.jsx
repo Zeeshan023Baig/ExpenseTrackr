@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v59 loaded - PSM 6 + Contrast')
+    console.log('ExpenseForm v60 loaded - PSM 4 + Simple Preproc')
   }, [])
 
   const handleChange = (e) => {
@@ -31,13 +31,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v59) ---
+  // --- IMAGE PREPROCESSING (v60) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
       img.src = URL.createObjectURL(file)
       img.onload = () => {
-        const targetWidth = Math.max(img.width * 1.5, 1500)
+        // v60: Return to 2.0x upscaling for maximum clarity
+        const targetWidth = Math.max(img.width * 2.0, 2000)
         const scaleFactor = targetWidth / img.width
         const targetHeight = img.height * scaleFactor
 
@@ -72,13 +73,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v59): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v60): Cropped | DarkMode: ${isDarkMode}`)
 
-        // RE-ENABLING CONTRAST (v59)
-        // Helps distinct characters when background is messy
-        const contrast = 1.3
-        const intercept = 128 * (1 - contrast)
-
+        // v60: NO Manual Contrast Boosting. Just Grayscale + Invert.
+        // This avoids washing out light text.
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
@@ -89,10 +87,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           if (isDarkMode) {
             gray = 255 - gray
           }
-
-          // Apply Contrast
-          gray = gray * contrast + intercept
-          gray = Math.min(255, Math.max(0, gray))
 
           data[i] = gray
           data[i + 1] = gray
@@ -114,7 +108,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Deep Scan... (v59: PSM 6)', { id: 'scan' })
+    toast.loading('Reading numbers... (v60: PSM 4)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -125,20 +119,27 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
-      // REVERT TO PSM 6 (Single Block)
-      // PSM 11 (Sparse) was filtering out the main number.
+      // PSM 4: Single Column.
+      // Better than PSM 6 for cropped receipts.
       await worker.setParameters({
-        tessedit_pageseg_mode: '6',
+        tessedit_pageseg_mode: '4',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
 
       const result = await worker.recognize(optimizedBlob);
       await worker.terminate();
 
-      setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + result.data.text)
-      console.log('--- RAW TEXT ---', result.data.text)
+      const rawText = result.data.text
+      setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark' : 'Light'}]\n` + rawText)
+      console.log('--- RAW TEXT ---', rawText)
 
-      // LINE SYNTHESIS (Robust)
+      if (!rawText || rawText.trim().length === 0) {
+        toast.error('OCR saw nothing. Try better lighting.', { id: 'scan' })
+        setIsScanning(false)
+        return
+      }
+
+      // LINE SYNTHESIS
       const words = result.data.words || []
       const manualLines = []
       words.sort((a, b) => {
@@ -170,7 +171,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
 
-      // 1. Max Height Calc
       let maxHeight = 0;
       lines.forEach(line => {
         const h = (line.bbox.y1 - line.bbox.y0)
@@ -182,7 +182,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // v58 Pattern Correction
+        // Pattern Correction
         const digitCount = (lineText.match(/\d/g) || []).length
         const totalCount = lineText.length
         if (digitCount / totalCount > 0.5) {
@@ -194,11 +194,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const isBig = height > maxHeight * 0.5
 
         if (isBig) {
-          // Fix "31000" -> "₹1000", "?1000" -> "₹1000"
           if (/^[?73Z]\d+/.test(lineText)) {
             lineText = lineText.replace(/^[?Z]/, '₹')
-            // Risky to replace '7' or '3' blindly unless sure
-            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1) // 3 is common for ₹
+            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
           }
         }
 
@@ -226,7 +224,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             }
 
             // 2. Currency
-            if (hasExplicit) score += 5000
+            if (hasExplicit) score += 20000 // MASSIVE BOOST for explicit currency
             else if (isFuzzy) score += 1000
 
             // 3. Filters
@@ -252,17 +250,19 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       candidates.sort((a, b) => b.score - a.score)
-      const validCandidates = candidates.filter(c => c.score > -1000)
+      const validCandidates = candidates.filter(c => c.score > -2000) // Lowered threshold slightly
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
+
         const best = validCandidates[0]
         if (best.value < 10 && best.score <= 0) {
-          toast.error('Could not clearly read amount.', { id: 'scan' })
+          toast.error('Scan unclear.', { id: 'scan' })
         } else {
           setFormData(prev => ({ ...prev, amount: best.value }))
           toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
         }
+
       } else {
         toast.error('No valid amount found.', { id: 'scan' })
       }
@@ -327,7 +327,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v59)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v60)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
