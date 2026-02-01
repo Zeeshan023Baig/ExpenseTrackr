@@ -52,8 +52,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        // Status bar area is usually the first 15% of lines but at least the first 5
-        const IS_VERY_TOP = i < 5
+        // Status bar area can sometimes be messy, extending the "top" range
+        const IS_TOP_SECTION = i < 10
 
         const matches = line.match(/(?:₹|RS|INR)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
@@ -64,21 +64,22 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // AGGRESSIVE TIME & STATUS BAR FILTER
-            // Most clock digits are at the very top. If we see a small number 
-            // at the very top without a currency symbol, we kill it.
-            if (IS_VERY_TOP && num < 60 && !match.includes('₹') && !match.toUpperCase().includes('RS')) {
-              return
+            // THE MINUTE TRAP: Aggressively target clock minutes (0-59)
+            // If it's a small number at the top without a symbol, it's 99% noise
+            const hasExplicitCurrency = match.includes('₹') || match.toUpperCase().includes('RS')
+            if (IS_TOP_SECTION && num < 60 && !hasExplicitCurrency) {
+              return // Skip immediately
             }
 
-            // FILTER: Typical Time noise (Clock, AM/PM)
+            // FILTER: Typical Time noise (Clock colons, AM/PM)
             const isTypicalTime = line.includes(':') || line.includes(' PM') || line.includes(' AM')
-            if (isTypicalTime && num < 60 && !match.includes('₹')) return
-            if (line.includes('%') && !match.includes('₹')) return
+            if (isTypicalTime && num < 60 && !hasExplicitCurrency) return
 
-            // FILTER: Likely IDs, Phone numbers
-            const hasCurrencyContext = match.includes('₹') || match.toUpperCase().includes('RS')
-            if (numStr.length >= 5 && !numStr.includes('.') && !hasCurrencyContext) return
+            // FILTER: Battery and other status bar labels
+            if (line.includes('%') && !hasExplicitCurrency) return
+
+            // FILTER: Likely IDs, Phone numbers (unlabeled 5+ digits)
+            if (numStr.length >= 5 && !numStr.includes('.') && !hasExplicitCurrency) return
 
             // FILTER: Years
             if (num >= 2100 || (num >= 2020 && num <= 2030)) return
@@ -86,23 +87,21 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             let score = 0
 
             // SCORING
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 70
-            // Extra boost for common GPay/Uppi success markers
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 80
             if (line.includes('SUCCESSFUL') || line.includes('DONE')) score += 50
-
             if (standardKeywords.some(kw => line.includes(kw))) score += 30
 
-            // THE ULTIMATE WINNER: If it has the symbol, it is almost certainly the amount
-            if (match.includes('₹')) score += 250 // Massive weight
+            // THE ULTIMATE WINNER: Symbol check
+            if (match.includes('₹')) score += 300 // Even bigger weight
             if (match.toUpperCase().includes('RS')) score += 100
 
             if (numStr.includes('.')) score += 20
 
             // PENALTY: Header noise
-            if (IS_VERY_TOP && !hasCurrencyContext) score -= 100
+            if (IS_TOP_SECTION && !hasExplicitCurrency) score -= 150
 
             // PENALTY: Negative context
-            if (negativeKeywords.some(kw => line.includes(kw))) score -= 150
+            if (negativeKeywords.some(kw => line.includes(kw))) score -= 200
 
             candidates.push({ value: num, score, text: match, line: line })
           })
@@ -190,7 +189,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v26)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v27)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
