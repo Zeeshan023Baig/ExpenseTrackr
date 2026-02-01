@@ -143,7 +143,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                   {isScanning ? 'Gemini AI is Watching...' : 'Upload Receipt / Screenshot'}
                 </span>
                 <span className="text-xs text-surface-400">
-                  {isScanning ? 'Extracting info...' : 'Powered by Google Gemini 1.5 Flash'}
+                  {isScanning ? 'Extracting info...' : 'Powered by Google Gemini AI'}
                 </span>
               </div>
             </div>

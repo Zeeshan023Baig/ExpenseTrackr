@@ -14,8 +14,8 @@ export const scanReceipt = async (filePath, mimeType) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using specific version to avoid alias 404s
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+        // Using specific version available in 2026
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         console.log(`[Gemini OCR] Scanning file: ${filePath}, type: ${mimeType}`);
 
