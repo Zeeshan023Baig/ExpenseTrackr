@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v64 loaded - Immunity Mode')
+    console.log('ExpenseForm v65 loaded - Dark Mode Invert Restored')
   }, [])
 
   const handleChange = (e) => {
@@ -31,7 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v64: SIMPLIFIED) ---
+  // --- IMAGE PREPROCESSING (v65) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -65,17 +65,30 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
         const data = imgData.data
 
-        // v64: REMOVED DARK MODE INVERT & CONTRAST
-        // Just pure Grayscale. 
-        // We trust Tesseract to handle white-on-black or black-on-white.
-        // Over-processing was likely creating artifacts.
+        // 1. Detect Dark Mode
+        let totalBrightness = 0
+        for (let i = 0; i < data.length; i += 4) {
+          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
+        }
+        const avgBrightness = totalBrightness / (data.length / 4)
+        const isDarkMode = avgBrightness < 100
 
+        console.log(`Image (v65): Cropped | DarkMode: ${isDarkMode}`)
+
+        // 2. Grayscale + INVERT (Essential for Dark Mode)
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
           const g = data[i + 1]
           const b = data[i + 2]
 
           let gray = (r * 0.299 + g * 0.587 + b * 0.114)
+
+          // v65: Restore Inversion!
+          // Tesseract prefers Black text on White background.
+          // Dark Mode = White on Black. So we MUST invert.
+          if (isDarkMode) {
+            gray = 255 - gray
+          }
 
           data[i] = gray
           data[i + 1] = gray
@@ -85,7 +98,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         ctx.putImageData(imgData, 0, 0)
 
         canvas.toBlob((blob) => {
-          resolve(blob) // No metadata passed
+          blob.isDarkMode = isDarkMode
+          resolve(blob)
         }, 'image/png')
       }
     })
@@ -96,7 +110,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Analyzing... (v64)', { id: 'scan' })
+    toast.loading('Optimizing... (v65)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -116,7 +130,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       await worker.terminate();
 
       const rawText = result.data.text
-      setDebugRaw(rawText)
+      setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark (Inverted)' : 'Light'}]\n` + rawText)
       console.log('--- RAW TEXT ---', rawText)
 
       const words = result.data.words || []
@@ -152,9 +166,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       let maxHeight = 0;
       lines.forEach(line => {
-        // Relaxed max height, trusting regex
-        const h = (line.bbox.y1 - line.bbox.y0)
-        if (h > maxHeight) maxHeight = h
+        // v65: Be more strict about max height contributors
+        // Only lines with Digits or Currency Symbols can set max height
+        if (/[\d₹]/.test(line.text)) {
+          const h = (line.bbox.y1 - line.bbox.y0)
+          if (h > maxHeight) maxHeight = h
+        }
       })
       console.log('Max Height:', maxHeight)
 
@@ -165,8 +182,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const bbox = lineObj.bbox
         const height = bbox.y1 - bbox.y0
 
-        // v63: IS LARGE TEXT?
-        const isBig = height > maxHeight * 0.4
+        // v63/Big Text logic
+        const isBig = height > maxHeight * 0.35 // 35% threshold
 
         if (isBig) {
           lineText = lineText.replace(/[lI|]/g, '1')
@@ -200,19 +217,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (maxHeight > 5) {
               if (height > maxHeight * 0.8) score += 10000
               else if (height > maxHeight * 0.5) score += 5000
-              else if (height > maxHeight * 0.3) score += 1000
+              else if (height > maxHeight * 0.35) score += 1000
               else score -= 5000
             }
 
             if (hasExplicit) score += 5000
             else if (isFuzzy) score += 1000
 
-            // --- v64: IMMUNITY FOR BIG TEXT ---
-            // If the text is physically large (>= 40% of max), IGNORE penalizing keywords.
-            // Example: "PAY 10000" where "10000" is huge. 
-            // Previous logic: "PAY" presence -> -10000 score.
-            // New logic: "PAY" ignored because it's BIG.
-
+            // Immunity for Big Text
             const isImmune = isBig;
 
             if (!isImmune) {
@@ -225,7 +237,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               if (lineText.includes('+91') && !hasExplicit) score -= 5000
             }
 
-            if (num === 91 || num === 4 || num === 5) score -= 20000 // Still kill these tiny numbers
+            if (num === 91 || num === 4 || num === 5) score -= 20000
             if (numStr.split('.')[0].length > 7) score -= 10000
 
             candidates.push({ value: num, score: score, text: lineText, height })
@@ -241,13 +253,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         setFormData(prev => ({ ...prev, amount: validCandidates[0].value }))
         toast.success(`Extracted: ₹${validCandidates[0].value}`, { id: 'scan' })
       } else {
-        // v64: PANIC FALLBACK
-        // If no "valid" candidates, check if we have ANY candidates with decent size.
-        // If we have a candidate that is BIG (> 40% height), just take it.
+        // Fallback to biggest number
         const backup = candidates.find(c => c.height > maxHeight * 0.4)
         if (backup) {
           setFormData(prev => ({ ...prev, amount: backup.value }))
-          toast.success(`Extracted (Fallback): ₹${backup.value}`, { id: 'scan' })
+          toast.success(`Extracted (Backup): ₹${backup.value}`, { id: 'scan' })
         } else {
           toast.error('No clear amount found.', { id: 'scan' })
         }
@@ -313,7 +323,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v64)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v65)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
