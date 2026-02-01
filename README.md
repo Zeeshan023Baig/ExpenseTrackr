@@ -1,5 +1,6 @@
 # 💰 ExpenseTrackr
-<!-- Deployment Sync: 2026-02-01 -->
+<!-- Forced Deployment Sync: 2026-02-01 14:32 -->
+
 
 A modern expense tracking application that you can run with your friends on the same Wi-Fi!
 
