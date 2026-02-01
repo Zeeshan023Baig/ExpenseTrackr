@@ -1,11 +1,12 @@
 import { useContext, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiTrendingDown, FiCalendar, FiLayout, FiArrowRight, FiPieChart } from 'react-icons/fi'
+import { FiTrendingDown, FiCalendar, FiLayout, FiArrowRight, FiPieChart, FiPlus } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
 import { StatCard, ExpenseCard, EmptyState, CategoryFilter } from '../components'
 
 const Dashboard = () => {
-  const { expenses, categories, getTotalExpenses, getExpensesByCategory, deleteExpense } = useContext(ExpenseContext)
+  const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense } = useContext(ExpenseContext)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
   const totalExpenses = getTotalExpenses()
@@ -103,8 +104,8 @@ const Dashboard = () => {
               animate={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
               className={`h-full rounded-full shadow-lg ${totalExpenses > budget
-                  ? 'bg-gradient-to-r from-red-500 to-red-600'
-                  : 'bg-gradient-to-r from-brand-500 to-purple-500'
+                ? 'bg-gradient-to-r from-red-500 to-red-600'
+                : 'bg-gradient-to-r from-brand-500 to-purple-500'
                 }`}
             />
           </div>
