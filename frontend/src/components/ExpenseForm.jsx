@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v58 loaded - Pattern Correction')
+    console.log('ExpenseForm v59 loaded - PSM 6 + Contrast')
   }, [])
 
   const handleChange = (e) => {
@@ -31,7 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v57 Base) ---
+  // --- IMAGE PREPROCESSING (v59) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -72,7 +72,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v58): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v59): Cropped | DarkMode: ${isDarkMode}`)
+
+        // RE-ENABLING CONTRAST (v59)
+        // Helps distinct characters when background is messy
+        const contrast = 1.3
+        const intercept = 128 * (1 - contrast)
 
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i]
@@ -80,7 +85,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           const b = data[i + 2]
 
           let gray = (r * 0.299 + g * 0.587 + b * 0.114)
-          if (isDarkMode) gray = 255 - gray
+
+          if (isDarkMode) {
+            gray = 255 - gray
+          }
+
+          // Apply Contrast
+          gray = gray * contrast + intercept
+          gray = Math.min(255, Math.max(0, gray))
 
           data[i] = gray
           data[i + 1] = gray
@@ -102,7 +114,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Analyzing numbers... (v58)', { id: 'scan' })
+    toast.loading('Deep Scan... (v59: PSM 6)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -113,8 +125,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
+      // REVERT TO PSM 6 (Single Block)
+      // PSM 11 (Sparse) was filtering out the main number.
       await worker.setParameters({
-        tessedit_pageseg_mode: '11',
+        tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
 
@@ -139,7 +153,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const matchingLine = manualLines.find(line => {
           const lineHeight = line.bbox.y1 - line.bbox.y0
           const lineMidY = (line.bbox.y0 + line.bbox.y1) / 2
-          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.6) // 60% overlap
+          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.6)
         })
         if (matchingLine) {
           matchingLine.text += ' ' + word.text
@@ -168,37 +182,25 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // --- v58 PATTERN CORRECTION ---
-        // 1. Remove Spaces in apparent numbers: "1 000" -> "1000"
-        // But be careful not to merge "12 Jan" -> "12Jan".
-        // Heuristic: If line contains mostly digits/symbols, strip spaces.
+        // v58 Pattern Correction
         const digitCount = (lineText.match(/\d/g) || []).length
         const totalCount = lineText.length
         if (digitCount / totalCount > 0.5) {
-          // It's mostly numbers. Safe to strip spaces.
           lineText = lineText.replace(/\s+/g, '')
         }
 
-        // 2. Fix common currency typos at start
-        // "31000" where "3" is "₹"
-        // "7500" where "7" is "₹"
-        // "?500" where "?" is "₹"
-        // Only apply if we have geometry and it's BIG (Amount)
         const bbox = lineObj.bbox
         const height = bbox.y1 - bbox.y0
         const isBig = height > maxHeight * 0.5
 
         if (isBig) {
-          // Check for zombie prefixes
+          // Fix "31000" -> "₹1000", "?1000" -> "₹1000"
           if (/^[?73Z]\d+/.test(lineText)) {
-            // Heuristic: "31000" -> "₹1000" is VERY risky.
-            // But "?1000" -> "₹1000" is safe.
-            // "71000" -> ?? "7" is often read for "₹".
-            // Let's replace '?' and 'Z' safely.
             lineText = lineText.replace(/^[?Z]/, '₹')
+            // Risky to replace '7' or '3' blindly unless sure
+            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1) // 3 is common for ₹
           }
         }
-        // -----------------------------
 
         const hasGeometry = height > 0
 
@@ -254,7 +256,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
-
         const best = validCandidates[0]
         if (best.value < 10 && best.score <= 0) {
           toast.error('Could not clearly read amount.', { id: 'scan' })
@@ -262,7 +263,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           setFormData(prev => ({ ...prev, amount: best.value }))
           toast.success(`Extracted: ₹${best.value}`, { id: 'scan' })
         }
-
       } else {
         toast.error('No valid amount found.', { id: 'scan' })
       }
@@ -327,7 +327,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v58)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v59)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
