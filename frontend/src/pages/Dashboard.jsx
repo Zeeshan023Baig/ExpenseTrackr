@@ -12,10 +12,12 @@ const Dashboard = () => {
   const totalExpenses = getTotalExpenses()
 
   const filteredExpenses = useMemo(() => {
-    if (selectedCategory) {
-      return getExpensesByCategory(selectedCategory)
-    }
-    return expenses
+    const result = selectedCategory
+      ? getExpensesByCategory(selectedCategory)
+      : expenses;
+
+    // Sort by createdAt DESC (Recent Added First)
+    return [...result].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [selectedCategory, expenses, getExpensesByCategory])
 
   const monthlyExpenses = useMemo(() => {
