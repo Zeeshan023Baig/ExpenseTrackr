@@ -20,7 +20,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v62 loaded - Smart Height + Panic Mode')
+    console.log('ExpenseForm v63 loaded - Aggressive Char Sub')
   }, [])
 
   const handleChange = (e) => {
@@ -31,7 +31,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v61/62) ---
+  // --- IMAGE PREPROCESSING (v61/62/63) ---
   const preprocessImage = (file) => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -72,7 +72,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         const avgBrightness = totalBrightness / (data.length / 4)
         const isDarkMode = avgBrightness < 100
 
-        console.log(`Image (v62): Cropped | DarkMode: ${isDarkMode}`)
+        console.log(`Image (v63): Cropped | DarkMode: ${isDarkMode}`)
 
         const contrast = 1.1
         const intercept = 128 * (1 - contrast)
@@ -111,7 +111,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Analysing sizes... (v62)', { id: 'scan' })
+    toast.loading('Deciphering... (v63)', { id: 'scan' })
     setDebugRaw('')
     setDebugLogs([])
 
@@ -122,6 +122,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         logger: m => console.log(m),
       });
 
+      // PSM 6 is typically best
       await worker.setParameters({
         tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -165,39 +166,46 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       let candidates = []
       const currencySymbols = ['₹', 'RS', 'INR']
 
-      // 1. SMART MAX HEIGHT Calculation (v62)
-      // Only consider lines that actually contain DIGITS for max height.
-      // This prevents a giant Checkmark or Icon from setting the bar too high.
       let maxHeight = 0;
       lines.forEach(line => {
-        if (/\d/.test(line.text)) { // Must have numbers to set the height record
-          const h = (line.bbox.y1 - line.bbox.y0)
-          if (h > maxHeight) maxHeight = h
-        }
+        // Relaxed max height finder: any text adds to candidate pool for height
+        const h = (line.bbox.y1 - line.bbox.y0)
+        if (h > maxHeight) maxHeight = h
       })
-      console.log('Smart Max Height:', maxHeight)
+      console.log('Max Height:', maxHeight)
 
       lines.forEach((lineObj, index) => {
         let lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
+        const bbox = lineObj.bbox
+        const height = bbox.y1 - bbox.y0
+
+        // v63: IS LARGE TEXT?
+        // Lower threshold to 30% to be safe
+        const isBig = height > maxHeight * 0.3
+
+        // --- v63 AGGRESSIVE CHARACTER SUBSTITUTION ---
+        // If it's big, we assume it's the amount.
+        // Replace 'l', 'I', '|' with '1'.
+        // Replace 'O' with '0'.
+        // This fixes "l000" -> "1000"
+        if (isBig) {
+          lineText = lineText.replace(/[lI|]/g, '1')
+          lineText = lineText.replace(/O/g, '0')
+
+          // Also fix start symbols
+          if (/^[?73Z]/.test(lineText)) {
+            // If followed by digits, likely currency
+            lineText = lineText.replace(/^[?Z]/, '₹')
+            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
+          }
+        }
+
         const digitCount = (lineText.match(/\d/g) || []).length
         const totalCount = lineText.length
         if (digitCount > 0 && digitCount / totalCount > 0.4) {
           lineText = lineText.replace(/\s+/g, '')
-        }
-
-        const bbox = lineObj.bbox
-        const height = bbox.y1 - bbox.y0
-
-        // v62: Lowered threshold to 30% to be safer
-        const isBig = height > maxHeight * 0.3
-
-        if (isBig) {
-          if (/^[?73Z]\d+/.test(lineText)) {
-            lineText = lineText.replace(/^[?Z]/, '₹')
-            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
-          }
         }
 
         const hasGeometry = height > 0
@@ -220,8 +228,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (hasGeometry && maxHeight > 5) {
               if (height > maxHeight * 0.8) score += 10000
               else if (height > maxHeight * 0.5) score += 5000
-              else if (height > maxHeight * 0.3) score += 1000 // Accepted
-              else score -= 5000 // Tiny
+              else if (height > maxHeight * 0.3) score += 1000
+              else score -= 5000
             }
 
             // 2. Currency
@@ -251,21 +259,13 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       candidates.sort((a, b) => b.score - a.score)
-      setDebugLogs(candidates.slice(0, 5))
-
-      // v62: PANIC LOOKUP
-      // If we filtered everyone out (score < -2000), check if we have ANY candidates at all?
-      // If we have candidates but they all suck, picking the "Least Worst" might be better than nothing.
-      // But let's stick to valid threshold for now.
       const validCandidates = candidates.filter(c => c.score > -2000)
+      setDebugLogs(candidates.slice(0, 5))
 
       if (validCandidates.length > 0) {
         setFormData(prev => ({ ...prev, amount: validCandidates[0].value }))
         toast.success(`Extracted: ₹${validCandidates[0].value}`, { id: 'scan' })
       } else {
-        // Panic Mode: Just take the biggest number detected regardless of score?
-        // No, that risks phone numbers.
-        // Just report failure.
         toast.error('No clear amount found.', { id: 'scan' })
       }
 
@@ -329,7 +329,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v62)' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning... (v63)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
