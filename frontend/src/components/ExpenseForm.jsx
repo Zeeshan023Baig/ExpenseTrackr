@@ -52,14 +52,17 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].toUpperCase()
-        // Aggressive status bar filter (top 15-20% of typical mobile screen)
-        const IS_TOP_SECTION = i < 15
 
-        // CRITICAL: Look for clock-like patterns (14:42, 2:45PM, or just 14 42)
+        // Mobile Status Bar usually occupies the top 10-15% of the screen
+        const IS_VERY_TOP = i < 8
+        const IS_HEADER_AREA = i < 15
+
+        // CRITICAL: Better clock detection (14:42, 14 42, 2.45 PM)
         const HAS_CLOCK_SYMBOL = line.includes(':') || line.includes('PM') || line.includes('AM')
-        const IS_CLOCK_FORMAT = line.match(/\d{1,2}\s?[:\s]\s?\d{2}/)
+        // Match patterns like "10:20" or "10 20" or "10.20 PM"
+        const IS_CLOCK_PATTERN = line.match(/\b\d{1,2}[:.\s]\d{2}\b/)
 
-        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z)?\s?([\d,]+(?:\.\d{1,2})?)/gi)
+        const matches = line.match(/(?:₹|RS|INR|RS.|S|Z|\?|\$)?[^\d]?\s?([\d,]+(?:\.\d{1,2})?)/gi)
 
         if (matches) {
           matches.forEach(match => {
@@ -68,50 +71,46 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
-            // DETECTION: Is this an actual currency symbol or an OCR mistake?
-            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR')
+            // DETECTION: Currency symbols (Explicit vs Fuzzy)
+            const hasExplicitCurrency = match.includes('₹') || match.includes('RS') || match.includes('INR') || match.includes('$')
+            // Fuzzy: Sometimes ₹ is read as 'S', 'Z', '?', or even '3' when blurry
+            const hasFuzzyCurrency = (match.includes('S') || match.includes('Z') || match.includes('?')) && numStr.length <= 6
 
-            // Tesseract often misreads ":" as "S" or "Z".
-            let isMarkedAsMoney = hasExplicitCurrency
-            if (!hasExplicitCurrency && (match.startsWith('S') || match.startsWith('Z'))) {
-              if (!HAS_CLOCK_SYMBOL && !IS_CLOCK_FORMAT) {
-                isMarkedAsMoney = true
-              }
-            }
+            const isMarkedAsMoney = hasExplicitCurrency || hasFuzzyCurrency
 
-            // AGGRESSIVE CLOCK FILTER: 
-            // If it's on a line that looks like a clock or status bar and it's small, it IS the clock.
-            if ((HAS_CLOCK_SYMBOL || IS_CLOCK_FORMAT) && num < 60 && !hasExplicitCurrency) {
-              return
-            }
+            // AGGRESSIVE CLOCK/STATUS NOISE TRAP
+            // 1. If it's a small number on a line that looks like a clock, it's noise.
+            if ((HAS_CLOCK_SYMBOL || IS_CLOCK_PATTERN) && num < 100 && !hasExplicitCurrency) return
 
-            // FILTER: Special Case for Status Bar (Top of Image)
-            // Most clock digits are at the very top. If we see a small number 
-            // at the very top without a currency symbol, we ignore it.
-            if (IS_TOP_SECTION && num < 60 && !hasExplicitCurrency) {
-              return
-            }
+            // 2. If it's at the very top (status bar) and < 100, it's almost certainly the clock or battery.
+            if (IS_VERY_TOP && num < 100 && !hasExplicitCurrency) return
 
-            // FILTER: Long unformatted numbers (IDs/Phones)
+            // 3. If it's in the header area and < 60, ignore unless it has a clear symbol.
+            if (IS_HEADER_AREA && num < 60 && !isMarkedAsMoney) return
+
+            // FILTER: Phone numbers, IDs (long numbers without decimals/symbols)
             if (numStr.length >= 7 && !numStr.includes('.') && !isMarkedAsMoney) return
 
             let score = 0
 
-            // SCORING
-            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 100
-            if (line.includes('SUCCESSFUL') || line.includes('DONE') || line.includes('PAID')) score += 80
-            if (standardKeywords.some(kw => line.includes(kw))) score += 40
+            // SCORING: Proximity to success keywords (GPay / PhonePe)
+            if (highConfidenceKeywords.some(kw => line.includes(kw))) score += 150
+            if (line.includes('SUCCESSFUL') || line.includes('DONE') || line.includes('PAID')) score += 100
+            if (standardKeywords.some(kw => line.includes(kw))) score += 50
 
-            // Weighting
-            if (hasExplicitCurrency) score += 600 // Even bigger trust in explicit symbol
-            if (isMarkedAsMoney && !hasExplicitCurrency) score += 100
+            // SCORING: Symbol Priority
+            if (hasExplicitCurrency) score += 700
+            if (hasFuzzyCurrency) score += 150
 
-            if (numStr.includes('.')) score += 30
+            // SCORING: Center Image Boost (Amount is usually in the middle)
+            // If the line is roughly in the middle 60% of the image
+            const linePosition = i / lines.length
+            if (linePosition > 0.2 && linePosition < 0.8) {
+              score += 100
+            }
 
-            // Penalty for top section
-            if (IS_TOP_SECTION && !isMarkedAsMoney) score -= 500
-
-            // PENALTY: Negative context
+            // PENALTY: Header/Footer noise
+            if (IS_HEADER_AREA && !isMarkedAsMoney) score -= 400
             if (negativeKeywords.some(kw => line.includes(kw)) && !isMarkedAsMoney) score -= 300
 
             candidates.push({
@@ -119,29 +118,24 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               score,
               text: match,
               line: line,
-              hasCurrency: isMarkedAsMoney
+              hasCurrency: isMarkedAsMoney,
+              isExplicit: hasExplicitCurrency
             })
           })
         }
       }
 
-      // Priority sort: Candidates with explicit currency symbols (₹, RS) ALWAYS win
+      // Priority sort: Candidates with EXPLICIT symbols (₹) rank first
       candidates.sort((a, b) => {
-        const aHasSym = a.text.includes('₹') || a.text.includes('RS')
-        const bHasSym = b.text.includes('₹') || b.text.includes('RS')
-
-        // Final ultimate override: Symbol presence is the king
-        if (aHasSym && !bHasSym) return -1
-        if (!aHasSym && bHasSym) return 1
-
+        if (a.isExplicit && !b.isExplicit) return -1
+        if (!a.isExplicit && b.isExplicit) return 1
         return b.score - a.score || b.value - a.value
       })
 
       if (candidates.length > 0) {
-        console.log('--- OCR Decision Engine v32 ---')
+        console.log('--- OCR Decision Engine v33 ---')
         candidates.slice(0, 5).forEach((c, idx) => {
-          const hasSym = c.text.includes('₹') || c.text.includes('RS')
-          console.log(`${idx + 1}. ₹${c.value} | Symbol: ${hasSym} | Score: ${c.score} | Context: "${c.line}"`)
+          console.log(`${idx + 1}. ₹${c.value} | Explicit: ${c.isExplicit} | Score: ${c.score} | Context: "${c.line}"`)
         })
       }
 
@@ -215,7 +209,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v32)'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v33)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
