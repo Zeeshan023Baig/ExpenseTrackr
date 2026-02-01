@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { FiType, FiTag, FiUpload, FiLoader } from 'react-icons/fi'
@@ -9,7 +9,7 @@ import Tesseract from 'tesseract.js'
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
-  const [debugLogs, setDebugLogs] = useState([]) // New Debug State
+  const [debugLogs, setDebugLogs] = useState([])
   const [formData, setFormData] = useState(
     initialData || {
       description: '',
@@ -17,6 +17,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       category: 'Other'
     }
   )
+
+  useEffect(() => {
+    console.log('ExpenseForm v46 loaded - OCR Fix Active')
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -31,7 +35,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     if (!file) return
 
     setIsScanning(true)
-    toast.loading('Scanning receipt for big amounts...', { id: 'scan' })
+    toast.loading('Scanning... (v46: ID Filter)', { id: 'scan' })
 
     try {
       const result = await Tesseract.recognize(file, 'eng', {
@@ -39,7 +43,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       })
 
       // START ROBUST EXTRACTOR
-      // Helper: recursive line extraction
       const getAllLines = (data) => {
         if (data.lines && data.lines.length > 0) return data.lines
         if (data.blocks && data.blocks.length > 0) {
@@ -51,32 +54,36 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             return []
           })
         }
-        // Fallback: Create fake line objects from text
         if (data.text) {
           console.warn('No geometry lines found! Creating synthetic lines from text.')
           return data.text.split('\n').map(txt => ({
             text: txt,
-            bbox: { y0: 0, y1: 0 } // No height info available
+            bbox: { y0: 0, y1: 0 }
           }))
         }
         return []
       }
 
       const lines = getAllLines(result.data)
+      // SORT BY VERTICAL POSITION (Critical for Layout Analysis)
+      lines.sort((a, b) => (a.bbox?.y0 || 0) - (b.bbox?.y0 || 0))
+
       console.log(`Scan complete. Found ${lines.length} lines.`)
 
       let candidates = []
 
-      // Keywords for currency detection (Strict & Fuzzy)
+      // Keywords
       const currencySymbols = ['₹', 'RS', 'INR']
-      // Fuzzy markers: chars often confused for ₹ in this font context
       const fuzzyMarkers = ['?', 'Z', 'S', '$', 'F', 'T', '7']
 
       lines.forEach((lineObj, index) => {
         const lineText = lineObj.text.trim().toUpperCase()
         if (!lineText) return
 
-        // 1. Calculate Line Height (proxy for font size)
+        // Context Lookbehind
+        const prevLine = index > 0 ? lines[index - 1].text.toUpperCase() : ''
+
+        // 1. Calculate Line Height
         const bbox = lineObj.bbox || { y0: 0, y1: 0 }
         const height = bbox.y1 - bbox.y0
         const hasGeometry = height > 0
@@ -98,11 +105,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             // 4. Scoring Logic
             let score = 0
 
-            // Height score (primary signal for "Big" numbers)
+            // Height score
             if (hasGeometry) {
               score += height
             } else {
-              // Fallback scoring if no geometry: prefer short lines (likely just the price)
               if (lineText.length < 10) score += 20
             }
 
@@ -118,28 +124,29 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               score += 2000
             }
 
-            // --- FAILURE FILTERS (The "Transaction ID" Killer) ---
+            // --- FILTERS ---
 
-            // 1. Long numbers are almost never amounts (unless usually rich, or commas used)
-            // Example: 117919183698 is an ID. 500.00 is an amount.
-            // Rule: If > 7 integer digits and NO decimal point, it's likely an ID/Phone
+            // 1. Long Numbers (ID Killer)
             const integerPart = numStr.split('.')[0]
             if (integerPart.length > 7) {
-              score -= 10000 // Kill it
+              score -= 10000
             }
 
-            // 2. Negative Keywords
-            // context often says "UPI transaction ID", "Ref No", "Mobile No"
+            // 2. Negative Keywords (Current Line)
             const negativeContext = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'PHONE', 'MOBILE', 'BATTERY', 'SIGNAL', 'UPI']
             if (negativeContext.some(bad => lineText.includes(bad))) {
               if (!hasExplicit) score -= 5000
             }
 
-            // 3. Penalize likely dates/times/phones
+            // 3. Negative Context (Previous Line) - Looking for "Transaction ID" label above value
+            if (['ID', 'REF', 'UPI', 'NO', 'TRANSACTION'].some(bad => prevLine.includes(bad))) {
+              if (!hasExplicit) score -= 5000
+            }
+
+            // 4. Penalize likely dates/times
             if (lineText.includes(':') || lineText.includes('AM') || lineText.includes('PM')) {
               if (!hasExplicit) score -= 5000
             }
-            // Year filter (numbers 1900-2100 often years)
             if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) {
               score -= 500
             }
@@ -150,7 +157,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               height: height,
               type: hasExplicit ? 'EXPLICIT' : (hasFuzzy ? 'FUZZY' : 'NONE'),
               text: lineText,
-              line: lineText
+              line: lineText,
+              prev: prevLine.substring(0, 10)
             })
           })
         }
@@ -159,20 +167,23 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       // Sort by Score descending
       candidates.sort((a, b) => b.score - a.score)
 
-      setDebugLogs(candidates.slice(0, 5))
+      // Filter garbage (e.g. penalized IDs)
+      const validCandidates = candidates.filter(c => c.score > -1000)
 
-      if (candidates.length > 0) {
-        console.log('--- OCR Candidates (v43 ID Filter) ---')
-        candidates.slice(0, 5).forEach((c, i) => {
-          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Ht: ${c.height} | Type: ${c.type} | "${c.text}"`)
+      setDebugLogs(candidates.slice(0, 5)) // Show even bad ones in debug
+
+      if (validCandidates.length > 0) {
+        console.log('--- OCR Candidates (v46) ---')
+        validCandidates.slice(0, 5).forEach((c, i) => {
+          console.log(`#${i + 1}: ₹${c.value} | Sc: ${c.score} | Ht: ${c.height} | Prev: "${c.prev}"`)
         })
 
-        const bestMatch = candidates[0]
+        const bestMatch = validCandidates[0]
         setFormData(prev => ({ ...prev, amount: bestMatch.value }))
         toast.success(`Extracted: ₹${bestMatch.value}`, { id: 'scan' })
 
       } else {
-        toast.error('No valid amounts found.', { id: 'scan' })
+        toast.error('No valid amount found (filtered IDs)', { id: 'scan' })
       }
 
     } catch (error) {
@@ -196,7 +207,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       return
     }
 
-    // Add category if it's new
     const trimmedCategory = formData.category.trim()
     if (trimmedCategory && !categories.includes(trimmedCategory)) {
       addCategory(trimmedCategory)
@@ -216,7 +226,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      {/* Receipt Scanner */}
       {!initialData && (
         <div className="relative group">
           <input
@@ -237,7 +246,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v38)'}
+                {isScanning ? 'Scanning... (v46)' : 'Scan Receipt / Screenshot'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
@@ -247,11 +256,11 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             {/* DEBUG PANEL */}
             {debugLogs.length > 0 && (
               <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
-                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share this if wrong)</p>
+                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share if wrong)</p>
                 {debugLogs.map((log, i) => (
-                  <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : 'text-surface-300'}`}>
-                    #{i + 1}: ₹{log.value} (Height: {log.height.toFixed(0)}) <br />
-                    <span className="opacity-50">Context: "{log.line.substring(0, 20)}..."</span>
+                  <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
+                    #{i + 1}: ₹{log.value} (Sc: {log.score}) <br />
+                    <span className="opacity-50">Line: "{log.text.substring(0, 15)}..."</span>
                   </div>
                 ))}
               </div>
