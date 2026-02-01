@@ -273,8 +273,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
             if (numStr.split('.')[0].length > 7) score -= 10000
 
-            // Year check
-            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy) score -= 500
+            // Year check (Only if text is small. Big 2000 is likely an amount)
+            if (num > 1900 && num < 2100 && !hasExplicit && !hasFuzzy && height < maxHeight * 0.5) score -= 500
 
             // Negative words
             const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
