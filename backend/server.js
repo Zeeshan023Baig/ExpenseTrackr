@@ -1,6 +1,6 @@
+import "dotenv/config"; // Must be FIRST
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -9,8 +9,6 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import ocrRoutes from "./routes/ocrRoutes.js";
-
-dotenv.config();
 
 // Connect to database
 connectDB();

@@ -1,10 +1,10 @@
 import { useContext, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiType, FiTag, FiUpload, FiLoader, FiCheckCircle } from 'react-icons/fi'
+import { FiType, FiTag, FiUpload, FiLoader, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
 import { FaRupeeSign, FaMagic } from 'react-icons/fa'
 import { ExpenseContext } from '../context/ExpenseContext'
-import api from '../services/api' // Use the configured Axios instance
+import api from '../services/api'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
@@ -21,7 +21,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v70 loaded - Gemini AI Powered')
+    console.log('ExpenseForm v71 loaded - Gemini AI (Debug Mode)')
   }, [])
 
   const handleChange = (e) => {
@@ -36,16 +36,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     const file = e.target.files[0]
     if (!file) return
 
-    // Show preview
     setPreviewUrl(URL.createObjectURL(file))
     setIsScanning(true)
-    const toastId = toast.loading('Gemini AI is analyzing receipt...', { id: 'ai-scan' })
+    const toastId = toast.loading('Gemini AI is analyzing...', { id: 'ai-scan' })
 
     try {
       const uploadData = new FormData()
       uploadData.append('image', file)
 
-      // Send to Backend Gemini Service
       const response = await api.post('/ocr/scan', uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
@@ -56,15 +54,20 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         ...prev,
         amount: amount || prev.amount,
         description: merchant ? `Payment to ${merchant}` : prev.description,
-        category: category && categories.includes(category) ? category : prev.category,
+        category: category && categories.includes(category) ? category : (category || prev.category),
         date: date || prev.date
       }))
 
-      toast.success(`Scanned: ₹${amount}`, { id: 'ai-scan' })
+      if (amount) {
+        toast.success(`Found: ₹${amount} (${category})`, { id: 'ai-scan' })
+      } else {
+        toast.error('AI could not identify the amount.', { id: 'ai-scan' })
+      }
 
     } catch (error) {
-      console.error('AI Scan failed:', error)
-      toast.error('AI Scan failed. Please enter manually.', { id: 'ai-scan' })
+      console.error('AI Scan Exception:', error)
+      const msg = error.response?.data?.message || error.message || 'Unknown Error'
+      toast.error(`Scan Failed: ${msg}`, { id: 'ai-scan', duration: 5000 })
     } finally {
       setIsScanning(false)
     }
@@ -115,7 +118,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${isScanning ? 'border-purple-500 bg-purple-50' : 'border-surface-200 hover:border-purple-400 hover:bg-surface-50'
             }`}>
 
-            {/* Background Animation for AI */}
             {isScanning && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-200/20 to-transparent w-full h-full animate-shimmer" />
             )}
@@ -141,7 +143,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                   {isScanning ? 'Gemini AI is Watching...' : 'Upload Receipt / Screenshot'}
                 </span>
                 <span className="text-xs text-surface-400">
-                  {isScanning ? 'Extracting Amount, Merchant & Category' : 'Powered by Google Gemini 1.5 Flash'}
+                  {isScanning ? 'Extracting info...' : 'Powered by Google Gemini 1.5 Flash'}
                 </span>
               </div>
             </div>
