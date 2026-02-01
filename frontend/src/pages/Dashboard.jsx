@@ -159,7 +159,6 @@ const Dashboard = () => {
           ) : (
             <motion.div className="space-y-3">
               {[...filteredExpenses]
-                .reverse()
                 .slice(0, 5)
                 .map((expense, index) => (
                   <motion.div

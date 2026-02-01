@@ -9,7 +9,7 @@ const getExpenses = async (req, res) => {
         console.log('Fetching expenses for user:', req.user.id);
         const expenses = await Expense.findAll({
             where: { userId: req.user.id },
-            order: [['date', 'DESC']]
+            order: [['date', 'DESC'], ['createdAt', 'DESC']]
         });
         res.status(200).json(expenses);
     } catch (error) {
