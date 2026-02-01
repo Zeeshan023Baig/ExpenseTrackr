@@ -1,26 +1,27 @@
 import { useContext, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiType, FiTag, FiUpload, FiLoader } from 'react-icons/fi'
-import { FaRupeeSign } from 'react-icons/fa'
+import { FiType, FiTag, FiUpload, FiLoader, FiCheckCircle } from 'react-icons/fi'
+import { FaRupeeSign, FaMagic } from 'react-icons/fa'
 import { ExpenseContext } from '../context/ExpenseContext'
-import Tesseract from 'tesseract.js'
+import api from '../services/api' // Use the configured Axios instance
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
-  const [debugLogs, setDebugLogs] = useState([])
-  const [debugRaw, setDebugRaw] = useState('')
+  const [previewUrl, setPreviewUrl] = useState(null)
+
   const [formData, setFormData] = useState(
     initialData || {
       description: '',
       amount: '',
-      category: 'Other'
+      category: 'Other',
+      date: new Date().toISOString().split('T')[0]
     }
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v65 loaded - Dark Mode Invert Restored')
+    console.log('ExpenseForm v70 loaded - Gemini AI Powered')
   }, [])
 
   const handleChange = (e) => {
@@ -31,241 +32,39 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }))
   }
 
-  // --- IMAGE PREPROCESSING (v65) ---
-  const preprocessImage = (file) => {
-    return new Promise((resolve) => {
-      const img = new Image()
-      img.src = URL.createObjectURL(file)
-      img.onload = () => {
-        const targetWidth = Math.max(img.width * 2.0, 2000)
-        const scaleFactor = targetWidth / img.width
-        const targetHeight = img.height * scaleFactor
-
-        const canvas = document.createElement('canvas')
-        const CROP_TOP = 0.10
-        const CROP_BOTTOM = 0.70
-        const cropHeightPercent = CROP_BOTTOM - CROP_TOP
-
-        canvas.width = targetWidth
-        canvas.height = targetHeight * cropHeightPercent
-
-        const ctx = canvas.getContext('2d')
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-        ctx.imageSmoothingEnabled = true
-        ctx.imageSmoothingQuality = 'high'
-
-        ctx.drawImage(
-          img,
-          0, img.height * CROP_TOP, img.width, img.height * cropHeightPercent,
-          0, 0, canvas.width, canvas.height
-        )
-
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        const data = imgData.data
-
-        // 1. Detect Dark Mode
-        let totalBrightness = 0
-        for (let i = 0; i < data.length; i += 4) {
-          totalBrightness += (data[i] + data[i + 1] + data[i + 2]) / 3
-        }
-        const avgBrightness = totalBrightness / (data.length / 4)
-        const isDarkMode = avgBrightness < 100
-
-        console.log(`Image (v65): Cropped | DarkMode: ${isDarkMode}`)
-
-        // 2. Grayscale + INVERT (Essential for Dark Mode)
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i]
-          const g = data[i + 1]
-          const b = data[i + 2]
-
-          let gray = (r * 0.299 + g * 0.587 + b * 0.114)
-
-          // v65: Restore Inversion!
-          // Tesseract prefers Black text on White background.
-          // Dark Mode = White on Black. So we MUST invert.
-          if (isDarkMode) {
-            gray = 255 - gray
-          }
-
-          data[i] = gray
-          data[i + 1] = gray
-          data[i + 2] = gray
-        }
-
-        ctx.putImageData(imgData, 0, 0)
-
-        canvas.toBlob((blob) => {
-          blob.isDarkMode = isDarkMode
-          resolve(blob)
-        }, 'image/png')
-      }
-    })
-  }
-
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
 
+    // Show preview
+    setPreviewUrl(URL.createObjectURL(file))
     setIsScanning(true)
-    toast.loading('Optimizing... (v65)', { id: 'scan' })
-    setDebugRaw('')
-    setDebugLogs([])
+    const toastId = toast.loading('Gemini AI is analyzing receipt...', { id: 'ai-scan' })
 
     try {
-      const optimizedBlob = await preprocessImage(file)
+      const uploadData = new FormData()
+      uploadData.append('image', file)
 
-      const worker = await Tesseract.createWorker("eng", 1, {
-        logger: m => console.log(m),
-      });
-
-      await worker.setParameters({
-        tessedit_pageseg_mode: '6',
-        tessedit_char_whitelist: '0123456789.,₹RsINR:APM-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      });
-
-      const result = await worker.recognize(optimizedBlob);
-      await worker.terminate();
-
-      const rawText = result.data.text
-      setDebugRaw(`[Mode: ${optimizedBlob.isDarkMode ? 'Dark (Inverted)' : 'Light'}]\n` + rawText)
-      console.log('--- RAW TEXT ---', rawText)
-
-      const words = result.data.words || []
-      const manualLines = []
-      words.sort((a, b) => {
-        const ay = a.bbox.y0
-        const by = b.bbox.y0
-        if (Math.abs(ay - by) < 10) return a.bbox.x0 - b.bbox.x0
-        return ay - by
+      // Send to Backend Gemini Service
+      const response = await api.post('/ocr/scan', uploadData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       })
 
-      words.forEach(word => {
-        const wordMidY = (word.bbox.y0 + word.bbox.y1) / 2
-        const matchingLine = manualLines.find(line => {
-          const lineHeight = line.bbox.y1 - line.bbox.y0
-          const lineMidY = (line.bbox.y0 + line.bbox.y1) / 2
-          return Math.abs(wordMidY - lineMidY) < (lineHeight * 0.6)
-        })
-        if (matchingLine) {
-          matchingLine.text += ' ' + word.text
-          matchingLine.bbox.x1 = Math.max(matchingLine.bbox.x1, word.bbox.x1)
-          matchingLine.bbox.y0 = Math.min(matchingLine.bbox.y0, word.bbox.y0)
-          matchingLine.bbox.y1 = Math.max(matchingLine.bbox.y1, word.bbox.y1)
-        } else {
-          manualLines.push({ text: word.text, bbox: { ...word.bbox } })
-        }
-      })
+      const { amount, merchant, category, date } = response.data
 
-      const lines = manualLines
+      setFormData(prev => ({
+        ...prev,
+        amount: amount || prev.amount,
+        description: merchant ? `Payment to ${merchant}` : prev.description,
+        category: category && categories.includes(category) ? category : prev.category,
+        date: date || prev.date
+      }))
 
-      let candidates = []
-      const currencySymbols = ['₹', 'RS', 'INR']
-
-      let maxHeight = 0;
-      lines.forEach(line => {
-        // v65: Be more strict about max height contributors
-        // Only lines with Digits or Currency Symbols can set max height
-        if (/[\d₹]/.test(line.text)) {
-          const h = (line.bbox.y1 - line.bbox.y0)
-          if (h > maxHeight) maxHeight = h
-        }
-      })
-      console.log('Max Height:', maxHeight)
-
-      lines.forEach((lineObj, index) => {
-        let lineText = lineObj.text.trim().toUpperCase()
-        if (!lineText) return
-
-        const bbox = lineObj.bbox
-        const height = bbox.y1 - bbox.y0
-
-        // v63/Big Text logic
-        const isBig = height > maxHeight * 0.35 // 35% threshold
-
-        if (isBig) {
-          lineText = lineText.replace(/[lI|]/g, '1')
-          lineText = lineText.replace(/O/g, '0')
-          if (/^[?73Z]/.test(lineText)) {
-            lineText = lineText.replace(/^[?Z]/, '₹')
-            if (lineText.startsWith('3')) lineText = '₹' + lineText.substring(1)
-          }
-        }
-
-        const digitCount = (lineText.match(/\d/g) || []).length
-        const totalCount = lineText.length
-        if (digitCount > 0 && digitCount / totalCount > 0.4) {
-          lineText = lineText.replace(/\s+/g, '')
-        }
-
-        const matches = lineText.match(/[\d,]+(?:\.\d{1,2})?/gi)
-
-        if (matches) {
-          matches.forEach(match => {
-            const numStr = match.replace(/[^\d.]/g, '')
-            const num = parseFloat(numStr)
-
-            if (isNaN(num) || num <= 0) return
-
-            const hasExplicit = currencySymbols.some(sym => lineText.includes(sym))
-            const isFuzzy = /^[?Z$FT7]\s?\d/.test(lineText) || lineText.startsWith('₹')
-
-            let score = 0
-
-            if (maxHeight > 5) {
-              if (height > maxHeight * 0.8) score += 10000
-              else if (height > maxHeight * 0.5) score += 5000
-              else if (height > maxHeight * 0.35) score += 1000
-              else score -= 5000
-            }
-
-            if (hasExplicit) score += 5000
-            else if (isFuzzy) score += 1000
-
-            // Immunity for Big Text
-            const isImmune = isBig;
-
-            if (!isImmune) {
-              const bankingKeywords = ['BANK', 'HDFC', 'SBI', 'ICICI', 'PAYTM', 'GPAY', 'GOOGLE', 'WALLET', 'PAY']
-              if (bankingKeywords.some(bk => lineText.includes(bk)) && !hasExplicit) score -= 10000
-
-              const negs = ['ID', 'REF', 'NO', 'TIME', 'DATE', 'UPI']
-              if (negs.some(bad => lineText.includes(bad)) && !hasExplicit) score -= 5000
-
-              if (lineText.includes('+91') && !hasExplicit) score -= 5000
-            }
-
-            if (num === 91 || num === 4 || num === 5) score -= 20000
-            if (numStr.split('.')[0].length > 7) score -= 10000
-
-            candidates.push({ value: num, score: score, text: lineText, height })
-          })
-        }
-      })
-
-      candidates.sort((a, b) => b.score - a.score)
-      const validCandidates = candidates.filter(c => c.score > -2000)
-      setDebugLogs(candidates.slice(0, 5))
-
-      if (validCandidates.length > 0) {
-        setFormData(prev => ({ ...prev, amount: validCandidates[0].value }))
-        toast.success(`Extracted: ₹${validCandidates[0].value}`, { id: 'scan' })
-      } else {
-        // Fallback to biggest number
-        const backup = candidates.find(c => c.height > maxHeight * 0.4)
-        if (backup) {
-          setFormData(prev => ({ ...prev, amount: backup.value }))
-          toast.success(`Extracted (Backup): ₹${backup.value}`, { id: 'scan' })
-        } else {
-          toast.error('No clear amount found.', { id: 'scan' })
-        }
-      }
+      toast.success(`Scanned: ₹${amount}`, { id: 'ai-scan' })
 
     } catch (error) {
-      console.error(error)
-      toast.error('Scan failed', { id: 'scan' })
+      console.error('AI Scan failed:', error)
+      toast.error('AI Scan failed. Please enter manually.', { id: 'ai-scan' })
     } finally {
       setIsScanning(false)
     }
@@ -292,7 +91,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     onSubmit({ ...formData, category: trimmedCategory || 'Other' })
 
     if (!initialData) {
-      setFormData({ description: '', amount: '', category: '' })
+      setFormData({ description: '', amount: '', category: 'Other', date: new Date().toISOString().split('T')[0] })
+      setPreviewUrl(null)
     }
   }
 
@@ -312,42 +112,39 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             disabled={isScanning}
           />
-          <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isScanning ? 'border-brand-500 bg-brand-50' : 'border-surface-200 hover:border-brand-400 hover:bg-surface-50'
+          <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${isScanning ? 'border-purple-500 bg-purple-50' : 'border-surface-200 hover:border-purple-400 hover:bg-surface-50'
             }`}>
-            <div className="flex flex-col items-center gap-2 text-surface-500 group-hover:text-brand-600">
+
+            {/* Background Animation for AI */}
+            {isScanning && (
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-200/20 to-transparent w-full h-full animate-shimmer" />
+            )}
+
+            <div className="flex flex-col items-center gap-3 text-surface-500 group-hover:text-purple-600 relative z-10">
               {isScanning ? (
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                  <FiLoader size={24} />
+                <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                  <FaMagic size={28} className="text-purple-600" />
                 </motion.div>
-              ) : (
-                <FiUpload size={24} />
-              )}
-              <span className="text-sm font-medium">
-                {isScanning ? 'Scanning... (v65)' : 'Scan Receipt / Screenshot'}
-              </span>
-              <span className="text-xs text-surface-400">
-                Upload to auto-fill amount
-              </span>
-            </div>
-
-            {debugLogs.length > 0 && (
-              <div className="mt-4 p-2 bg-black/50 rounded text-[10px] text-left font-mono overflow-hidden">
-                <p className="text-surface-400 mb-1 border-b border-surface-700 pb-1">OCR LOGS (Share if wrong)</p>
-                {debugLogs.map((log, i) => (
-                  <div key={i} className={`mb-1 ${i === 0 ? 'text-green-400 font-bold' : log.score < 0 ? 'text-red-400' : 'text-surface-300'}`}>
-                    #{i + 1}: ₹{log.value} (Sc: {log.score} | H: {log.height ? log.height.toFixed(0) : 'NaN'}) <br />
-                    <span className="opacity-50">"{log.text.substring(0, 15)}..."</span>
+              ) : previewUrl ? (
+                <div className="relative">
+                  <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-lg shadow-md" />
+                  <div className="absolute -bottom-2 -right-2 bg-green-500 text-white rounded-full p-1">
+                    <FiCheckCircle size={12} />
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ) : (
+                <FiUpload size={28} />
+              )}
 
-            {debugRaw && (
-              <div className="mt-2 p-2 bg-gray-900 rounded text-[10px] text-left font-mono max-h-20 overflow-y-auto">
-                <p className="text-blue-400 border-b border-blue-900 pb-1 mb-1">RAW TEXT:</p>
-                <pre className="whitespace-pre-wrap text-gray-400">{debugRaw}</pre>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-surface-700">
+                  {isScanning ? 'Gemini AI is Watching...' : 'Upload Receipt / Screenshot'}
+                </span>
+                <span className="text-xs text-surface-400">
+                  {isScanning ? 'Extracting Amount, Merchant & Category' : 'Powered by Google Gemini 1.5 Flash'}
+                </span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -362,8 +159,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="e.g., Lunch at restaurant"
-            className="input-field"
+            placeholder="e.g., Payment to HDFC"
+            className="input-field pl-4"
           />
         </div>
       </div>
@@ -374,6 +171,9 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             Amount (₹)
           </label>
           <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400">
+              <FaRupeeSign />
+            </div>
             <input
               type="number"
               name="amount"
@@ -382,7 +182,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               placeholder="0.00"
               step="0.01"
               min="0"
-              className="input-field"
+              className="input-field pl-10"
             />
           </div>
         </div>

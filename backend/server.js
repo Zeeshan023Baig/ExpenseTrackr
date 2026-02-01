@@ -32,6 +32,7 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/budget", budgetRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/ocr", ocrRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
