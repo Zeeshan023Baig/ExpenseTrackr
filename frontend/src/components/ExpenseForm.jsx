@@ -65,10 +65,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             if (isNaN(num) || num <= 0 || num > 1000000) return
 
             // FILTER: Likely IDs, Phone numbers, or Account numbers
-            if (numStr.length > 7 && !numStr.includes('.')) return
+            // If it's 5+ digits with no decimal and NO currency keyword, it's noise
+            const hasCurrencyContext = match.includes('₹') || match.toUpperCase().includes('RS')
+            if (numStr.length >= 5 && !numStr.includes('.') && !hasCurrencyContext) return
 
             // FILTER: Likely Years
-            if (num >= 2020 && num <= 2100) return
+            if (num >= 2100 || (num >= 2020 && num <= 2030)) return
 
             let score = 0
 
@@ -164,7 +166,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <FiUpload size={24} />
               )}
               <span className="text-sm font-medium">
-                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot'}
+                {isScanning ? 'Scanning Receipt...' : 'Scan Receipt / Screenshot (v2)'}
               </span>
               <span className="text-xs text-surface-400">
                 Upload to auto-fill amount
