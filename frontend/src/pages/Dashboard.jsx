@@ -147,7 +147,7 @@ const Dashboard = () => {
 
 
         {/* Recent Expenses Section (Full Width now) */}
-        <motion.div variants={itemVariants} className="lg:col-span-3 space-y-6">
+        <motion.div variants={itemVariants} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-surface-900">
               {selectedCategory ? `${selectedCategory} Expenses` : 'Recent Transactions'}
