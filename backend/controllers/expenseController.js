@@ -48,7 +48,7 @@ const addExpense = async (req, res) => {
             const messages = error.errors.map(e => e.message);
             return res.status(400).json({ message: 'Validation Error', errors: messages });
         }
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: `Server Error: ${error.message}`, error: error.message });
     }
 };
 
