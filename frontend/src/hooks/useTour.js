@@ -66,34 +66,42 @@ const tourConfigs = {
         {
             element: '#analytics-title',
             popover: {
-                title: 'Analytics & Reports',
-                description: 'Welcome to your expense analytics hub! Here you can visualize and analyze your spending patterns.',
+                title: 'Welcome to Analytics!',
+                description: 'Your complete financial visualization dashboard. Track spending trends, manage your budget, and plan your savings goals.',
                 side: 'bottom',
                 align: 'start'
             }
         },
         {
-            element: '#analytics-metrics',
+            element: '#budget-card',
             popover: {
-                title: 'Key Statistics',
-                description: 'Quick overview of your total expenses, transaction count, and highest single expense.',
-                side: 'bottom'
+                title: 'Monthly Budget Manager',
+                description: 'View and edit your monthly budget limit. The progress bar shows how much you\'ve spent. Click the edit icon to update your budget anytime.',
+                side: 'right'
             }
         },
         {
-            element: '#category-breakdown',
+            element: '#savings-predictor',
             popover: {
-                title: 'Category Breakdown',
-                description: 'See how much you\'ve spent in each category, with percentage contributions and transaction counts.',
-                side: 'top'
+                title: 'Savings Predictor',
+                description: 'Set a savings goal and see how much you can spend weekly. This smart calculator helps you stay on track with your financial targets!',
+                side: 'left'
             }
         },
         {
-            element: '#monthly-trends',
+            element: '#category-chart',
             popover: {
-                title: 'Monthly Trends',
-                description: 'Track your spending patterns over time to understand seasonal trends and budget planning.',
-                side: 'top'
+                title: 'Spending by Category',
+                description: 'Visualize where your money goes with this interactive pie chart. Each slice represents a spending category.',
+                side: 'right'
+            }
+        },
+        {
+            element: '#weekly-trend',
+            popover: {
+                title: 'Weekly Spending Trends',
+                description: 'Track your daily spending patterns over the last 7 days. Spot trends and adjust your habits accordingly.',
+                side: 'left'
             }
         }
     ]

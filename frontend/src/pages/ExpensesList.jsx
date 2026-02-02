@@ -5,11 +5,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts'
-import { FiDollarSign, FiTarget, FiActivity, FiEdit2, FiCheck, FiX } from 'react-icons/fi'
+import { FiDollarSign, FiTarget, FiActivity, FiEdit2, FiCheck, FiX, FiHelpCircle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { useTour } from '../hooks/useTour'
 
 const ChartsPage = () => {
   const { expenses, budget, updateUserBudget, categories } = useContext(ExpenseContext)
+  const { startTour } = useTour('analytics')
   const [savingsGoal, setSavingsGoal] = useState(0)
   const [isEditingBudget, setIsEditingBudget] = useState(false)
   const [newBudget, setNewBudget] = useState(budget)
@@ -79,9 +81,17 @@ const ChartsPage = () => {
   return (
     <div className="layout-container py-8 space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-surface-900 tracking-tight">Financial Analytics</h1>
-        <p className="text-surface-500 mt-1">Visualize your spending and plan your savings.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 id="analytics-title" className="text-3xl font-bold text-surface-900 tracking-tight">Financial Analytics</h1>
+          <p className="text-surface-500 mt-1">Visualize your spending and plan your savings.</p>
+        </div>
+        <button
+          onClick={startTour}
+          className="btn bg-white dark:bg-surface-800 text-surface-600 border border-surface-200 dark:border-surface-700 hover:bg-surface-50 flex items-center gap-2"
+        >
+          <FiHelpCircle /> Quick Guide
+        </button>
       </div>
 
       {/* Top Row: Budget & Prediction */}
@@ -89,6 +99,7 @@ const ChartsPage = () => {
 
         {/* Budget Overview Card */}
         <motion.div
+          id="budget-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="card p-6 space-y-6"
@@ -141,6 +152,7 @@ const ChartsPage = () => {
 
         {/* Savings & Prediction Calculator */}
         <motion.div
+          id="savings-predictor"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -190,6 +202,7 @@ const ChartsPage = () => {
 
         {/* Category Pie Chart */}
         <motion.div
+          id="category-chart"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
@@ -231,6 +244,7 @@ const ChartsPage = () => {
 
         {/* Weekly Trend Bar Chart */}
         <motion.div
+          id="weekly-trend"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
