@@ -1,11 +1,13 @@
 import { useContext, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { FiBarChart2, FiPieChart, FiTrendingUp } from 'react-icons/fi'
+import { FiBarChart2, FiPieChart, FiTrendingUp, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
 import { StatCard, EmptyState } from '../components'
+import { useTour } from '../hooks/useTour'
 
 const Reports = () => {
   const { expenses, categories, getExpensesByCategory } = useContext(ExpenseContext)
+  const { startTour } = useTour('analytics')
 
   const totalExpenses = useMemo(() => {
     return expenses.reduce((sum, exp) => sum + exp.amount, 0)
@@ -66,17 +68,23 @@ const Reports = () => {
       {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-surface-900 tracking-tight">
+          <h1 id="analytics-title" className="text-3xl font-bold text-surface-900 tracking-tight">
             Expense Reports
           </h1>
           <p className="text-surface-500 mt-1">
             Visual analysis of your spending habits.
           </p>
         </div>
+        <button
+          onClick={startTour}
+          className="btn bg-white dark:bg-surface-800 text-surface-600 border border-surface-200 dark:border-surface-700 hover:bg-surface-50 flex items-center gap-2"
+        >
+          <FiHelpCircle /> Quick Guide
+        </button>
       </motion.div>
 
       {/* Key Metrics */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <motion.div id="analytics-metrics" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Expenses"
           value={`₹${totalExpenses.toFixed(2)}`}
@@ -101,7 +109,7 @@ const Reports = () => {
 
       {/* Category Breakdown */}
       {categoryBreakdown.length > 0 ? (
-        <motion.div variants={itemVariants} className="space-y-6">
+        <motion.div id="category-breakdown" variants={itemVariants} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-surface-900">
               Breakdown by Category
@@ -152,7 +160,7 @@ const Reports = () => {
 
       {/* Monthly Breakdown */}
       {monthlyBreakdown.length > 0 ? (
-        <motion.div variants={itemVariants} className="space-y-6">
+        <motion.div id="monthly-trends" variants={itemVariants} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-surface-900">
               Monthly Trends
