@@ -55,16 +55,12 @@ export const useTour = () => {
                         side: 'top'
                     }
                 }
-            ],
-            onDestroyed: () => {
-                localStorage.setItem('hasSeenTour', 'true')
-            }
+            ]
         })
     }, [])
 
     const startTour = () => {
-        const hasSeenTour = localStorage.getItem('hasSeenTour')
-        if (!hasSeenTour) {
+        if (driverObj.current) {
             driverObj.current.drive()
         }
     }
