@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ExpenseProvider } from './context/ExpenseContext'
 import { ThemeProvider } from './context/ThemeContext'
-import { Header, LoadingSpinner } from './components'
+import { Header, LoadingSpinner, ChatBot } from './components'
 import { Dashboard, ExpensesList, AddExpense, Reports, Login, Register } from './pages'
 
 const PrivateRoute = ({ children }) => {
@@ -61,6 +61,7 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      {!isAuthPage && <ChatBot />}
       <Toaster position="top-right" />
     </div>
   )
