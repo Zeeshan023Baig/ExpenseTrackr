@@ -8,6 +8,7 @@ export const useTour = () => {
             showProgress: true,
             animate: true,
             allowClose: true,
+            closeBtnText: 'Skip Tour',
             doneBtnText: 'Get Started',
             nextBtnText: 'Next',
             prevBtnText: 'Previous',
