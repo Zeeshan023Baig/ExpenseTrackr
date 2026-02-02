@@ -180,11 +180,15 @@ const ChartsPage = () => {
               <div>
                 <label className="block text-blue-100 text-sm font-medium mb-2">Target Savings Goal (₹)</label>
                 <input
-                  type="number"
-                  placeholder="e.g. 5000"
-                  value={savingsGoal}
-                  onChange={(e) => setSavingsGoal(Number(e.target.value) || 0)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Type amount (e.g. 5000)"
+                  value={savingsGoal === 0 ? '' : savingsGoal}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '')
+                    setSavingsGoal(value ? Number(value) : 0)
+                  }}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold text-lg"
                 />
                 <p className="text-xs text-blue-200 mt-1">
                   Amount you want to save
@@ -193,11 +197,15 @@ const ChartsPage = () => {
               <div>
                 <label className="block text-blue-100 text-sm font-medium mb-2">Max Weekly Spend (₹)</label>
                 <input
-                  type="number"
-                  placeholder="e.g. 2000"
-                  value={weeklyLimit}
-                  onChange={(e) => handleWeeklyLimitChange(Number(e.target.value) || 0)}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Type amount (e.g. 2000)"
+                  value={weeklyLimit === 0 ? '' : weeklyLimit}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '')
+                    handleWeeklyLimitChange(value ? Number(value) : 0)
+                  }}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold text-lg"
                 />
                 <p className="text-xs text-blue-200 mt-1">
                   Your weekly spending limit
