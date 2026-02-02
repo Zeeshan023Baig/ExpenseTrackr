@@ -15,7 +15,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     initialData || {
       description: '',
       amount: '',
-      category: 'Other',
+      category: '',
       date: new Date().toISOString().split('T')[0]
     }
   )
