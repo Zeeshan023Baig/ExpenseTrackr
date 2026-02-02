@@ -3,10 +3,8 @@ import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 
 export const useTour = () => {
-    const driverObj = useRef(null)
-
-    useEffect(() => {
-        driverObj.current = driver({
+    const startTour = () => {
+        const driverObj = driver({
             showProgress: true,
             animate: true,
             allowClose: true,
@@ -57,12 +55,8 @@ export const useTour = () => {
                 }
             ]
         })
-    }, [])
 
-    const startTour = () => {
-        if (driverObj.current) {
-            driverObj.current.drive()
-        }
+        driverObj.drive()
     }
 
     return { startTour }
