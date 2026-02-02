@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiTrendingDown, FiCalendar, FiLayout, FiArrowRight, FiPieChart, FiPlus } from 'react-icons/fi'
+import { FiTrendingDown, FiCalendar, FiLayout, FiArrowRight, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
 import { StatCard, ExpenseCard, EmptyState, CategoryFilter } from '../components'
 
@@ -142,7 +142,18 @@ const Dashboard = () => {
           <StatCard
             title="Top Category"
             value={topCategory}
-            icon={FiPieChart}
+            icon={(() => {
+              const icons = {
+                Food: FiCoffee,
+                Transportation: FiTruck,
+                Entertainment: FiFilm,
+                Utilities: FiZap,
+                Healthcare: FiActivity,
+                Shopping: FiShoppingBag,
+                Other: FiGrid
+              }
+              return icons[topCategory] || FiPieChart
+            })()}
             color="purple"
           />
         </motion.div>
