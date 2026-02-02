@@ -42,6 +42,7 @@ const Header = () => {
                   <Link
                     key={item.path}
                     to={item.path}
+                    id={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
                     className={`relative text-sm font-bold tracking-wide transition-all duration-300 ${isActive(item.path)
                       ? 'text-brand-600 dark:text-brand-400 scale-105'
                       : 'text-surface-500 hover:text-surface-900 dark:hover:text-surface-200 hover:scale-105'

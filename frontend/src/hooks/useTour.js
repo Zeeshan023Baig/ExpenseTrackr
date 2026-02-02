@@ -22,34 +22,50 @@ export const useTour = () => {
                     }
                 },
                 {
-                    element: '#add-expense-btn',
+                    element: '#nav-analytics',
                     popover: {
-                        title: 'Add Expenses',
-                        description: 'Click here to record a new expense. You can categorize them and even upload receipts!',
+                        title: 'Financial Analytics',
+                        description: 'Visualize your spending trends, set savings goals, and track your monthly budget usage in detail.',
+                        side: 'bottom'
+                    }
+                },
+                {
+                    element: '#nav-add-expense',
+                    popover: {
+                        title: 'Quick Entry',
+                        description: 'Easily record new expenses. You can add descriptions, categories, and manage your daily spending.',
+                        side: 'bottom'
+                    }
+                },
+                {
+                    element: '#nav-reports',
+                    popover: {
+                        title: 'Detailed Reports',
+                        description: 'Deep dive into your spending habits with category breakdowns and monthly trend analysis.',
                         side: 'bottom'
                     }
                 },
                 {
                     element: '#budget-overview',
                     popover: {
-                        title: 'Track Your Budget',
-                        description: 'See how much of your monthly budget you\'ve used. The bar turns red if you exceed it!',
-                        side: 'bottom'
+                        title: 'Monthly Budget Control',
+                        description: 'Monitor your current spending against your monthly limit. It updates instantly with every new expense!',
+                        side: 'top'
                     }
                 },
                 {
                     element: '#stats-section',
                     popover: {
-                        title: 'Key Statistics',
-                        description: 'Get quick insights into your total spending, monthly average, and top spending category.',
+                        title: 'Key Metrics',
+                        description: 'A summary of your total spending, averages, and your most expensive categories at a glance.',
                         side: 'top'
                     }
                 },
                 {
                     element: '#recent-transactions',
                     popover: {
-                        title: 'Recent Transactions',
-                        description: 'View your latest expenses here. You can edit or delete them if needed.',
+                        title: 'Expense History',
+                        description: 'View and manage your most recent records. You can edit or delete them directly from here.',
                         side: 'top'
                     }
                 }
