@@ -160,8 +160,8 @@ const ChatBot = () => {
                                 >
                                     <div
                                         className={`max-w-[80%] p-3 rounded-2xl ${msg.type === 'user'
-                                                ? 'bg-brand-600 text-white rounded-br-sm'
-                                                : 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 border border-surface-200 dark:border-surface-700 rounded-bl-sm'
+                                            ? 'bg-brand-600 text-white rounded-br-sm'
+                                            : 'bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 border border-surface-200 dark:border-surface-700 rounded-bl-sm'
                                             }`}
                                     >
                                         <p className="text-sm whitespace-pre-line">{msg.text}</p>
@@ -172,12 +172,12 @@ const ChatBot = () => {
                             {/* Quick Questions */}
                             {messages.length === 1 && (
                                 <div className="space-y-2">
-                                    <p className="text-xs text-surface-500 font-medium">Quick questions:</p>
+                                    <p className="text-xs text-surface-700 dark:text-surface-300 font-semibold">Quick questions:</p>
                                     {quickQuestions.map((question, index) => (
                                         <button
                                             key={index}
                                             onClick={() => handleQuickQuestion(question)}
-                                            className="block w-full text-left text-sm p-3 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 hover:border-brand-300 transition-colors"
+                                            className="block w-full text-left text-sm p-3 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 hover:border-brand-300 transition-colors text-surface-800 dark:text-surface-200 font-medium"
                                         >
                                             {question}
                                         </button>
@@ -195,7 +195,7 @@ const ChatBot = () => {
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     placeholder="Ask me anything..."
-                                    className="flex-1 px-4 py-2 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
+                                    className="flex-1 px-4 py-2 bg-surface-50 dark:bg-surface-900 border border-surface-200 dark:border-surface-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm text-surface-900 dark:text-surface-100"
                                 />
                                 <button
                                     onClick={handleSendMessage}
