@@ -32,6 +32,13 @@ const ChartsPage = () => {
     return Math.floor(available / 4)
   }, [budget, savingsGoal])
 
+  // Handler for when user changes weekly limit
+  const handleWeeklyLimitChange = (newWeeklyLimit) => {
+    // Calculate what the savings goal would be: Budget - (WeeklyLimit * 4)
+    const calculatedSavings = Math.max(0, budget - (newWeeklyLimit * 4))
+    setSavingsGoal(calculatedSavings)
+  }
+
   // -- Charts Data --
   const categoryData = useMemo(() => {
     const data = categories.map(cat => {
@@ -176,17 +183,24 @@ const ChartsPage = () => {
                   type="number"
                   placeholder="e.g. 5000"
                   value={savingsGoal}
-                  onChange={(e) => setSavingsGoal(Number(e.target.value))}
+                  onChange={(e) => setSavingsGoal(Number(e.target.value) || 0)}
                   className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold"
                 />
+                <p className="text-xs text-blue-200 mt-1">
+                  Amount you want to save
+                </p>
               </div>
               <div>
-                <label className="block text-blue-100 text-sm font-medium mb-1">Max Weekly Spend</label>
-                <div className="text-3xl font-black text-white">
-                  ₹{weeklyLimit.toLocaleString()}
-                </div>
+                <label className="block text-blue-100 text-sm font-medium mb-2">Max Weekly Spend (₹)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 2000"
+                  value={weeklyLimit}
+                  onChange={(e) => handleWeeklyLimitChange(Number(e.target.value) || 0)}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder:text-blue-200/50 focus:outline-none focus:bg-white/20 transition-all font-bold"
+                />
                 <p className="text-xs text-blue-200 mt-1">
-                  To save ₹{savingsGoal}
+                  Your weekly spending limit
                 </p>
               </div>
             </div>
