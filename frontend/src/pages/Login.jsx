@@ -66,14 +66,14 @@ const Login = () => {
                 >
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-blue-900 tracking-tight">Welcome Back</h2>
-                        <p className="text-surface-500 mt-2">Please sign in to your account</p>
+                        <p className="text-surface-700 mt-2">Please sign in to your account</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
                             <label className="block text-sm font-semibold text-surface-700">Email Address</label>
                             <div className="relative">
-                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                                 <input
                                     type="email"
                                     name="email"
@@ -98,7 +98,7 @@ const Login = () => {
                                 </button>
                             </div>
                             <div className="relative">
-                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                                 <input
                                     type="password"
                                     name="password"
@@ -121,7 +121,7 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center text-surface-500 text-sm">
+                    <div className="mt-8 text-center text-surface-700 text-sm">
                         Don't have an account?{' '}
                         <Link to="/register" className="text-brand-600 font-semibold hover:text-brand-700 hover:underline">
                             Sign up
@@ -162,7 +162,7 @@ const Login = () => {
                                 {/* Content */}
                                 <div className="mb-6">
                                     <h3 className="text-2xl font-bold text-surface-900 mb-2">Reset Password</h3>
-                                    <p className="text-surface-500 text-sm">
+                                    <p className="text-surface-700 text-sm">
                                         Enter your email address and we'll send you instructions to reset your password.
                                     </p>
                                 </div>
@@ -173,7 +173,7 @@ const Login = () => {
                                             Email Address
                                         </label>
                                         <div className="relative">
-                                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                                             <input
                                                 type="email"
                                                 value={resetEmail}

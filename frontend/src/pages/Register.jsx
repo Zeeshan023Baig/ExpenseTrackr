@@ -41,14 +41,14 @@ const Register = () => {
             >
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-blue-900 tracking-tight">Create Account</h2>
-                    <p className="text-surface-500 mt-2">Join ExpenseTrackr today</p>
+                    <p className="text-surface-700 mt-2">Join ExpenseTrackr today</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-surface-700">Username</label>
                         <div className="relative">
-                            <FiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                            <FiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                             <input
                                 type="text"
                                 name="username"
@@ -64,7 +64,7 @@ const Register = () => {
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-surface-700">Email Address</label>
                         <div className="relative">
-                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                             <input
                                 type="email"
                                 name="email"
@@ -80,7 +80,7 @@ const Register = () => {
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-surface-700">Phone Number</label>
                         <div className="relative">
-                            <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                            <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                             <input
                                 type="tel"
                                 name="phoneNumber"
@@ -95,7 +95,7 @@ const Register = () => {
                     <div className="space-y-1.5">
                         <label className="block text-sm font-semibold text-surface-700">Password</label>
                         <div className="relative">
-                            <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400" />
+                            <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
                             <input
                                 type="password"
                                 name="password"
@@ -118,7 +118,7 @@ const Register = () => {
                     </button>
                 </form>
 
-                <div className="mt-8 text-center text-surface-500 text-sm">
+                <div className="mt-8 text-center text-surface-700 text-sm">
                     Already have an account?{' '}
                     <Link to="/login" className="text-brand-600 font-semibold hover:text-brand-700 hover:underline">
                         Sign in
