@@ -198,7 +198,7 @@ const Dashboard = () => {
                   >
                     <ExpenseCard
                       expense={expense}
-                      onEdit={() => { }}
+                      onEdit={(exp) => navigate(`/edit/${exp.id}`)}
                       onDelete={deleteExpense}
                     />
                   </motion.div>

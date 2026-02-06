@@ -51,6 +51,11 @@ const AppContent = () => {
               <AddExpense />
             </PrivateRoute>
           } />
+          <Route path="/edit/:id" element={
+            <PrivateRoute>
+              <EditExpense />
+            </PrivateRoute>
+          } />
           <Route path="/reports" element={
             <PrivateRoute>
               <Reports />

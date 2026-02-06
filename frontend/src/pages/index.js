@@ -7,12 +7,24 @@
  * - ExpensesList: Full list of expenses with filters
  * - AddExpense: Page for adding new expenses
  * - Reports: Analytics and reporting page
+ * - EditExpense: Page for editing existing expenses
  */
 
 // Main Pages
-export { default as Dashboard } from './Dashboard'
-export { default as ExpensesList } from './ExpensesList'
-export { default as AddExpense } from './AddExpense'
-export { default as Reports } from './Reports'
-export { default as Login } from './Login'
-export { default as Register } from './Register'
+import Dashboard from './Dashboard'
+import ExpensesList from './ExpensesList'
+import AddExpense from './AddExpense'
+import EditExpense from './EditExpense'
+import Reports from './Reports'
+import Login from './Login'
+import Register from './Register'
+
+export {
+    Dashboard,
+    ExpensesList,
+    AddExpense,
+    EditExpense,
+    Reports,
+    Login,
+    Register
+}
