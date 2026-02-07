@@ -6,6 +6,7 @@ import ExpenseCard from './ExpenseCard'
 import EmptyState from './EmptyState'
 import CategoryFilter from './CategoryFilter'
 import Calendar from './Calendar'
+import ChatBot from './ChatBot'
 
 export {
     ExpenseForm,
@@ -15,5 +16,6 @@ export {
     ExpenseCard,
     EmptyState,
     CategoryFilter,
-    Calendar
+    Calendar,
+    ChatBot
 }

@@ -1,0 +1,128 @@
+﻿
+> expensetrackr@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 1100 modules transformed.
+node.exe : 
+[31mx[39m Build 
+failed in 5.21s
+At C:\Program Files\no
+dejs\npm.ps1:29 char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ([31mx[39   
+ m Build failed in    
+ 5.21s:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+[31merror during 
+build:
+[31msrc/App.jsx 
+(7:33): "ChatBot" is 
+not exported by "src/c
+omponents/index.js", 
+imported by 
+"src/App.jsx".[31m
+file: [36mC:/Users/Ze
+esh/ExpenseTrackr/fron
+tend/src/App.jsx:7:33
+[31m
+[33m
+5: import { 
+ExpenseProvider } 
+from './context/Expens
+eContext'
+6: import { 
+ThemeProvider } from '
+./context/ThemeContext
+'
+7: import { Header, 
+LoadingSpinner, 
+ChatBot } from 
+'./components'
+                      
+              ^
+8: import { 
+Dashboard, 
+ExpensesList, 
+AddExpense, 
+EditExpense, Reports, 
+Login, Register } 
+from './pages'
+[31m
+    at getRollupError 
+(file:///C:/Users/Zees
+h/ExpenseTrackr/fronte
+nd/node_modules/rollup
+/dist/es/shared/parseA
+st.js:400:41)
+    at error (file:///
+C:/Users/Zeesh/Expense
+Trackr/frontend/node_m
+odules/rollup/dist/es/
+shared/parseAst.js:396
+:42)
+    at Module.error (f
+ile:///C:/Users/Zeesh/
+ExpenseTrackr/frontend
+/node_modules/rollup/d
+ist/es/shared/node-ent
+ry.js:17036:16)
+    at 
+Module.traceVariable (
+file:///C:/Users/Zeesh
+/ExpenseTrackr/fronten
+d/node_modules/rollup/
+dist/es/shared/node-en
+try.js:17448:29)
+    at ModuleScope.fin
+dVariable (file:///C:/
+Users/Zeesh/ExpenseTra
+ckr/frontend/node_modu
+les/rollup/dist/es/sha
+red/node-entry.js:1506
+6:39)
+    at ReturnValueScop
+e.findVariable (file:/
+//C:/Users/Zeesh/Expen
+seTrackr/frontend/node
+_modules/rollup/dist/e
+s/shared/node-entry.js
+:5673:38)
+    at FunctionBodySco
+pe.findVariable (file:
+///C:/Users/Zeesh/Expe
+nseTrackr/frontend/nod
+e_modules/rollup/dist/
+es/shared/node-entry.j
+s:5673:38)
+    at 
+Identifier.bind (file:
+///C:/Users/Zeesh/Expe
+nseTrackr/frontend/nod
+e_modules/rollup/dist/
+es/shared/node-entry.j
+s:5447:40)
+    at 
+CallExpression.bind (f
+ile:///C:/Users/Zeesh/
+ExpenseTrackr/frontend
+/node_modules/rollup/d
+ist/es/shared/node-ent
+ry.js:2825:28)
+    at 
+CallExpression.bind (f
+ile:///C:/Users/Zeesh/
+ExpenseTrackr/frontend
+/node_modules/rollup/d
+ist/es/shared/node-ent
+ry.js:12179:15)[39m
