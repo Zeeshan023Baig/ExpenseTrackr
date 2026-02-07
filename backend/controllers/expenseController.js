@@ -17,6 +17,27 @@ const getExpenses = async (req, res) => {
     }
 };
 
+// @desc    Get expense by ID
+// @route   GET /api/expenses/:id
+// @access  Private
+const getExpenseById = async (req, res) => {
+    try {
+        const expense = await Expense.findByPk(req.params.id);
+
+        if (!expense) {
+            return res.status(404).json({ message: 'Expense not found' });
+        }
+
+        if (expense.userId !== req.user.id) {
+            return res.status(401).json({ message: 'User not authorized' });
+        }
+
+        res.status(200).json(expense);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 // @desc    Add new expense
 // @route   POST /api/expenses
 // @access  Private
@@ -120,6 +141,7 @@ const getExpenseStats = async (req, res) => {
 
 export {
     getExpenses,
+    getExpenseById,
     addExpense,
     deleteExpense,
     updateExpense,
