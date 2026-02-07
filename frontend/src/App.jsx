@@ -41,11 +41,6 @@ const AppContent = () => {
               <Dashboard />
             </PrivateRoute>
           } />
-          <Route path="/expenses" element={
-            <PrivateRoute>
-              <ExpensesList />
-            </PrivateRoute>
-          } />
           <Route path="/analytics" element={
             <PrivateRoute>
               <Analytics />
