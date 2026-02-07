@@ -4,8 +4,9 @@ import { FiTrash2, FiEdit2, FiCalendar, FiCheck, FiX } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 
 const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
-  const [isEditingAmount, setIsEditingAmount] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [tempAmount, setTempAmount] = useState(expense.amount)
+  const [tempDescription, setTempDescription] = useState(expense.description)
   const [isUpdating, setIsUpdating] = useState(false)
 
   const getCategoryColor = (category) => {
@@ -30,8 +31,11 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   }
 
   const handleSave = async () => {
-    if (tempAmount === expense.amount) {
-      setIsEditingAmount(false)
+    const hasAmountChanged = Number(tempAmount) !== Number(expense.amount)
+    const hasDescriptionChanged = tempDescription.trim() !== expense.description.trim()
+
+    if (!hasAmountChanged && !hasDescriptionChanged) {
+      setIsEditing(false)
       return
     }
 
@@ -40,13 +44,21 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
       return
     }
 
+    if (!tempDescription.trim()) {
+      toast.error('Description is required')
+      return
+    }
+
     setIsUpdating(true)
     try {
-      await onUpdate(expense.id, { amount: Number(tempAmount) })
-      setIsEditingAmount(false)
-      toast.success('Amount updated!')
+      await onUpdate(expense.id, {
+        amount: Number(tempAmount),
+        description: tempDescription.trim()
+      })
+      setIsEditing(false)
+      toast.success('Updated successfully!')
     } catch (error) {
-      toast.error('Failed to update amount')
+      toast.error('Failed to update')
     } finally {
       setIsUpdating(false)
     }
@@ -54,7 +66,8 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
 
   const handleCancel = () => {
     setTempAmount(expense.amount)
-    setIsEditingAmount(false)
+    setTempDescription(expense.description)
+    setIsEditing(false)
   }
 
   return (
@@ -77,55 +90,66 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
             </span>
           </div>
 
-          <div className="space-y-1">
-            <h3 className="font-semibold text-lg text-surface-900 group-hover:text-brand-600 transition-colors">
-              {expense.description}
-            </h3>
-
-            <div className="flex items-center gap-2">
-              <AnimatePresence mode="wait">
-                {isEditingAmount ? (
-                  <motion.div
-                    key="editing"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    className="flex items-center gap-2"
-                  >
+          <div className="space-y-2">
+            <AnimatePresence mode="wait">
+              {isEditing ? (
+                <motion.div
+                  key="editing-fields"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="space-y-3"
+                >
+                  <div>
+                    <input
+                      type="text"
+                      value={tempDescription}
+                      onChange={(e) => setTempDescription(e.target.value)}
+                      placeholder="Description"
+                      className="w-full bg-surface-50 border border-brand-200 rounded-lg px-3 py-1.5 text-lg font-semibold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      autoFocus
+                      disabled={isUpdating}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-2xl font-bold text-surface-900">₹</span>
                     <input
                       type="number"
                       value={tempAmount}
                       onChange={(e) => setTempAmount(e.target.value)}
+                      placeholder="0.00"
                       className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      autoFocus
                       disabled={isUpdating}
                     />
-                  </motion.div>
-                ) : (
-                  <motion.p
-                    key="display"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="text-2xl font-bold text-surface-900"
-                  >
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="display-fields"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <h3 className="font-semibold text-lg text-surface-900 group-hover:text-brand-600 transition-colors">
+                    {expense.description}
+                  </h3>
+                  <p className="text-2xl font-bold text-surface-900 mt-1">
                     ₹{expense.amount.toLocaleString()}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         <div className="flex gap-2">
-          {isEditingAmount ? (
+          {isEditing ? (
             <div className="flex gap-1">
               <button
                 onClick={handleSave}
                 disabled={isUpdating}
                 className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
-                title="Save"
+                title="Save Changes"
               >
                 <FiCheck size={20} />
               </button>
@@ -141,9 +165,9 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
           ) : (
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
               <button
-                onClick={() => setIsEditingAmount(true)}
+                onClick={() => setIsEditing(true)}
                 className="p-2 text-surface-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
-                title="Edit Amount"
+                title="Edit Details"
               >
                 <FiEdit2 size={18} />
               </button>
