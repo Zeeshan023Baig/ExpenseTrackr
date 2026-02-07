@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 import { ExpenseContext } from '../context/ExpenseContext'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, Legend
+  PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts'
-import { FiDollarSign, FiTarget, FiActivity, FiEdit2, FiCheck, FiX, FiHelpCircle, FiCalendar } from 'react-icons/fi'
+import { FiDollarSign, FiTarget, FiActivity, FiEdit2, FiCheck, FiX, FiHelpCircle, FiCalendar, FiBarChart2 } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { useTour } from '../hooks/useTour'
 
@@ -70,6 +70,23 @@ const Analytics = () => {
       }
     })
   }, [expenses, trendEndDate])
+
+  const monthlySpendingData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const currentYear = new Date().getFullYear()
+
+    return months.map((month, index) => {
+      const monthTotal = expenses.filter(e => {
+        const date = new Date(e.date || e.createdAt)
+        return date.getMonth() === index && date.getFullYear() === currentYear
+      }).reduce((sum, e) => sum + e.amount, 0)
+
+      return {
+        month,
+        amount: monthTotal
+      }
+    })
+  }, [expenses])
 
   // -- Handlers --
   const handleSaveBudget = async () => {
@@ -295,6 +312,56 @@ const Analytics = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Full Width Monthly Trend */}
+      <motion.div
+        id="monthly-trend"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="card p-6"
+      >
+        <h3 className="text-lg font-bold text-surface-900 mb-6 flex items-center gap-2">
+          <FiBarChart2 className="text-brand-500" /> Monthly Spending Trend ({new Date().getFullYear()})
+        </h3>
+        <div className="h-[350px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={monthlySpendingData}>
+              <defs>
+                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                dy={10}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#64748b', fontSize: 12 }}
+                tickFormatter={(value) => `₹${value}`}
+              />
+              <RechartsTooltip
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="amount"
+                stroke="#6366f1"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#colorAmount)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </motion.div>
     </div>
   )
 }
