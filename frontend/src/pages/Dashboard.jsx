@@ -1,14 +1,14 @@
 import { useContext, useMemo, useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { FiTrendingDown, FiCalendar, FiLayout, FiArrowRight, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid, FiHelpCircle } from 'react-icons/fi'
+import { motion } from 'framer-motion'
+import { FiTrendingDown, FiCalendar, FiLayout, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
-import { StatCard, ExpenseCard, EmptyState, Calendar } from '../components'
+import { StatCard, ExpenseCard, EmptyState, CategoryFilter } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Dashboard = () => {
   const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense } = useContext(ExpenseContext)
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedCategory, setSelectedCategory] = useState(null)
   const navigate = useNavigate()
   const { startTour } = useTour()
 
@@ -22,17 +22,14 @@ const Dashboard = () => {
 
   const totalExpenses = getTotalExpenses()
 
-  const dailyExpenses = useMemo(() => {
-    const dateStr = selectedDate.toISOString().split('T')[0]
-    return expenses.filter(e => {
-      const eDate = (e.date || e.createdAt).split('T')[0]
-      return eDate === dateStr
-    })
-  }, [expenses, selectedDate])
+  const filteredExpenses = useMemo(() => {
+    const result = selectedCategory
+      ? getExpensesByCategory(selectedCategory)
+      : expenses;
 
-  const totalForDay = useMemo(() => {
-    return dailyExpenses.reduce((sum, e) => sum + e.amount, 0)
-  }, [dailyExpenses])
+    // Sort by createdAt DESC (Recent Added First)
+    return [...result].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  }, [selectedCategory, expenses, getExpensesByCategory])
 
   const monthlyExpenses = useMemo(() => {
     const now = new Date()
@@ -181,60 +178,44 @@ const Dashboard = () => {
           />
         </motion.div>
 
-        {/* Calendar & Daily Events Section */}
-        <motion.div id="recent-transactions" variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-5">
-            <Calendar
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-              transactions={expenses}
-            />
-          </div>
 
-          <div className="lg:col-span-7">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-surface-900">
-                  Events - ({selectedDate.toLocaleDateString('en-GB')})
-                  {dailyExpenses.length > 0 && (
-                    <span className="text-sm font-normal text-surface-400 ml-2">
-                      (Total: ₹{totalForDay.toFixed(2)})
-                    </span>
-                  )}
-                </h3>
-              </div>
-
-              <AnimatePresence mode="popLayout">
-                {dailyExpenses.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <EmptyState message="There is no event on this date." />
-                  </motion.div>
-                ) : (
-                  <motion.div className="space-y-3">
-                    {dailyExpenses.map((expense, index) => (
-                      <motion.div
-                        key={expense.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        layout
-                      >
-                        <ExpenseCard
-                          expense={expense}
-                          onEdit={(exp) => navigate(`/edit/${exp.id}`)}
-                          onDelete={deleteExpense}
-                        />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        {/* Recent Expenses Section (Restored List View) */}
+        <motion.div id="recent-transactions" variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-surface-900">
+              {selectedCategory ? `${selectedCategory} Expenses` : 'Recent Transactions'}
+            </h2>
+            <div className="flex items-center gap-3">
+              <CategoryFilter
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
             </div>
           </div>
+
+          {filteredExpenses.length === 0 ? (
+            <EmptyState message={selectedCategory ? `No ${selectedCategory} expenses found` : 'No expenses yet. Start tracking!'} />
+          ) : (
+            <motion.div className="grid grid-cols-1 gap-4">
+              {filteredExpenses
+                .slice(0, 10)
+                .map((expense, index) => (
+                  <motion.div
+                    key={expense.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <ExpenseCard
+                      expense={expense}
+                      onEdit={(exp) => navigate(`/edit/${exp.id}`)}
+                      onDelete={deleteExpense}
+                    />
+                  </motion.div>
+                ))}
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
     </div >
