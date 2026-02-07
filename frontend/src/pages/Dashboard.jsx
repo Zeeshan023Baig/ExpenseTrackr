@@ -1,15 +1,13 @@
-import { useContext, useMemo, useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useContext, useMemo, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiTrendingDown, FiCalendar, FiLayout, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
-import { StatCard, ExpenseCard, EmptyState, CategoryFilter } from '../components'
+import { StatCard, ExpenseCard, EmptyState } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Dashboard = () => {
-  const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense } = useContext(ExpenseContext)
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const navigate = useNavigate()
+  const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense } = useContext(ExpenseContext)
   const { startTour } = useTour()
 
   // Start tour on mount with a small delay to ensure DOM is ready
@@ -22,14 +20,10 @@ const Dashboard = () => {
 
   const totalExpenses = getTotalExpenses()
 
-  const filteredExpenses = useMemo(() => {
-    const result = selectedCategory
-      ? getExpensesByCategory(selectedCategory)
-      : expenses;
-
+  const recentExpenses = useMemo(() => {
     // Sort by createdAt DESC (Recent Added First)
-    return [...result].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
-  }, [selectedCategory, expenses, getExpensesByCategory])
+    return [...expenses].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  }, [expenses])
 
   const monthlyExpenses = useMemo(() => {
     const now = new Date()
@@ -109,13 +103,13 @@ const Dashboard = () => {
             <div>
               <h3 className="text-sm font-semibold text-surface-500 uppercase tracking-wider">Monthly Budget</h3>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-bold text-surface-900">₹{totalExpenses.toFixed(0)}</span>
-                <span className="text-surface-500 font-medium">of ₹{budget.toFixed(0)}</span>
+                <span className="text-3xl font-bold text-surface-900">₹{totalExpenses.toLocaleString()}</span>
+                <span className="text-surface-500 font-medium">of ₹{budget.toLocaleString()}</span>
               </div>
             </div>
             <div className="text-right">
               <span className={`text-lg font-bold ${totalExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
-                {((totalExpenses / budget) * 100).toFixed(1)}%
+                {budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0}%
               </span>
             </div>
           </div>
@@ -123,7 +117,7 @@ const Dashboard = () => {
           <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min((totalExpenses / budget) * 100, 100)}%` }}
+              animate={{ width: `${Math.min(budget > 0 ? (totalExpenses / budget) * 100 : 0, 100)}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
               className={`h-full rounded-full shadow-lg ${totalExpenses > budget
                 ? 'bg-gradient-to-r from-red-500 to-red-600'
@@ -143,13 +137,13 @@ const Dashboard = () => {
         <motion.div id="stats-section" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Expenses"
-            value={`₹${totalExpenses.toFixed(2)}`}
+            value={`₹${totalExpenses.toLocaleString()}`}
             icon={FiTrendingDown}
             color="red"
           />
           <StatCard
             title="This Month"
-            value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}`}
+            value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}`}
             icon={FiCalendar}
             color="blue"
           />
@@ -179,26 +173,19 @@ const Dashboard = () => {
         </motion.div>
 
 
-        {/* Recent Expenses Section (Restored List View) */}
+        {/* Recent Expenses Section (No Category Filter) */}
         <motion.div id="recent-transactions" variants={itemVariants} className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-surface-900">
-              {selectedCategory ? `${selectedCategory} Expenses` : 'Recent Transactions'}
+              Recent Transactions
             </h2>
-            <div className="flex items-center gap-3">
-              <CategoryFilter
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-              />
-            </div>
           </div>
 
-          {filteredExpenses.length === 0 ? (
-            <EmptyState message={selectedCategory ? `No ${selectedCategory} expenses found` : 'No expenses yet. Start tracking!'} />
+          {recentExpenses.length === 0 ? (
+            <EmptyState message="No expenses yet. Start tracking!" />
           ) : (
             <motion.div className="grid grid-cols-1 gap-4">
-              {filteredExpenses
+              {recentExpenses
                 .slice(0, 10)
                 .map((expense, index) => (
                   <motion.div
@@ -209,7 +196,7 @@ const Dashboard = () => {
                   >
                     <ExpenseCard
                       expense={expense}
-                      onEdit={(exp) => navigate(`/edit/${exp.id}`)}
+                      onUpdate={updateExpense}
                       onDelete={deleteExpense}
                     />
                   </motion.div>

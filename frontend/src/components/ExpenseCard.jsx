@@ -1,7 +1,13 @@
-import { motion } from 'framer-motion'
-import { FiTrash2, FiEdit2, FiCalendar } from 'react-icons/fi'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiTrash2, FiEdit2, FiCalendar, FiCheck, FiX } from 'react-icons/fi'
+import toast from 'react-hot-toast'
 
-const ExpenseCard = ({ expense, onEdit, onDelete }) => {
+const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
+  const [isEditingAmount, setIsEditingAmount] = useState(false)
+  const [tempAmount, setTempAmount] = useState(expense.amount)
+  const [isUpdating, setIsUpdating] = useState(false)
+
   const getCategoryColor = (category) => {
     const colors = {
       Food: 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20',
@@ -23,13 +29,41 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
     })
   }
 
+  const handleSave = async () => {
+    if (tempAmount === expense.amount) {
+      setIsEditingAmount(false)
+      return
+    }
+
+    if (isNaN(tempAmount) || tempAmount < 0) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      await onUpdate(expense.id, { amount: Number(tempAmount) })
+      setIsEditingAmount(false)
+      toast.success('Amount updated!')
+    } catch (error) {
+      toast.error('Failed to update amount')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setTempAmount(expense.amount)
+    setIsEditingAmount(false)
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -2 }}
-      className="card p-5 group"
+      className="card p-5 group relative overflow-hidden"
     >
       <div className="flex justify-between items-start">
         <div className="flex-1 space-y-3">
@@ -39,7 +73,7 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium text-surface-400">
               <FiCalendar size={12} />
-              {formatDate(expense.createdAt)}
+              {formatDate(expense.createdAt || expense.date)}
             </span>
           </div>
 
@@ -47,29 +81,89 @@ const ExpenseCard = ({ expense, onEdit, onDelete }) => {
             <h3 className="font-semibold text-lg text-surface-900 group-hover:text-brand-600 transition-colors">
               {expense.description}
             </h3>
-            <p className="text-2xl font-bold text-surface-900">
-              ₹{expense.amount.toFixed(2)}
-            </p>
+
+            <div className="flex items-center gap-2">
+              <AnimatePresence mode="wait">
+                {isEditingAmount ? (
+                  <motion.div
+                    key="editing"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="flex items-center gap-2"
+                  >
+                    <span className="text-2xl font-bold text-surface-900">₹</span>
+                    <input
+                      type="number"
+                      value={tempAmount}
+                      onChange={(e) => setTempAmount(e.target.value)}
+                      className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      autoFocus
+                      disabled={isUpdating}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.p
+                    key="display"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    className="text-2xl font-bold text-surface-900"
+                  >
+                    ₹{expense.amount.toLocaleString()}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
-          <button
-            onClick={() => onEdit(expense)}
-            className="p-2 text-surface-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
-            title="Edit"
-          >
-            <FiEdit2 size={18} />
-          </button>
-          <button
-            onClick={() => onDelete(expense.id)}
-            className="p-2 text-surface-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-            title="Delete"
-          >
-            <FiTrash2 size={18} />
-          </button>
+        <div className="flex gap-2">
+          {isEditingAmount ? (
+            <div className="flex gap-1">
+              <button
+                onClick={handleSave}
+                disabled={isUpdating}
+                className="p-2 text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+                title="Save"
+              >
+                <FiCheck size={20} />
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isUpdating}
+                className="p-2 text-surface-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                title="Cancel"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+              <button
+                onClick={() => setIsEditingAmount(true)}
+                className="p-2 text-surface-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+                title="Edit Amount"
+              >
+                <FiEdit2 size={18} />
+              </button>
+              <button
+                onClick={() => onDelete(expense.id)}
+                className="p-2 text-surface-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                title="Delete"
+              >
+                <FiTrash2 size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {isUpdating && (
+        <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
     </motion.div>
   )
 }
