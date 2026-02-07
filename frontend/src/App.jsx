@@ -46,6 +46,11 @@ const AppContent = () => {
               <ExpensesList />
             </PrivateRoute>
           } />
+          <Route path="/analytics" element={
+            <PrivateRoute>
+              <Analytics />
+            </PrivateRoute>
+          } />
           <Route path="/add" element={
             <PrivateRoute>
               <AddExpense />
