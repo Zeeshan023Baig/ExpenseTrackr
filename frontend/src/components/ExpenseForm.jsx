@@ -7,7 +7,7 @@ import { ExpenseContext } from '../context/ExpenseContext'
 import api from '../services/api'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
-  const { categories, addCategory } = useContext(ExpenseContext)
+  const { categories } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
   const [previewUrls, setPreviewUrls] = useState([])
 
@@ -99,9 +99,6 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }
 
     const trimmedCategory = formData.category.trim()
-    if (trimmedCategory && !categories.includes(trimmedCategory)) {
-      addCategory(trimmedCategory)
-    }
 
     onSubmit({ ...formData, category: trimmedCategory || 'Other' })
 
@@ -221,20 +218,20 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             Category
           </label>
           <div className="relative">
-            <input
-              list="category-list"
-              type="text"
+            <select
               name="category"
               value={formData.category}
               onChange={handleChange}
-              placeholder="Select or type..."
-              className="input-field"
-            />
-            <datalist id="category-list">
+              className="input-field appearance-none"
+            >
+              <option value="" disabled>Select category...</option>
               {categories.map(cat => (
-                <option key={cat} value={cat} />
+                <option key={cat} value={cat}>{cat}</option>
               ))}
-            </datalist>
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-surface-400">
+              <FiTag />
+            </div>
           </div>
         </div>
       </div>
