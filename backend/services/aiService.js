@@ -12,7 +12,7 @@ export const predictExpenses = async (expenses) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Prepare context: Group by category and date for efficiency
         const context = expenses.map(e => ({
@@ -24,28 +24,29 @@ export const predictExpenses = async (expenses) => {
         const prompt = `
             Analyze this historical expense data and predict the future 30 days.
             
-            Data: ${JSON.stringify(context.slice(-100))} (limited to last 100 for token efficiency)
+            Data: ${JSON.stringify(context.slice(-100))}
             
-            Return ONLY a JSON object with:
-            - predictedTotal: Estimated total spending for next 30 days
-            - predictedCategories: Array of {category, predictedAmount} for top 3 hotspots
-            - insights: 3 specific, actionable saving recommendations based on patterns
-            - confidence: 0-100 indicating reliability
-            
-            Return ONLY the JSON. No markdown.
+            Return ONLY a valid JSON object with these exact keys:
+            - "predictedTotal": (number)
+            - "predictedCategories": Array of {"category": string, "predictedAmount": number}
+            - "insights": Array of 3 strings
+            - "confidence": (number 0-100)
         `;
 
+        console.log("[AI Predictor] Sending prompt to Gemini...");
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
+        console.log("[AI Predictor] Raw response:", text);
+
         // Clean up markdown if Gemini adds it
-        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
 
         return JSON.parse(cleanText);
 
     } catch (error) {
-        console.error("AI Prediction Error:", error);
+        console.error("AI Prediction Error Detailed:", error);
         throw new Error(`AI Forecast Failed: ${error.message}`);
     }
 };
