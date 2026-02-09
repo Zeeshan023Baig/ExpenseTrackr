@@ -39,11 +39,6 @@ export const ExpenseProvider = ({ children }) => {
       setExpenses(Array.isArray(expensesRes.data) ? expensesRes.data : [])
       setBudget(budgetRes.data.budget || 0)
 
-      // Dynamic Categories: Extract unique categories from existing expenses
-      const existingCategories = expensesRes.data.map(e => e.category);
-      const uniqueCategories = [...new Set([...categories, ...existingCategories])];
-      setCategories(uniqueCategories.sort());
-
       setError(null)
     } catch (err) {
       console.error('Error loading data:', err)
@@ -131,12 +126,6 @@ export const ExpenseProvider = ({ children }) => {
     })
   }, [expenses])
 
-  const addCategory = useCallback((category) => {
-    setCategories(prev => {
-      if (prev.includes(category)) return prev
-      return [...prev, category]
-    })
-  }, [])
 
   const value = {
     expenses,
@@ -150,8 +139,7 @@ export const ExpenseProvider = ({ children }) => {
     updateUserBudget,
     getExpensesByCategory,
     getTotalExpenses,
-    getExpensesByDateRange,
-    addCategory
+    getExpensesByDateRange
   }
 
   return (

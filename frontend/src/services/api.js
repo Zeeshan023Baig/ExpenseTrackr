@@ -50,6 +50,7 @@ export const expenseAPI = {
   updateExpense: (id, data) => api.put(`/expenses/${id}`, data),
   deleteExpense: (id) => api.delete(`/expenses/${id}`),
   getExpenseStats: () => api.get('/expenses/stats'),
+  getExpenseTrend: () => api.get('/expenses/trend'),
 
   // Categories
   getCategories: () => api.get('/categories'),
@@ -68,6 +69,10 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   getMe: () => api.get('/auth/me')
+}
+
+export const aiAPI = {
+  predict: () => api.get('/ai/predict')
 }
 
 export default api

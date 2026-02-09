@@ -1,15 +1,15 @@
 import { useContext, useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { FiType, FiTag, FiUpload, FiLoader, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
+import { FiType, FiTag, FiUpload, FiLoader, FiCheckCircle, FiAlertCircle, FiX } from 'react-icons/fi'
 import { FaRupeeSign, FaMagic } from 'react-icons/fa'
 import { ExpenseContext } from '../context/ExpenseContext'
 import api from '../services/api'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
-  const { categories, addCategory } = useContext(ExpenseContext)
+  const { categories } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState(null)
+  const [previewUrls, setPreviewUrls] = useState([])
 
   const [formData, setFormData] = useState(
     initialData || {
@@ -21,7 +21,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   )
 
   useEffect(() => {
-    console.log('ExpenseForm v71 loaded - Gemini AI (Debug Mode)')
+    console.log('ExpenseForm v72 loaded - Multi-Image Gemini AI Support')
   }, [])
 
   const handleChange = (e) => {
@@ -33,16 +33,25 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
   }
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
 
-    setPreviewUrl(URL.createObjectURL(file))
+    if (files.length > 5) {
+      toast.error('Maximum 5 images allowed')
+      return
+    }
+
+    const urls = files.map(file => URL.createObjectURL(file))
+    setPreviewUrls(urls)
+
     setIsScanning(true)
-    const toastId = toast.loading('Gemini AI is analyzing...', { id: 'ai-scan' })
+    const toastId = toast.loading(`Gemini AI is analyzing ${files.length} images...`, { id: 'ai-scan' })
 
     try {
       const uploadData = new FormData()
-      uploadData.append('image', file)
+      files.forEach(file => {
+        uploadData.append('images', file)
+      })
 
       const response = await api.post('/ocr/scan', uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -53,15 +62,14 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       setFormData(prev => ({
         ...prev,
         amount: amount || prev.amount,
-        // description: kept as is (user wants to type it)
         category: category && categories.includes(category) ? category : (category || prev.category),
         date: date || prev.date
       }))
 
       if (amount) {
-        toast.success(`Found: ₹${amount} (${category})`, { id: 'ai-scan' })
+        toast.success(`Total Found: ₹${amount.toLocaleString()}`, { id: 'ai-scan' })
       } else {
-        toast.error('AI could not identify the amount.', { id: 'ai-scan' })
+        toast.error('AI could not identify a total amount.', { id: 'ai-scan' })
       }
 
     } catch (error) {
@@ -71,6 +79,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     } finally {
       setIsScanning(false)
     }
+  }
+
+  const clearPreviews = () => {
+    setPreviewUrls([])
   }
 
   const handleSubmit = (e) => {
@@ -87,15 +99,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
     }
 
     const trimmedCategory = formData.category.trim()
-    if (trimmedCategory && !categories.includes(trimmedCategory)) {
-      addCategory(trimmedCategory)
-    }
 
     onSubmit({ ...formData, category: trimmedCategory || 'Other' })
 
     if (!initialData) {
       setFormData({ description: '', amount: '', category: 'Other', date: new Date().toISOString().split('T')[0] })
-      setPreviewUrl(null)
+      setPreviewUrls([])
     }
   }
 
@@ -111,6 +120,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageUpload}
             className="hidden"
             disabled={isScanning}
@@ -127,12 +137,26 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
                 <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                   <FaMagic size={28} className="text-purple-600" />
                 </motion.div>
-              ) : previewUrl ? (
-                <div className="relative">
-                  <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-lg shadow-md" />
-                  <div className="absolute -bottom-2 -right-2 bg-green-500 text-white rounded-full p-1">
-                    <FiCheckCircle size={12} />
-                  </div>
+              ) : previewUrls.length > 0 ? (
+                <div className="flex -space-x-4 overflow-hidden p-2">
+                  {previewUrls.map((url, i) => (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      key={url}
+                      className="relative ring-4 ring-white dark:ring-surface-900 rounded-lg shadow-lg"
+                    >
+                      <img src={url} alt={`Preview ${i}`} className="w-14 h-14 object-cover rounded-lg" />
+                    </motion.div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); clearPreviews(); }}
+                    className="ml-4 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors self-center"
+                  >
+                    <FiX />
+                  </button>
                 </div>
               ) : (
                 <FiUpload size={28} />
@@ -140,10 +164,10 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
 
               <div className="flex flex-col">
                 <span className="text-sm font-bold text-surface-700">
-                  {isScanning ? 'Gemini AI is Watching...' : 'Upload Receipt / Screenshot'}
+                  {isScanning ? `Analyzing ${previewUrls.length} Images...` : 'Upload Receipts (Up to 5)'}
                 </span>
                 <span className="text-xs text-surface-400">
-                  {isScanning ? 'Extracting info...' : 'Powered by Google Gemini AI'}
+                  {isScanning ? 'Gemini AI is consolidating data...' : 'Powered by Google Gemini AI'}
                 </span>
               </div>
             </div>
@@ -195,19 +219,21 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
           </label>
           <div className="relative">
             <input
-              list="category-list"
-              type="text"
+              list="category-suggestions"
               name="category"
               value={formData.category}
               onChange={handleChange}
               placeholder="Select or type..."
               className="input-field"
             />
-            <datalist id="category-list">
+            <datalist id="category-suggestions">
               {categories.map(cat => (
                 <option key={cat} value={cat} />
               ))}
             </datalist>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-surface-400">
+              <FiTag />
+            </div>
           </div>
         </div>
       </div>

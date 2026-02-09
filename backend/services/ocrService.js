@@ -1,49 +1,48 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 
-export const scanReceipt = async (filePath, mimeType) => {
+/**
+ * Scans multiple receipts and returns consolidated data.
+ * @param {Array<{path: string, mimetype: string}>} files 
+ */
+export const scanReceipts = async (files) => {
     try {
-        // Debug Log
-        console.log('[Gemini OCR] Scanning file...');
-        console.log('[Gemini OCR] Key check:', process.env.GEMINI_API_KEY ? 'Found' : 'Missing');
+        console.log(`[Gemini OCR] Scanning ${files.length} files...`);
 
-        // Lazy load key to ensure dotenv is ready
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error("GEMINI_API_KEY is missing in .env");
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using specific version available in 2026
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        console.log(`[Gemini OCR] Scanning file: ${filePath}, type: ${mimeType}`);
-
-        // Read file
-        const filePart = {
+        // Prepare image parts for Gemini
+        const imageParts = files.map(file => ({
             inlineData: {
-                data: Buffer.from(fs.readFileSync(filePath)).toString("base64"),
-                mimeType: mimeType,
+                data: Buffer.from(fs.readFileSync(file.path)).toString("base64"),
+                mimeType: file.mimetype,
             },
-        };
+        }));
 
         const prompt = `
-    Analyze this receipt or screenshot. 
-    Extract the following details as a JSON object:
-    - amount: The total transaction amount (number only, no symbols).
-    - date: The transaction date (in YYYY-MM-DD format). If not found, use null.
-    - merchant: The name of the merchant or person paid (string).
-    - category: The expense category. Choose ONE from: [Food, Travel, Groceries, Bills, Entertainment, Health, Shopping, Education, Other].
-
-    Note: 
-    - If the image is a Payment Screenshot (GPay/PhonePe), "Paid to X" or "X" is the merchant.
-    - Ignore "Transaction ID" numbers.
-    - If you cannot find a value, use null.
+    Analyze these ${files.length} receipts or screenshots. 
+    They might be different receipts or multiple photos of the same long receipt.
     
-    Return ONLY the JSON string. Do not use Markdown code blocks.
+    Extract the following details as a consolidated JSON object:
+    - amount: The TOTAL combined transaction amount from all images (number only, no symbols).
+    - date: The transaction date (in YYYY-MM-DD format). If multiple dates exist, use the most recent or logical one.
+    - merchant: The name of the merchant(s) or person(s) paid.
+    - category: The expense category. Choose ONE that best fits the majority of items: [Food, Travel, Groceries, Bills, Entertainment, Health, Shopping, Education, Other].
+
+    Important: 
+    - Provide ONE consolidated object. 
+    - Add up the amounts from all valid receipts found.
+    - Ignore duplicate charges if an image appears twice or shows the same transaction.
+    - Return ONLY the JSON string. Do not use Markdown code blocks.
     `;
 
-        const result = await model.generateContent([prompt, filePart]);
+        const result = await model.generateContent([prompt, ...imageParts]);
         const response = await result.response;
         const text = response.text();
 
@@ -56,7 +55,6 @@ export const scanReceipt = async (filePath, mimeType) => {
 
     } catch (error) {
         console.error("Gemini OCR Error:", error);
-        // Return a descriptive error to the frontend
         throw new Error(`AI Scan Failed: ${error.message}`);
     }
 };

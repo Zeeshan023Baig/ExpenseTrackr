@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ExpenseProvider } from './context/ExpenseContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Header, LoadingSpinner, ChatBot } from './components'
-import { Dashboard, ExpensesList, AddExpense, Reports, Login, Register } from './pages'
+import { Dashboard, Analytics, ExpensesList, AddExpense, EditExpense, Reports, Login, Register } from './pages'
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth()
@@ -41,14 +41,19 @@ const AppContent = () => {
               <Dashboard />
             </PrivateRoute>
           } />
-          <Route path="/expenses" element={
+          <Route path="/analytics" element={
             <PrivateRoute>
-              <ExpensesList />
+              <Analytics />
             </PrivateRoute>
           } />
           <Route path="/add" element={
             <PrivateRoute>
               <AddExpense />
+            </PrivateRoute>
+          } />
+          <Route path="/edit/:id" element={
+            <PrivateRoute>
+              <EditExpense />
             </PrivateRoute>
           } />
           <Route path="/reports" element={
