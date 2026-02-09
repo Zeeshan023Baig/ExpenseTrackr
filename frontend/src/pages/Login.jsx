@@ -62,7 +62,7 @@ const Login = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white p-8 md:p-10 rounded-2xl shadow-soft w-full max-w-md border border-surface-100"
+                    className="bg-surface-100 p-8 md:p-10 rounded-2xl shadow-soft w-full max-w-md border border-surface-100"
                 >
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-blue-900 tracking-tight">Welcome Back</h2>
@@ -150,7 +150,7 @@ const Login = () => {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="fixed inset-0 z-50 flex items-center justify-center p-4"
                         >
-                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+                            <div className="bg-surface-100 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
                                 {/* Close button */}
                                 <button
                                     onClick={() => setShowForgotPassword(false)}
