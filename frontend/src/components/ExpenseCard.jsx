@@ -134,6 +134,8 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                         type="date"
                         value={tempDate}
                         onChange={(e) => setTempDate(e.target.value)}
+                        onClick={(e) => e.target.showPicker()}
+                        onFocus={(e) => e.target.showPicker()}
                         className="bg-transparent text-sm font-semibold text-surface-900 focus:outline-none cursor-pointer"
                         disabled={isUpdating}
                       />

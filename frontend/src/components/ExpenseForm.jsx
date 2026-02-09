@@ -248,6 +248,8 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             name="date"
             value={formData.date}
             onChange={handleChange}
+            onClick={(e) => e.target.showPicker()}
+            onFocus={(e) => e.target.showPicker()}
             className="input-field"
           />
         </div>
