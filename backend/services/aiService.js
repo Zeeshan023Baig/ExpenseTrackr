@@ -14,12 +14,17 @@ export const predictExpenses = async (expenses) => {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // Prepare context: Group by        // Prepare context: Group by category and date for efficiency
-        const context = expenses.map(e => ({
-            amount: e.amount,
-            category: e.category,
-            date: e.date ? new Date(e.date).toISOString().split('T')[0] : new Date(e.createdAt).toISOString().split('T')[0]
-        }));
+        console.log("[AI Predictor] Preparing context for", expenses.length, "expenses...");
+
+        const context = expenses.map(e => {
+            const dateObj = e.date ? new Date(e.date) : new Date(e.createdAt);
+            const dateStr = !isNaN(dateObj) ? dateObj.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+            return {
+                amount: e.amount,
+                category: e.category,
+                date: dateStr
+            };
+        });
 
         const prompt = `
             Analyze this historical expense data and predict the future 30 days.
