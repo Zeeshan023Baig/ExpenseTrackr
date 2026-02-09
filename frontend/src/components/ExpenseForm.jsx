@@ -218,17 +218,19 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
             Category
           </label>
           <div className="relative">
-            <select
+            <input
+              list="category-suggestions"
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="input-field appearance-none"
-            >
-              <option value="" disabled>Select category...</option>
+              placeholder="Select or type..."
+              className="input-field"
+            />
+            <datalist id="category-suggestions">
               {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat} />
               ))}
-            </select>
+            </datalist>
             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-surface-400">
               <FiTag />
             </div>
