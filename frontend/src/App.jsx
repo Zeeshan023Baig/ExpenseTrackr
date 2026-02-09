@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ExpenseProvider } from './context/ExpenseContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Header, LoadingSpinner, ChatBot } from './components'
-import { Dashboard, Analytics, ExpensesList, AddExpense, EditExpense, Reports, Login, Register } from './pages'
+import { Dashboard, Analytics, ExpensesList, AddExpense, EditExpense, Reports, Login, Register, ResetPassword } from './pages'
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth()
@@ -23,7 +23,7 @@ const PrivateRoute = ({ children }) => {
 
 const AppContent = () => {
   const location = useLocation()
-  const isAuthPage = ['/login', '/register'].includes(location.pathname)
+  const isAuthPage = ['/login', '/register'].includes(location.pathname) || location.pathname.startsWith('/reset-password/')
 
   return (
     <div className="min-h-screen bg-surface-50 transition-colors duration-300 font-sans text-surface-900">
@@ -34,6 +34,7 @@ const AppContent = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           {/* Private Routes */}
           <Route path="/" element={

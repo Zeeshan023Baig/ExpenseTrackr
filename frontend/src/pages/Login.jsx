@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiMail, FiLock, FiArrowRight, FiX } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
+import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
 const Login = () => {
@@ -43,14 +44,13 @@ const Login = () => {
 
         setResetLoading(true)
         try {
-            // Simulate API call - in production, this would call your backend
-            await new Promise(resolve => setTimeout(resolve, 1500))
-
+            await authAPI.forgotPassword(resetEmail)
             toast.success('Password reset instructions sent to your email! 📧')
             setShowForgotPassword(false)
             setResetEmail('')
         } catch (error) {
-            toast.error('Failed to send reset email. Please try again.')
+            const message = error.response?.data?.message || 'Failed to send reset email. Please try again.'
+            toast.error(message)
         } finally {
             setResetLoading(false)
         }

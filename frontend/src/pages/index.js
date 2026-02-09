@@ -5,6 +5,7 @@ import EditExpense from './EditExpense'
 import Reports from './Reports'
 import Login from './Login'
 import Register from './Register'
+import ResetPassword from './ResetPassword'
 
 export {
     Dashboard,
@@ -13,5 +14,6 @@ export {
     EditExpense,
     Reports,
     Login,
-    Register
+    Register,
+    ResetPassword
 }
