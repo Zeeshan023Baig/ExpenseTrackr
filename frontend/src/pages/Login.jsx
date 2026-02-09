@@ -66,14 +66,14 @@ const Login = () => {
                 >
                     <div className="text-center mb-8">
                         <h2 className="text-3xl font-bold text-blue-900 tracking-tight">Welcome Back</h2>
-                        <p className="text-surface-700 mt-2">Please sign in to your account</p>
+                        <p className="text-surface-900 mt-2">Please sign in to your account</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-surface-700">Email Address</label>
+                            <label className="block text-sm font-semibold text-surface-900">Email Address</label>
                             <div className="relative">
-                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
+                                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                                 <input
                                     type="email"
                                     name="email"
@@ -88,7 +88,7 @@ const Login = () => {
 
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                                <label className="block text-sm font-semibold text-surface-700">Password</label>
+                                <label className="block text-sm font-semibold text-surface-900">Password</label>
                                 <button
                                     type="button"
                                     onClick={() => setShowForgotPassword(true)}
@@ -98,7 +98,7 @@ const Login = () => {
                                 </button>
                             </div>
                             <div className="relative">
-                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
+                                <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                                 <input
                                     type="password"
                                     name="password"
@@ -121,7 +121,7 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center text-surface-700 text-sm">
+                    <div className="mt-8 text-center text-surface-900 text-sm">
                         Don't have an account?{' '}
                         <Link to="/register" className="text-brand-600 font-semibold hover:text-brand-700 hover:underline">
                             Sign up
@@ -162,18 +162,18 @@ const Login = () => {
                                 {/* Content */}
                                 <div className="mb-6">
                                     <h3 className="text-2xl font-bold text-surface-900 mb-2">Reset Password</h3>
-                                    <p className="text-surface-700 text-sm">
+                                    <p className="text-surface-900 text-sm">
                                         Enter your email address and we'll send you instructions to reset your password.
                                     </p>
                                 </div>
 
                                 <form onSubmit={handleForgotPassword} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-surface-700 mb-2">
+                                        <label className="block text-sm font-semibold text-surface-900 mb-2">
                                             Email Address
                                         </label>
                                         <div className="relative">
-                                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-600" />
+                                            <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                                             <input
                                                 type="email"
                                                 value={resetEmail}
@@ -189,7 +189,7 @@ const Login = () => {
                                         <button
                                             type="button"
                                             onClick={() => setShowForgotPassword(false)}
-                                            className="flex-1 px-4 py-2.5 border border-surface-300 text-surface-700 rounded-xl font-semibold hover:bg-surface-50 transition-colors"
+                                            className="flex-1 px-4 py-2.5 border border-surface-300 text-surface-900 rounded-xl font-semibold hover:bg-surface-50 transition-colors"
                                         >
                                             Cancel
                                         </button>
