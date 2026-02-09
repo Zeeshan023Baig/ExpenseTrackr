@@ -107,12 +107,12 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       className="space-y-6"
     >
       {!initialData && (
-        <div className="relative group">
+        <label className="block relative group cursor-pointer">
           <input
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            className="hidden"
             disabled={isScanning}
           />
           <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 relative overflow-hidden ${isScanning ? 'border-purple-500 bg-purple-50' : 'border-surface-200 hover:border-purple-400 hover:bg-surface-50'
@@ -148,7 +148,7 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
               </div>
             </div>
           </div>
-        </div>
+        </label>
       )}
 
       <div>
