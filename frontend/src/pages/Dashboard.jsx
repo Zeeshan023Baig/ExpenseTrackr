@@ -21,14 +21,14 @@ const Dashboard = () => {
   const totalExpenses = getTotalExpenses()
 
   const recentExpenses = useMemo(() => {
-    // Sort by createdAt DESC (Recent Added First)
-    return [...expenses].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+    // Sort by date DESC (User-selected date first, fallback to createdAt)
+    return [...expenses].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
   }, [expenses])
 
   const monthlyExpenses = useMemo(() => {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    return expenses.filter(expense => new Date(expense.createdAt || expense.date) >= startOfMonth)
+    return expenses.filter(expense => new Date(expense.date || expense.createdAt) >= startOfMonth)
   }, [expenses])
 
   const averageExpense = useMemo(() => {

@@ -91,7 +91,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium text-surface-400">
               <FiCalendar size={12} />
-              {formatDate(expense.createdAt || expense.date)}
+              {formatDate(expense.date || expense.createdAt)}
             </span>
           </div>
 

@@ -121,7 +121,7 @@ export const ExpenseProvider = ({ children }) => {
   const getExpensesByDateRange = useCallback((startDate, endDate) => {
     if (!Array.isArray(expenses)) return []
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.createdAt || expense.date)
+      const expenseDate = new Date(expense.date || expense.createdAt)
       return expenseDate >= startDate && expenseDate <= endDate
     })
   }, [expenses])

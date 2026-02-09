@@ -27,7 +27,7 @@ const Reports = () => {
   const monthlyBreakdown = useMemo(() => {
     const months = {}
     expenses.forEach(expense => {
-      const date = new Date(expense.createdAt)
+      const date = new Date(expense.date || expense.createdAt)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       months[monthKey] = (months[monthKey] || 0) + expense.amount
     })
