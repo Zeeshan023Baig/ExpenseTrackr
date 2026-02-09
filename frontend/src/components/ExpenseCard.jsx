@@ -7,6 +7,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [tempAmount, setTempAmount] = useState(expense.amount)
   const [tempDescription, setTempDescription] = useState(expense.description)
+  const [tempDate, setTempDate] = useState(new Date(expense.date || expense.createdAt).toISOString().split('T')[0])
   const [isUpdating, setIsUpdating] = useState(false)
 
   const getCategoryColor = (category) => {
@@ -33,8 +34,10 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   const handleSave = async () => {
     const hasAmountChanged = Number(tempAmount) !== Number(expense.amount)
     const hasDescriptionChanged = tempDescription.trim() !== expense.description.trim()
+    const originalDate = new Date(expense.date || expense.createdAt).toISOString().split('T')[0]
+    const hasDateChanged = tempDate !== originalDate
 
-    if (!hasAmountChanged && !hasDescriptionChanged) {
+    if (!hasAmountChanged && !hasDescriptionChanged && !hasDateChanged) {
       setIsEditing(false)
       return
     }
@@ -53,7 +56,8 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
     try {
       await onUpdate(expense.id, {
         amount: Number(tempAmount),
-        description: tempDescription.trim()
+        description: tempDescription.trim(),
+        date: tempDate
       })
       setIsEditing(false)
       toast.success('Updated successfully!')
@@ -67,6 +71,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   const handleCancel = () => {
     setTempAmount(expense.amount)
     setTempDescription(expense.description)
+    setTempDate(new Date(expense.date || expense.createdAt).toISOString().split('T')[0])
     setIsEditing(false)
   }
 
@@ -111,16 +116,28 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                       disabled={isUpdating}
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-surface-900">₹</span>
-                    <input
-                      type="number"
-                      value={tempAmount}
-                      onChange={(e) => setTempAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      disabled={isUpdating}
-                    />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-surface-900">₹</span>
+                      <input
+                        type="number"
+                        value={tempAmount}
+                        onChange={(e) => setTempAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                        disabled={isUpdating}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1">
+                      <FiCalendar size={16} className="text-surface-400" />
+                      <input
+                        type="date"
+                        value={tempDate}
+                        onChange={(e) => setTempDate(e.target.value)}
+                        className="bg-transparent text-sm font-medium text-surface-700 focus:outline-none"
+                        disabled={isUpdating}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               ) : (

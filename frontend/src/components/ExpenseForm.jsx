@@ -238,6 +238,21 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
         </div>
       </div>
 
+      <div>
+        <label className="block text-sm font-bold text-surface-900 mb-2">
+          Date
+        </label>
+        <div className="relative">
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            className="input-field"
+          />
+        </div>
+      </div>
+
       <div className="flex gap-4 pt-4">
         <motion.button
           whileHover={{ scale: 1.02 }}
