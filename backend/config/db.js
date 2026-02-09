@@ -40,6 +40,21 @@ const connectDB = async () => {
             console.log("Schema migration skipped/error (safe to ignore if already altered):", err.message);
         }
 
+        // --- NEW: Migration for User Reset Password Columns ---
+        try {
+            await sequelize.query("ALTER TABLE Users ADD COLUMN resetPasswordToken VARCHAR(255) NULL;");
+            console.log("Added resetPasswordToken column to Users.");
+        } catch (err) {
+            // console.log("resetPasswordToken migration skipped:", err.message);
+        }
+
+        try {
+            await sequelize.query("ALTER TABLE Users ADD COLUMN resetPasswordExpires DATETIME NULL;");
+            console.log("Added resetPasswordExpires column to Users.");
+        } catch (err) {
+            // console.log("resetPasswordExpires migration skipped:", err.message);
+        }
+
         console.log("Database Synced...");
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);
