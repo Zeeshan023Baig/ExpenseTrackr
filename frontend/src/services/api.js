@@ -50,6 +50,7 @@ export const expenseAPI = {
   updateExpense: (id, data) => api.put(`/expenses/${id}`, data),
   deleteExpense: (id) => api.delete(`/expenses/${id}`),
   getExpenseStats: () => api.get('/expenses/stats'),
+  getExpenseTrend: () => api.get('/expenses/trend'),
 
   // Categories
   getCategories: () => api.get('/categories'),

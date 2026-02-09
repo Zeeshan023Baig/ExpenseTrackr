@@ -139,11 +139,38 @@ const getExpenseStats = async (req, res) => {
     }
 };
 
+// @desc    Get daily trend stats (last 30 days)
+// @route   GET /api/expenses/trend
+// @access  Private
+const getExpenseTrend = async (req, res) => {
+    try {
+        const stats = await Expense.findAll({
+            where: {
+                userId: req.user.id,
+                date: {
+                    [sequelize.Op.gte]: sequelize.literal("DATE_SUB(NOW(), INTERVAL 30 DAY)")
+                }
+            },
+            attributes: [
+                [sequelize.fn('DATE', sequelize.col('date')), 'day'],
+                [sequelize.fn('SUM', sequelize.col('amount')), 'total']
+            ],
+            group: [sequelize.fn('DATE', sequelize.col('date'))],
+            order: [[sequelize.fn('DATE', sequelize.col('date')), 'ASC']]
+        });
+        res.status(200).json(stats);
+    } catch (error) {
+        console.error('Error fetching trend:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 export {
     getExpenses,
     getExpenseById,
     addExpense,
     deleteExpense,
     updateExpense,
-    getExpenseStats
+    getExpenseStats,
+    getExpenseTrend
 };
