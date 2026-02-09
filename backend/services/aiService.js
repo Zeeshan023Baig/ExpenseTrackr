@@ -14,6 +14,7 @@ export const predictExpenses = async (expenses) => {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }, { apiVersion: "v1" });
 
+        console.log("[AI Predictor v2.0-LIVE] Using gemini-2.0-flash on v1 API");
         console.log("[AI Predictor] Preparing context for", expenses.length, "expenses...");
 
         const context = expenses.map(e => {
