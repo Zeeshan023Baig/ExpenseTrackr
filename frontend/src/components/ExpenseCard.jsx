@@ -91,17 +91,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
             </span>
             <span className="flex items-center gap-1.5 text-xs font-medium text-surface-400">
               <FiCalendar size={12} />
-              {isEditing ? (
-                <input
-                  type="date"
-                  value={tempDate}
-                  onChange={(e) => setTempDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-xs font-medium text-surface-400 focus:outline-none focus:ring-0 w-24"
-                  disabled={isUpdating}
-                />
-              ) : (
-                formatDate(expense.createdAt || expense.date)
-              )}
+              {formatDate(expense.createdAt || expense.date)}
             </span>
           </div>
 
@@ -126,16 +116,28 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                       disabled={isUpdating}
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-surface-900">₹</span>
-                    <input
-                      type="number"
-                      value={tempAmount}
-                      onChange={(e) => setTempAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      disabled={isUpdating}
-                    />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-surface-900">₹</span>
+                      <input
+                        type="number"
+                        value={tempAmount}
+                        onChange={(e) => setTempAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                        disabled={isUpdating}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 bg-surface-50 border border-brand-200 rounded-lg px-3 py-1.5">
+                      <FiCalendar size={16} className="text-brand-500" />
+                      <input
+                        type="date"
+                        value={tempDate}
+                        onChange={(e) => setTempDate(e.target.value)}
+                        className="bg-transparent text-sm font-semibold text-surface-900 focus:outline-none cursor-pointer"
+                        disabled={isUpdating}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               ) : (
