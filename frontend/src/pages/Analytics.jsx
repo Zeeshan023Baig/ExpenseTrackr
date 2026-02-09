@@ -1,9 +1,10 @@
 import { useContext, useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ExpenseContext } from '../context/ExpenseContext'
+import { useTheme } from '../context/ThemeContext'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, AreaChart, Area
+  PieChart, Pie, Cell, Legend
 } from 'recharts'
 import { FiDollarSign, FiTarget, FiActivity, FiEdit2, FiCheck, FiX, FiHelpCircle, FiCalendar, FiBarChart2, FiList } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -12,6 +13,8 @@ import ExpenseCard from '../components/ExpenseCard'
 
 const Analytics = () => {
   const { expenses, budget, updateUserBudget, categories, updateExpense, deleteExpense } = useContext(ExpenseContext)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const { startTour } = useTour('analytics')
   const [savingsGoal, setSavingsGoal] = useState(0)
   const [isEditingBudget, setIsEditingBudget] = useState(false)
@@ -73,26 +76,6 @@ const Analytics = () => {
     })
   }, [expenses, trendEndDate])
 
-  const monthlySpendingData = useMemo(() => {
-    const currentYear = new Date().getFullYear()
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-    // Single pass to group expenses by month
-    const monthlyTotals = expenses.reduce((acc, exp) => {
-      const date = new Date(exp.date || exp.createdAt)
-      if (date.getFullYear() === currentYear) {
-        const monthIndex = date.getMonth()
-        acc[monthIndex] = (acc[monthIndex] || 0) + exp.amount
-      }
-      return acc
-    }, {})
-
-    return months.map((month, index) => ({
-      month,
-      amount: monthlyTotals[index] || 0
-    }))
-  }, [expenses])
-
   const selectedDayExpenses = useMemo(() => {
     return expenses.filter(e => {
       const eDate = (e.date || e.createdAt).split('T')[0]
@@ -116,8 +99,8 @@ const Analytics = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white dark:bg-surface-800 p-3 rounded-xl border border-surface-200 dark:border-surface-700 shadow-xl">
-          <p className="text-xs font-bold text-surface-400 mb-1 uppercase tracking-wider">{label}</p>
+        <div className="bg-white dark:bg-surface-200 p-3 rounded-xl border border-surface-200 dark:border-surface-300 shadow-xl">
+          <p className="text-xs font-bold text-surface-400 dark:text-surface-500 mb-1 uppercase tracking-wider">{label}</p>
           <p className="text-xl font-black text-surface-900">₹{payload[0].value.toLocaleString()}</p>
         </div>
       )
@@ -128,14 +111,14 @@ const Analytics = () => {
   return (
     <div className="layout-container py-8 space-y-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-surface-100 dark:border-surface-800 pb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-surface-200/20 pb-8">
         <div>
           <h1 id="analytics-title" className="text-4xl font-black text-surface-900 tracking-tight">Financial <span className="text-brand-600">Analytics</span></h1>
           <p className="text-surface-500 mt-2 text-lg">Powerful insights into your spending habits.</p>
         </div>
         <button
           onClick={startTour}
-          className="btn bg-brand-50 hover:bg-brand-100 text-brand-600 border-none flex items-center gap-2 font-bold py-3 px-6 rounded-2xl transition-all hover:scale-105 active:scale-95"
+          className="btn bg-brand-50 dark:bg-brand-900/10 hover:bg-brand-100 dark:hover:bg-brand-900/20 text-brand-600 dark:text-brand-400 border-none flex items-center gap-2 font-bold py-3 px-6 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-sm shadow-brand-500/10"
         >
           <FiHelpCircle size={20} /> Guide
         </button>
@@ -147,11 +130,11 @@ const Analytics = () => {
           id="budget-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card p-8 border-none bg-surface-50/50 dark:bg-surface-900/50 backdrop-blur-xl ring-1 ring-surface-200/50 dark:ring-surface-800/50"
+          className="card p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none"
         >
           <div className="flex justify-between items-start mb-8">
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-surface-400 uppercase tracking-widest">Monthly Budget</h3>
+              <h3 className="text-sm font-bold text-surface-500 dark:text-surface-400 uppercase tracking-widest">Monthly Budget</h3>
               {isEditingBudget ? (
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-surface-900">₹</span>
@@ -163,20 +146,20 @@ const Analytics = () => {
                     autoFocus
                   />
                   <div className="flex gap-1 ml-2">
-                    <button onClick={handleSaveBudget} className="p-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all"><FiCheck /></button>
-                    <button onClick={() => setIsEditingBudget(false)} className="p-2 bg-surface-200 dark:bg-surface-700 text-surface-600 rounded-xl hover:bg-surface-300 dark:hover:bg-surface-600 transition-all"><FiX /></button>
+                    <button onClick={handleSaveBudget} className="p-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20"><FiCheck /></button>
+                    <button onClick={() => setIsEditingBudget(false)} className="p-2 bg-surface-200 dark:bg-surface-800 text-surface-600 dark:text-surface-300 rounded-xl hover:bg-surface-300 dark:hover:bg-surface-700 transition-all"><FiX /></button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 group">
                   <span className="text-5xl font-black text-surface-900 tracking-tighter">₹{budget.toLocaleString()}</span>
-                  <button onClick={() => { setNewBudget(budget); setIsEditingBudget(true) }} className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-brand-50 rounded-lg text-brand-600">
+                  <button onClick={() => { setNewBudget(budget); setIsEditingBudget(true) }} className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-brand-50 dark:hover:bg-surface-800 rounded-lg text-brand-600">
                     <FiEdit2 size={18} />
                   </button>
                 </div>
               )}
             </div>
-            <div className={`p-4 rounded-2xl ${totalExpenses > budget ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'}`}>
+            <div className={`p-4 rounded-2xl ${totalExpenses > budget ? 'bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400' : 'bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400'}`}>
               <FiDollarSign size={28} />
             </div>
           </div>
@@ -184,14 +167,14 @@ const Analytics = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-end">
               <div>
-                <span className="text-sm font-bold text-surface-400 uppercase tracking-wider block mb-1">Total Spent</span>
+                <span className="text-sm font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider block mb-1">Total Spent</span>
                 <span className="text-2xl font-bold text-surface-900">₹{totalExpenses.toLocaleString()}</span>
               </div>
               <div className="text-right">
                 <span className={`text-lg font-black ${totalExpenses > budget ? 'text-red-500' : 'text-brand-600'}`}>
                   {spendingPercentage}%
                 </span>
-                <span className="text-xs font-bold text-surface-400 block uppercase">Utilization</span>
+                <span className="text-xs font-bold text-surface-500 dark:text-surface-400 block uppercase">Utilization</span>
               </div>
             </div>
             <div className="h-4 w-full bg-surface-200 dark:bg-surface-800 rounded-full overflow-hidden">
@@ -269,11 +252,11 @@ const Analytics = () => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="card p-8 border-none bg-white dark:bg-surface-900 shadow-xl shadow-surface-200/50 dark:shadow-none"
+          className="card p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none overflow-hidden"
         >
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-black text-surface-900 flex items-center gap-3">
-              <span className="p-2 bg-brand-50 text-brand-600 rounded-xl"><FiTarget /></span>
+              <span className="p-2 bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400 rounded-xl"><FiTarget /></span>
               Category Breakdown
             </h3>
           </div>
@@ -300,7 +283,7 @@ const Analytics = () => {
                     verticalAlign="bottom"
                     height={36}
                     iconType="circle"
-                    formatter={(value) => <span className="text-sm font-bold text-surface-600">{value}</span>}
+                    formatter={(value) => <span className="text-sm font-bold text-surface-600 dark:text-surface-400">{value}</span>}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -318,14 +301,14 @@ const Analytics = () => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="card p-8 border-none bg-white dark:bg-surface-900 shadow-xl shadow-surface-200/50 dark:shadow-none"
+          className="card p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none overflow-hidden"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <h3 className="text-xl font-black text-surface-900 flex items-center gap-3">
-              <span className="p-2 bg-brand-50 text-brand-600 rounded-xl"><FiActivity /></span>
+              <span className="p-2 bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400 rounded-xl"><FiActivity /></span>
               Weekly Trend
             </h3>
-            <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 px-4 py-2 rounded-2xl border border-surface-100 dark:border-surface-700">
+            <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 px-4 py-2 rounded-2xl border border-surface-200/20">
               <FiCalendar className="text-surface-400" />
               <input
                 type="date"
@@ -339,21 +322,21 @@ const Analytics = () => {
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyTrendData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
                 <XAxis
                   dataKey="date"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 12, fontWeight: 700 }}
                   dy={15}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
+                  tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 12, fontWeight: 700 }}
                   tickFormatter={(value) => `₹${value}`}
                 />
-                <RechartsTooltip cursor={{ fill: '#f8fafc', radius: 10 }} content={<CustomTooltip />} />
+                <RechartsTooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', radius: 10 }} content={<CustomTooltip />} />
                 <Bar
                   dataKey="amount"
                   fill="#6366f1"
@@ -379,17 +362,17 @@ const Analytics = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        className="space-y-6"
+        className="space-y-6 pb-12"
       >
-        <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-800 pb-4">
+        <div className="flex items-center justify-between border-b border-surface-200/20 pb-4">
           <h3 className="text-2xl font-black text-surface-900 flex items-center gap-3">
-            <span className="p-2 bg-brand-50 text-brand-600 rounded-xl"><FiList /></span>
+            <span className="p-2 bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400 rounded-xl"><FiList /></span>
             Daily Timeline
-            <span className="text-surface-400 text-lg font-bold ml-2">
+            <span className="text-surface-400 dark:text-surface-500 text-lg font-bold ml-2">
               {new Date(trendEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </h3>
-          <span className="px-4 py-2 bg-brand-50 text-brand-600 rounded-2xl text-sm font-black ring-1 ring-brand-100">
+          <span className="px-4 py-2 bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400 rounded-2xl text-sm font-black ring-1 ring-brand-500/20">
             {selectedDayExpenses.length} Records found
           </span>
         </div>
@@ -409,68 +392,18 @@ const Analytics = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="col-span-full py-20 text-center card bg-surface-50/50 border-dashed border-2 border-surface-200 dark:border-surface-700 flex flex-col items-center gap-4"
+                className="col-span-full py-20 text-center card bg-surface-50/50 dark:bg-surface-800/10 border-dashed border-2 border-surface-200 dark:border-surface-700 flex flex-col items-center gap-4 shadow-none"
               >
-                <div className="p-4 bg-white dark:bg-surface-800 rounded-full shadow-lg text-surface-300">
+                <div className="p-4 bg-white dark:bg-surface-800 rounded-full shadow-lg text-surface-300 dark:text-surface-600">
                   <FiCalendar size={64} />
                 </div>
                 <div>
                   <p className="font-black text-2xl text-surface-900">Quiet day!</p>
-                  <p className="text-surface-500 font-medium">No transactions found for this date.</p>
+                  <p className="text-surface-500 dark:text-surface-400 font-medium">No transactions found for this date.</p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* Full Width Monthly Trend */}
-      <motion.div
-        id="monthly-trend"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="card p-8 border-none bg-white dark:bg-surface-900 shadow-xl"
-      >
-        <h3 className="text-xl font-black text-surface-900 mb-8 flex items-center gap-3">
-          <span className="p-2 bg-brand-50 text-brand-600 rounded-xl"><FiBarChart2 /></span>
-          Annual Performance Curve ({new Date().getFullYear()})
-        </h3>
-        <div className="h-[400px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthlySpendingData}>
-              <defs>
-                <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
-                dy={15}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
-                tickFormatter={(value) => `₹${value}`}
-              />
-              <RechartsTooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="#6366f1"
-                strokeWidth={4}
-                fillOpacity={1}
-                fill="url(#colorAmount)"
-                animationDuration={1500}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
         </div>
       </motion.div>
     </div>
