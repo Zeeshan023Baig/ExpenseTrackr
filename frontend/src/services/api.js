@@ -71,4 +71,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me')
 }
 
+export const aiAPI = {
+  predict: () => api.get('/ai/predict')
+}
+
 export default api

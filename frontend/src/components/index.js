@@ -7,6 +7,7 @@ import EmptyState from './EmptyState'
 import CategoryFilter from './CategoryFilter'
 import Calendar from './Calendar'
 import ChatBot from './ChatBot'
+import AIPredictor from './AIPredictor'
 
 export {
     ExpenseForm,
@@ -17,5 +18,6 @@ export {
     EmptyState,
     CategoryFilter,
     Calendar,
-    ChatBot
+    ChatBot,
+    AIPredictor
 }

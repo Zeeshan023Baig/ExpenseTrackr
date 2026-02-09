@@ -23,6 +23,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import ocrRoutes from "./routes/ocrRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 // Connect to database
 connectDB();
@@ -46,6 +47,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/budget", budgetRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/ocr", ocrRoutes);
+app.use("/api/ai", aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

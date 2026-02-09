@@ -2,7 +2,7 @@ import { useContext, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { FiBarChart2, FiPieChart, FiTrendingUp, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
-import { StatCard, EmptyState } from '../components'
+import { StatCard, EmptyState, AIPredictor } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Reports = () => {
@@ -81,6 +81,11 @@ const Reports = () => {
         >
           <FiHelpCircle /> Quick Guide
         </button>
+      </motion.div>
+
+      {/* AI Expense Predictor */}
+      <motion.div variants={itemVariants}>
+        <AIPredictor />
       </motion.div>
 
       {/* Key Metrics */}
