@@ -27,14 +27,16 @@ export const predictExpenses = async (expenses) => {
         });
 
         const prompt = `
-            Analyze this historical expense data and predict the future 30 days.
+            Analyze this historical expense data from an Indian user and predict the future 30 days.
+            
+            IMPORTANT: Use Indian Rupees (₹) as the currency for all textual insights. Never mention dollars ($) or any other currency.
             
             Data: ${JSON.stringify(context.slice(-100))}
             
             Return ONLY a valid JSON object with these exact keys:
             - "predictedTotal": (number)
             - "predictedCategories": Array of {"category": string, "predictedAmount": number}
-            - "insights": Array of 3 strings
+            - "insights": Array of 3 strings (Make sure to use ₹ symbol when mentioning amounts)
             - "confidence": (number 0-100)
         `;
 
