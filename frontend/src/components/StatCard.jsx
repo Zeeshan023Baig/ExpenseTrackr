@@ -15,8 +15,9 @@ const StatCard = ({ title, value, icon: Icon, color = 'brand' }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card p-6"
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="card p-6 will-change-transform"
     >
       <div className="flex items-start justify-between">
         <div>

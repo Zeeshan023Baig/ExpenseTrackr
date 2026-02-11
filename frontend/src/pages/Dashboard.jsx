@@ -52,8 +52,8 @@ const Dashboard = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
+        staggerChildren: 0.05,
+        delayChildren: 0.1
       }
     }
   }
@@ -95,8 +95,8 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Budget Overview Bar */}
-        <motion.div id="budget-overview" variants={itemVariants} className="card p-6 border-l-4 border-l-brand-500 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <motion.div id="budget-overview" variants={itemVariants} className="card p-6 border-l-4 border-l-brand-500 relative overflow-hidden group will-change-transform">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
             <FiPieChart size={80} />
           </div>
           <div className="flex justify-between items-end mb-2 relative z-10">
@@ -190,9 +190,11 @@ const Dashboard = () => {
                 .map((expense, index) => (
                   <motion.div
                     key={expense.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.3 }}
+                    className="will-change-transform"
                   >
                     <ExpenseCard
                       expense={expense}

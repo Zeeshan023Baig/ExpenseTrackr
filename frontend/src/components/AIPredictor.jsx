@@ -26,7 +26,7 @@ const AIPredictor = () => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card p-8 bg-gradient-to-br from-surface-100 to-surface-50 dark:from-surface-100 dark:to-brand-950/20 border-none shadow-2xl relative overflow-hidden group hover:shadow-brand-500/20 transition-all duration-500"
+            className="card p-8 bg-gradient-to-br from-surface-100 to-surface-50 dark:from-surface-100 dark:to-brand-950/20 border-none shadow-2xl relative overflow-hidden group hover:shadow-brand-500/20 transition-all duration-500 will-change-transform gpu"
         >
             {/* Background Decorative Elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 dark:bg-brand-500/20 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none group-hover:bg-brand-500/20 dark:group-hover:bg-brand-500/30 transition-all duration-500" />

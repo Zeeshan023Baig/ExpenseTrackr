@@ -169,7 +169,8 @@
 
   /* Cards */
   .card {
-    @apply bg-surface-100 rounded-2xl border border-surface-200/20 shadow-lg shadow-black/20 hover:shadow-xl transition-all duration-300;
+    @apply bg-surface-100 rounded-2xl border border-surface-200/20 shadow-lg shadow-black/20 hover:shadow-xl transition-all duration-300 transform-gpu;
+    backface-visibility: hidden;
   }
 
   .card-hover {
@@ -201,6 +202,21 @@
   .text-subtle {
     @apply text-surface-500 text-sm;
   }
+}
+
+/* Performance Optimizations */
+.gpu {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
 }
 
 /* Animations & Scrollbar */
