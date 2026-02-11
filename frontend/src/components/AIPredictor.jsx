@@ -26,11 +26,11 @@ const AIPredictor = () => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card p-8 bg-gradient-to-br from-surface-100 to-surface-50 dark:from-surface-900/50 dark:to-surface-800/50 border-none shadow-2xl relative overflow-hidden group hover:shadow-brand-500/10 transition-all duration-500"
+            className="card p-8 bg-gradient-to-br from-surface-100 to-surface-50 dark:from-surface-100 dark:to-brand-950/20 border-none shadow-2xl relative overflow-hidden group hover:shadow-brand-500/20 transition-all duration-500"
         >
             {/* Background Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none group-hover:bg-brand-500/10 transition-all duration-500" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/5 rounded-full -ml-24 -mb-24 blur-2xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 dark:bg-brand-500/20 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none group-hover:bg-brand-500/20 dark:group-hover:bg-brand-500/30 transition-all duration-500" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-full -ml-24 -mb-24 blur-2xl pointer-events-none" />
 
             <div className="relative z-10 flex flex-col gap-8">
                 <div className="flex items-center justify-between">
@@ -90,7 +90,7 @@ const AIPredictor = () => {
                             className="grid grid-cols-1 lg:grid-cols-2 gap-8"
                         >
                             <div className="space-y-6">
-                                <div className="p-6 bg-white dark:bg-surface-800 rounded-3xl border border-surface-200 dark:border-surface-700 shadow-sm relative overflow-hidden">
+                                <div className="p-6 bg-white dark:bg-surface-100/50 rounded-3xl border border-surface-200 dark:border-brand-500/20 shadow-sm relative overflow-hidden">
                                     <p className="text-xs font-bold text-surface-400 uppercase tracking-widest mb-1">Expected Spend (Next 30 Days)</p>
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-4xl font-black text-surface-900 tracking-tighter">₹{prediction.predictedTotal.toLocaleString()}</span>
@@ -107,7 +107,7 @@ const AIPredictor = () => {
                                     <h4 className="text-sm font-bold text-surface-500 uppercase tracking-widest pl-1">Category Hotspots</h4>
                                     <div className="space-y-3">
                                         {prediction.predictedCategories.map((cat, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/40 rounded-2xl border border-surface-200/50">
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-surface-50 dark:bg-brand-950/20 rounded-2xl border border-surface-200/50 dark:border-brand-500/10">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-2 h-2 bg-brand-500 rounded-full" />
                                                     <span className="font-bold text-surface-700">{cat.category}</span>
@@ -128,7 +128,7 @@ const AIPredictor = () => {
                                             initial={{ x: 20, opacity: 0 }}
                                             animate={{ x: 0, opacity: 1 }}
                                             transition={{ delay: idx * 0.1 }}
-                                            className="flex gap-4 p-5 bg-brand-50/50 dark:bg-brand-500/5 rounded-3xl border border-brand-100/50 dark:border-brand-500/10"
+                                            className="flex gap-4 p-5 bg-brand-50/50 dark:bg-brand-500/10 rounded-3xl border border-brand-100/50 dark:border-brand-500/20"
                                         >
                                             <div className="flex-shrink-0 w-8 h-8 bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 rounded-full flex items-center justify-center">
                                                 <FiCheckCircle size={18} />
