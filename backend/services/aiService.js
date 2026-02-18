@@ -1,9 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-/**
- * Predicts future expenses using historical data.
- * @param {Array} expenses 
- */
 /**
  * Simple Linear Regression helper
  * y = mx + b
@@ -35,45 +29,56 @@ export const predictExpenses = async (expenses) => {
     try {
         console.log("[Linear Predictor] Analyzing", expenses.length, "expenses...");
 
-        // 1. Group expenses by date (daily total)
-        const dailyTotals = {};
-        const categoryTotals = {};
-
+        // 1. Determine timeline range
         const sortedExpenses = [...expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
-        const firstDate = new Date(sortedExpenses[0].date);
+        const firstDate = new Date(new Date(sortedExpenses[0].date).setHours(0, 0, 0, 0));
+        const lastDate = new Date(new Date(sortedExpenses[sortedExpenses.length - 1].date).setHours(0, 0, 0, 0));
+
+        // Calculate total days in history (min 7 days for better math)
+        const diffMs = lastDate - firstDate;
+        const totalDaysRange = Math.max(7, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+
+        // 2. Group expenses by day (filling gaps with 0)
+        const dailyTotalsMap = {};
+        const categoryDailyMap = {};
 
         sortedExpenses.forEach(e => {
-            const dateStr = new Date(e.date).toISOString().split('T')[0];
-            const daysSinceStart = Math.floor((new Date(e.date) - firstDate) / (1000 * 60 * 60 * 24));
+            const date = new Date(new Date(e.date).setHours(0, 0, 0, 0));
+            const dayOffset = Math.floor((date - firstDate) / (1000 * 60 * 60 * 24));
 
-            dailyTotals[daysSinceStart] = (dailyTotals[daysSinceStart] || 0) + parseFloat(e.amount);
+            dailyTotalsMap[dayOffset] = (dailyTotalsMap[dayOffset] || 0) + parseFloat(e.amount);
 
-            if (!categoryTotals[e.category]) categoryTotals[e.category] = [];
-            categoryTotals[e.category].push({ x: daysSinceStart, y: parseFloat(e.amount) });
+            if (!categoryDailyMap[e.category]) categoryDailyMap[e.category] = {};
+            categoryDailyMap[e.category][dayOffset] = (categoryDailyMap[e.category][dayOffset] || 0) + parseFloat(e.amount);
         });
 
-        const regressionData = Object.keys(dailyTotals).map(day => ({
-            x: parseInt(day),
-            y: dailyTotals[day]
-        }));
+        // Create full timeline for global trend
+        const regressionData = [];
+        for (let i = 0; i <= totalDaysRange; i++) {
+            regressionData.push({ x: i, y: dailyTotalsMap[i] || 0 });
+        }
 
-        // 2. Global Trend (Linear Regression)
+        // 3. Global Trend (Linear Regression)
         const { m, b } = calculateLinearRegression(regressionData);
 
         // Predict next 30 days
-        const lastDay = regressionData[regressionData.length - 1].x;
         let predictedTotal = 0;
         for (let i = 1; i <= 30; i++) {
-            const forecast = m * (lastDay + i) + b;
+            const forecast = m * (totalDaysRange + i) + b;
             predictedTotal += Math.max(0, forecast); // Disallow negative spend
         }
 
-        // 3. Category Breakdown
-        const predictedCategories = Object.keys(categoryTotals).map(cat => {
-            const catLR = calculateLinearRegression(categoryTotals[cat]);
+        // 4. Category Breakdown
+        const predictedCategories = Object.keys(categoryDailyMap).map(cat => {
+            const catData = [];
+            for (let i = 0; i <= totalDaysRange; i++) {
+                catData.push({ x: i, y: categoryDailyMap[cat][i] || 0 });
+            }
+
+            const catLR = calculateLinearRegression(catData);
             let catTotal = 0;
             for (let i = 1; i <= 30; i++) {
-                catTotal += Math.max(0, catLR.m * (lastDay + i) + catLR.b);
+                catTotal += Math.max(0, catLR.m * (totalDaysRange + i) + catLR.b);
             }
             return {
                 category: cat,
@@ -81,21 +86,22 @@ export const predictExpenses = async (expenses) => {
             };
         }).filter(c => c.predictedAmount > 0).sort((a, b) => b.predictedAmount - a.predictedAmount);
 
-        // 4. Insights Generation
+        // 5. Insights Generation
+        const currentDailyAvg = m * totalDaysRange + b;
         const trendDirection = m > 0 ? "increasing" : "decreasing";
-        const trendPercent = Math.abs(Math.round((m / (m * lastDay + b)) * 100)) || 0;
+        const trendPercent = currentDailyAvg === 0 ? 0 : Math.abs(Math.round((m / currentDailyAvg) * 100));
 
         const insights = [
-            `Based on your history, spending is ${trendDirection} by approx ${trendPercent}% daily.`,
-            `Your largest predicted category is ${predictedCategories[0]?.category || 'N/A'} at ₹${predictedCategories[0]?.predictedAmount.toLocaleString() || 0}.`,
-            m > 0 ? "Try setting specific budgets for your top categories to reverse the upward trend." : "Great job! Your spending trend is heading downwards compared to previous periods."
+            `Spending is currently ${trendDirection} by approx ${trendPercent}% daily compared to your historical average.`,
+            `Your top predicted hotspot is ${predictedCategories[0]?.category || 'N/A'} at ₹${predictedCategories[0]?.predictedAmount.toLocaleString() || 0}.`,
+            m > 0 ? "Try consolidating your largest recurring expenses to bring the trend line down." : "Your spending habits are improving! The trend line is moving downwards."
         ];
 
         return {
             predictedTotal: Math.round(predictedTotal),
             predictedCategories,
             insights,
-            confidence: Math.min(95, Math.max(60, 100 - Math.round(Math.abs(m) * 10))) // Heuristic confidence
+            confidence: Math.min(98, Math.max(65, 100 - Math.round(Math.abs(m) * 5)))
         };
 
     } catch (error) {
