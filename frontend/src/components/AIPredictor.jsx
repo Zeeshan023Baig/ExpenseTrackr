@@ -156,7 +156,7 @@ const AIPredictor = () => {
                                         <FiInfo size={20} />
                                     </div>
                                     <p className="text-surface-600 dark:text-surface-400 font-medium leading-relaxed">
-                                        Our AI model uses advanced pattern recognition to scan your last 100 transactions and simulate a likely spending path for the upcoming month.
+                                        Our predictive model uses Linear Regression to analyze your last 100 transactions and calculate a trend-based spending path for the upcoming month.
                                     </p>
                                 </div>
                             </div>
