@@ -4,11 +4,17 @@ import { FiCpu, FiTrendingUp, FiInfo, FiZap, FiArrowRight, FiCheckCircle } from 
 import { aiAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
-const AIPredictor = () => {
+const AIPredictor = ({ expenseCount }) => {
     const [loading, setLoading] = useState(false)
     const [prediction, setPrediction] = useState(null)
 
+    const isDisabled = (expenseCount || 0) < 5
+
     const handlePredict = async () => {
+        if (isDisabled) {
+            toast.error('Please add at least 5 expenses to use AI Prediction')
+            return
+        }
         setLoading(true)
         try {
             const { data } = await aiAPI.predict()
@@ -46,11 +52,12 @@ const AIPredictor = () => {
                     {!prediction && !loading && (
                         <button
                             onClick={handlePredict}
-                            className="btn-primary py-3 px-8 rounded-2xl group flex items-center gap-2 overflow-hidden relative"
+                            disabled={isDisabled}
+                            className={`btn-primary py-3 px-8 rounded-2xl group flex items-center gap-2 overflow-hidden relative ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                         >
-                            <span className="relative z-10">Generate AI Insights</span>
-                            <FiZap className="relative z-10 group-hover:animate-bounce" />
-                            <div className="absolute inset-0 bg-gradient-to-r from-brand-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="relative z-10">{isDisabled ? `Add ${5 - (expenseCount || 0)} More Expenses` : 'Generate AI Insights'}</span>
+                            <FiZap className={`relative z-10 ${isDisabled ? '' : 'group-hover:animate-bounce'}`} />
+                            {!isDisabled && <div className="absolute inset-0 bg-gradient-to-r from-brand-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />}
                         </button>
                     )}
                 </div>

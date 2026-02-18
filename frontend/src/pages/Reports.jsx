@@ -85,7 +85,7 @@ const Reports = () => {
 
       {/* AI Expense Predictor */}
       <motion.div variants={itemVariants}>
-        <AIPredictor />
+        <AIPredictor expenseCount={expenses.length} />
       </motion.div>
 
       {/* Key Metrics */}
