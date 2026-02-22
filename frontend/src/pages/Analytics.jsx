@@ -193,7 +193,7 @@ const Analytics = () => {
                 initial={{ width: 0 }}
                 animate={{ width: `${spendingPercentage}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
-                className={`h-full rounded-full shadow-lg ${totalExpenses > budget ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-gradient-to-r from-brand-500 to-indigo-600'}`}
+                className={`h-full rounded-full shadow-lg ${totalCurrentMonthExpenses > budget ? 'bg-gradient-to-r from-red-500 to-rose-600' : 'bg-gradient-to-r from-brand-500 to-indigo-600'}`}
               />
             </div>
           </div>
