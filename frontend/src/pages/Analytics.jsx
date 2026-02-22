@@ -170,7 +170,7 @@ const Analytics = () => {
                 </div>
               )}
             </div>
-            <div className={`p-4 rounded-2xl ${totalExpenses > budget ? 'bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400' : 'bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400'}`}>
+            <div className={`p-4 rounded-2xl ${totalCurrentMonthExpenses > budget ? 'bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400' : 'bg-brand-50 dark:bg-brand-900/10 text-brand-600 dark:text-brand-400'}`}>
               <FiDollarSign size={28} />
             </div>
           </div>
@@ -182,7 +182,7 @@ const Analytics = () => {
                 <span className="text-2xl font-bold text-surface-900">₹{totalExpenses.toLocaleString()}</span>
               </div>
               <div className="text-right">
-                <span className={`text-lg font-black ${totalExpenses > budget ? 'text-red-500' : 'text-brand-600'}`}>
+                <span className={`text-lg font-black ${totalCurrentMonthExpenses > budget ? 'text-red-500' : 'text-brand-600'}`}>
                   {spendingPercentage}%
                 </span>
                 <span className="text-xs font-bold text-surface-500 dark:text-surface-400 block uppercase">Utilization</span>
