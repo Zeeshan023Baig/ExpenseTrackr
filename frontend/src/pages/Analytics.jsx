@@ -179,7 +179,7 @@ const Analytics = () => {
             <div className="flex justify-between items-end">
               <div>
                 <span className="text-sm font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider block mb-1">Total Spent</span>
-                <span className="text-2xl font-bold text-surface-900">₹{totalExpenses.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-surface-900">₹{totalCurrentMonthExpenses.toLocaleString()}</span>
               </div>
               <div className="text-right">
                 <span className={`text-lg font-black ${totalCurrentMonthExpenses > budget ? 'text-red-500' : 'text-brand-600'}`}>
