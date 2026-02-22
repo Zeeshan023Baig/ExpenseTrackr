@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ExpenseProvider } from './context/ExpenseContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Header, LoadingSpinner, ChatBot, UserGuide } from './components'
-import { Dashboard, Analytics, ExpensesList, AddExpense, EditExpense, Reports, Login, Register, ResetPassword } from './pages'
+import { Dashboard, Analytics, Expenses, AddExpense, EditExpense, Reports, Login, Register, ResetPassword } from './pages'
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth()
@@ -53,31 +53,12 @@ const AppContent = () => {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           {/* Private Routes */}
-          <Route path="/" element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          } />
-          <Route path="/analytics" element={
-            <PrivateRoute>
-              <Analytics />
-            </PrivateRoute>
-          } />
-          <Route path="/add" element={
-            <PrivateRoute>
-              <AddExpense />
-            </PrivateRoute>
-          } />
-          <Route path="/edit/:id" element={
-            <PrivateRoute>
-              <EditExpense />
-            </PrivateRoute>
-          } />
-          <Route path="/reports" element={
-            <PrivateRoute>
-              <Reports />
-            </PrivateRoute>
-          } />
+          <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
+          <Route path="/expenses" element={<PrivateRoute><Expenses /></PrivateRoute>} />
+          <Route path="/add" element={<PrivateRoute><AddExpense /></PrivateRoute>} />
+          <Route path="/edit/:id" element={<PrivateRoute><EditExpense /></PrivateRoute>} />
+          <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
