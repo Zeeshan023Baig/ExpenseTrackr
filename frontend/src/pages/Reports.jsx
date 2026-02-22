@@ -6,7 +6,7 @@ import { StatCard, EmptyState, AIPredictor } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Reports = () => {
-  const { expenses, categories, getExpensesByCategory } = useContext(ExpenseContext)
+  const { expenses, getExpensesByCategory } = useContext(ExpenseContext)
   const { startTour } = useTour('analytics')
 
   const totalExpenses = useMemo(() => {
@@ -14,7 +14,10 @@ const Reports = () => {
   }, [expenses])
 
   const categoryBreakdown = useMemo(() => {
-    return categories
+    // Get unique categories present in expenses
+    const uniqueCategories = [...new Set(expenses.map(exp => exp.category || 'Other'))]
+
+    return uniqueCategories
       .map(cat => ({
         name: cat,
         amount: getExpensesByCategory(cat).reduce((sum, exp) => sum + exp.amount, 0),
@@ -22,7 +25,7 @@ const Reports = () => {
       }))
       .filter(cat => cat.amount > 0)
       .sort((a, b) => b.amount - a.amount)
-  }, [categories, getExpensesByCategory])
+  }, [expenses, getExpensesByCategory])
 
   const monthlyBreakdown = useMemo(() => {
     const months = {}

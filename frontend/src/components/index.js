@@ -8,6 +8,7 @@ import CategoryFilter from './CategoryFilter'
 import Calendar from './Calendar'
 import ChatBot from './ChatBot'
 import AIPredictor from './AIPredictor'
+import UserGuide from './UserGuide'
 
 export {
     ExpenseForm,
@@ -19,5 +20,6 @@ export {
     CategoryFilter,
     Calendar,
     ChatBot,
-    AIPredictor
+    AIPredictor,
+    UserGuide
 }

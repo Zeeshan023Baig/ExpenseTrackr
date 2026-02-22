@@ -44,16 +44,17 @@ const Analytics = () => {
 
   // -- Charts Data --
   const categoryData = useMemo(() => {
-    // Single pass to group expenses by category
     const totals = expenses.reduce((acc, exp) => {
-      acc[exp.category] = (acc[exp.category] || 0) + exp.amount
+      const cat = exp.category || 'Other'
+      acc[cat] = (acc[cat] || 0) + exp.amount
       return acc
     }, {})
 
-    return categories
-      .map(cat => ({ name: cat, value: totals[cat] || 0 }))
+    return Object.entries(totals)
+      .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0)
-  }, [expenses, categories])
+      .sort((a, b) => b.value - a.value)
+  }, [expenses])
 
   const weeklyTrendData = useMemo(() => {
     const endDate = new Date(trendEndDate)
