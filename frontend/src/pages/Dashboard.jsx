@@ -12,11 +12,14 @@ const Dashboard = () => {
 
   // Start tour on mount with a small delay to ensure DOM is ready
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startTour()
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    if (!localStorage.getItem('has-seen-dashboard-tour')) {
+      const timer = setTimeout(() => {
+        startTour()
+        localStorage.setItem('has-seen-dashboard-tour', 'true')
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [startTour])
 
   const totalExpenses = getTotalExpenses()
 
