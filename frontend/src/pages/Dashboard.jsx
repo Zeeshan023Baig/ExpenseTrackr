@@ -31,12 +31,20 @@ const Dashboard = () => {
   const monthlyExpenses = useMemo(() => {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    return expenses.filter(expense => new Date(expense.date || expense.createdAt) >= startOfMonth)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    return expenses.filter(expense => {
+      const d = new Date(expense.date || expense.createdAt)
+      return d >= startOfMonth && d <= endOfMonth
+    })
   }, [expenses])
 
+  const totalMonthlyExpenses = useMemo(() => {
+    return monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+  }, [monthlyExpenses])
+
   const averageExpense = useMemo(() => {
-    return expenses.length > 0 ? (totalExpenses / expenses.length).toFixed(2) : 0
-  }, [expenses, totalExpenses])
+    return expenses.length > 0 ? (getTotalExpenses() / expenses.length).toFixed(2) : 0
+  }, [expenses, getTotalExpenses])
 
   const topCategory = useMemo(() => {
     if (categories.length === 0) return 'N/A'
@@ -106,13 +114,13 @@ const Dashboard = () => {
             <div>
               <h3 className="text-sm font-semibold text-surface-500 uppercase tracking-wider">Monthly Budget</h3>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-bold text-surface-900">₹{totalExpenses.toLocaleString()}</span>
+                <span className="text-3xl font-bold text-surface-900">₹{totalMonthlyExpenses.toLocaleString()}</span>
                 <span className="text-surface-500 font-medium">of ₹{budget.toLocaleString()}</span>
               </div>
             </div>
             <div className="text-right">
-              <span className={`text-lg font-bold ${totalExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
-                {budget > 0 ? ((totalExpenses / budget) * 100).toFixed(1) : 0}%
+              <span className={`text-lg font-bold ${totalMonthlyExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
+                {budget > 0 ? ((totalMonthlyExpenses / budget) * 100).toFixed(1) : 0}%
               </span>
             </div>
           </div>
@@ -120,15 +128,15 @@ const Dashboard = () => {
           <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.min(budget > 0 ? (totalExpenses / budget) * 100 : 0, 100)}%` }}
+              animate={{ width: `${Math.min(budget > 0 ? (totalMonthlyExpenses / budget) * 100 : 0, 100)}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full rounded-full shadow-lg ${totalExpenses > budget
+              className={`h-full rounded-full shadow-lg ${totalMonthlyExpenses > budget
                 ? 'bg-gradient-to-r from-red-500 to-red-600'
                 : 'bg-gradient-to-r from-brand-500 to-purple-500'
                 }`}
             />
           </div>
-          {totalExpenses > budget && (
+          {totalMonthlyExpenses > budget && (
             <p className="text-red-500 text-sm mt-2 font-medium flex items-center gap-1 relative z-10">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
               You have exceeded your budget!

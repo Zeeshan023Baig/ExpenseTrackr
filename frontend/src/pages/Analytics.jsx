@@ -22,14 +22,24 @@ const Analytics = () => {
   const [trendEndDate, setTrendEndDate] = useState(new Date().toISOString().split('T')[0])
 
   // -- Derived Data --
-  const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, exp) => sum + exp.amount, 0)
+  const currentMonthExpenses = useMemo(() => {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+    return expenses.filter(expense => {
+      const d = new Date(expense.date || expense.createdAt)
+      return d >= startOfMonth && d <= endOfMonth
+    })
   }, [expenses])
+
+  const totalCurrentMonthExpenses = useMemo(() => {
+    return currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+  }, [currentMonthExpenses])
 
   const spendingPercentage = useMemo(() => {
     if (budget === 0) return 0
-    return Math.min(Math.round((totalExpenses / budget) * 100), 100)
-  }, [totalExpenses, budget])
+    return Math.min(Math.round((totalCurrentMonthExpenses / budget) * 100), 100)
+  }, [totalCurrentMonthExpenses, budget])
 
   const weeklyLimit = useMemo(() => {
     const available = Math.max(0, budget - savingsGoal)
