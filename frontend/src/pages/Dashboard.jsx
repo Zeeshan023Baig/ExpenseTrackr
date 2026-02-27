@@ -240,10 +240,7 @@ const Dashboard = () => {
               {/* Pagination Controls */}
               {recentExpenses.length > ITEMS_PER_PAGE && (
                 <div className="flex items-center justify-between pt-4 border-t border-surface-200 dark:border-surface-700/50">
-                  <p className="text-sm font-medium text-surface-500">
-                    Showing <span className="text-surface-900 font-bold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-surface-900 font-bold">{Math.min(currentPage * ITEMS_PER_PAGE, recentExpenses.length)}</span> of <span className="text-surface-900 font-bold">{recentExpenses.length}</span>
-                  </p>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 ml-auto">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
