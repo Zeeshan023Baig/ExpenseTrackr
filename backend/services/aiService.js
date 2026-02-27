@@ -117,13 +117,46 @@ export const predictExpenses = async (expenses) => {
         const naiveProjection = overallAvgDaily * 30;
         const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
 
+        // Behavioral Analytics
+        const weekdayTotals = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        const weekendDays = [0, 6]; // Sun, Sat
+        let weekendSpend = 0, weekdaySpend = 0;
+
+        sortedExpenses.forEach(e => {
+            const d = new Date(e.date);
+            const day = d.getDay();
+            const amt = parseFloat(e.amount);
+            weekdayTotals[day] += amt;
+            if (weekendDays.includes(day)) weekendSpend += amt;
+            else weekdaySpend += amt;
+        });
+
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const maxDayEntry = Object.entries(weekdayTotals).reduce((a, b) => b[1] > a[1] ? b : a);
+        const peakDay = dayNames[maxDayEntry[0]];
+
+        // Budget IQ Calculation (Assuming a monthly cycle)
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysPassed = now.getDate();
+        const daysLeft = daysInMonth - daysPassed || 1;
+
+        const monthlySpent = sortedExpenses
+            .filter(e => new Date(e.date).getMonth() === now.getMonth())
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        // Cap the total predicted to 130% of average unless trend is very strong
+        const naiveProjection = overallAvgDaily * 30;
+        const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
+
         // Insights Generation
         const trendDirection = m > 0 ? "increasing" : "decreasing";
         const velocity = Math.abs(m) > (overallAvgDaily * 0.05) ? "steadily" : "slightly";
 
         const insights = [
-            `Based on clean patterns, your spending is ${trendDirection} ${velocity}.`,
-            `Top expected area: ${predictedCategories[0]?.category || 'N/A'} (approx ₹${predictedCategories[0]?.predictedAmount.toLocaleString('en-IN') || 0}).`,
+            `Overall trend: Spending is ${trendDirection} ${velocity}.`,
+            `Your peak spending day is typically ${peakDay}.`,
+            `Weekend vs Weekday: Your weekend spend is ₹${weekendSpend.toLocaleString('en-IN')} vs ₹${weekdaySpend.toLocaleString('en-IN')} on weekdays.`,
             m > 0 ? "Recent spikes are pushing your trend up. We've adjusted for one-time costs." : "Great! Your spending is stabilized and predictable."
         ];
 
@@ -131,6 +164,12 @@ export const predictExpenses = async (expenses) => {
             predictedTotal: Math.round(finalPredicted),
             predictedCategories: predictedCategories.slice(0, 10),
             insights,
+            behavioral: {
+                peakDay,
+                weekendRatio: weekendSpend / (weekendSpend + weekdaySpend || 1),
+                dailyBudgetIQ: Math.max(0, Math.round((naiveProjection - monthlySpent) / daysLeft)),
+                burnRate: Math.round(monthlySpent / daysPassed || 1)
+            },
             confidence: Math.min(95, Math.max(75, 90 - Math.round(Math.abs(m / (overallAvgDaily || 1)) * 100)))
         };
 
