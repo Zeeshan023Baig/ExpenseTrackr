@@ -96,7 +96,7 @@ const Expenses = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                             onClick={(e) => e.target.showPicker()}
                             onFocus={(e) => e.target.showPicker()}
-                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-white"
+                            className="input pl-10 h-11 text-sm"
                             placeholder="Start Date"
                         />
                     </div>
@@ -108,14 +108,14 @@ const Expenses = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                             onClick={(e) => e.target.showPicker()}
                             onFocus={(e) => e.target.showPicker()}
-                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-white"
+                            className="input pl-10 h-11 text-sm"
                             placeholder="End Date"
                         />
                     </div>
                 </div>
 
                 <div className="flex gap-2">
-                    <div className="flex items-center gap-1 bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
+                    <div className="flex items-center gap-1 bg-white dark:bg-surface-100 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
                         <select
                             value={sortField}
                             onChange={(e) => setSortField(e.target.value)}

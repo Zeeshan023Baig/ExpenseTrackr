@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiBarChart2, FiPieChart, FiTrendingUp, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
@@ -8,24 +8,41 @@ import { useTour } from '../hooks/useTour'
 const Reports = () => {
   const { expenses, getExpensesByCategory } = useContext(ExpenseContext)
   const { startTour } = useTour('analytics')
+  const [filterMode, setFilterMode] = useState('all') // 'all' or 'month'
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)) // YYYY-MM
+
+  const filteredExpenses = useMemo(() => {
+    if (filterMode === 'all') return expenses
+    return expenses.filter(exp => {
+      const date = new Date(exp.date || exp.createdAt)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      return monthKey === selectedMonth
+    })
+  }, [expenses, filterMode, selectedMonth])
 
   const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, exp) => sum + exp.amount, 0)
-  }, [expenses])
+    return filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+  }, [filteredExpenses])
 
   const categoryBreakdown = useMemo(() => {
-    // Get unique categories present in expenses
-    const uniqueCategories = [...new Set(expenses.map(exp => exp.category || 'Other'))]
+    const breakdown = {}
 
-    return uniqueCategories
-      .map(cat => ({
-        name: cat,
-        amount: getExpensesByCategory(cat).reduce((sum, exp) => sum + exp.amount, 0),
-        count: getExpensesByCategory(cat).length
-      }))
+    filteredExpenses.forEach(exp => {
+      // Normalize category: trim and capitalize first letter
+      const rawCat = exp.category || 'Other'
+      const cat = rawCat.trim().charAt(0).toUpperCase() + rawCat.trim().slice(1).toLowerCase()
+
+      if (!breakdown[cat]) {
+        breakdown[cat] = { name: cat, amount: 0, count: 0 }
+      }
+      breakdown[cat].amount += exp.amount
+      breakdown[cat].count += 1
+    })
+
+    return Object.values(breakdown)
       .filter(cat => cat.amount > 0)
       .sort((a, b) => b.amount - a.amount)
-  }, [expenses, getExpensesByCategory])
+  }, [filteredExpenses])
 
   const monthlyBreakdown = useMemo(() => {
     const months = {}
@@ -118,10 +135,33 @@ const Reports = () => {
       {/* Category Breakdown */}
       {categoryBreakdown.length > 0 ? (
         <motion.div id="category-breakdown" variants={itemVariants} className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-surface-900">
               Breakdown by Category
             </h2>
+
+            <div className="flex items-center gap-2 bg-surface-100 dark:bg-surface-800 p-1 rounded-2xl border border-surface-200 dark:border-surface-700/50">
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterMode === 'all' ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20' : 'text-surface-500 hover:text-surface-700'}`}
+              >
+                All Time
+              </button>
+              <button
+                onClick={() => setFilterMode('month')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterMode === 'month' ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20' : 'text-surface-500 hover:text-surface-700'}`}
+              >
+                Monthly
+              </button>
+              {filterMode === 'month' && (
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="bg-transparent border-none text-xs font-bold text-brand-600 dark:text-brand-400 focus:ring-0 cursor-pointer ml-1 pr-2"
+                />
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

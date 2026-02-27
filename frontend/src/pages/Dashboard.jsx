@@ -225,18 +225,51 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-surface-500">
                     Showing <span className="text-surface-900 font-bold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-surface-900 font-bold">{Math.min(currentPage * ITEMS_PER_PAGE, recentExpenses.length)}</span> of <span className="text-surface-900 font-bold">{recentExpenses.length}</span>
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="btn px-4 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-all font-bold text-sm rounded-xl"
+                      className="btn px-3 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-all font-bold text-xs rounded-xl"
                     >
-                      Previous
+                      Prev
                     </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex gap-1 mx-1">
+                      {Array.from({ length: Math.ceil(recentExpenses.length / ITEMS_PER_PAGE) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        // Show current, first, last, and pages around current
+                        if (
+                          pageNum === 1 ||
+                          pageNum === Math.ceil(recentExpenses.length / ITEMS_PER_PAGE) ||
+                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${currentPage === pageNum
+                                  ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
+                                  : 'bg-surface-100 dark:bg-surface-800 text-surface-600 hover:bg-surface-200 dark:hover:bg-surface-700'
+                                }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        } else if (
+                          (pageNum === currentPage - 2 && pageNum > 1) ||
+                          (pageNum === currentPage + 2 && pageNum < Math.ceil(recentExpenses.length / ITEMS_PER_PAGE))
+                        ) {
+                          return <span key={pageNum} className="w-4 text-center text-surface-400">...</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+
                     <button
                       onClick={() => setCurrentPage(p => p + 1)}
                       disabled={currentPage * ITEMS_PER_PAGE >= recentExpenses.length}
-                      className="btn px-4 py-2 bg-brand-600 text-white shadow-lg shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-brand-700 transition-all font-bold text-sm rounded-xl"
+                      className="btn px-3 py-2 bg-brand-600 text-white shadow-lg shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-brand-700 transition-all font-bold text-xs rounded-xl"
                     >
                       Next
                     </button>
