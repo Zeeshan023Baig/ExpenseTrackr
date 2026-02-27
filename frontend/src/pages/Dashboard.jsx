@@ -9,6 +9,7 @@ import { useTour } from '../hooks/useTour'
 const Dashboard = () => {
   const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense } = useContext(ExpenseContext)
   const [currentPage, setCurrentPage] = useState(1)
+  const [pageInput, setPageInput] = useState('1')
   const ITEMS_PER_PAGE = 5
   const { startTour } = useTour()
 
@@ -29,6 +30,24 @@ const Dashboard = () => {
     // Sort by date DESC (User-selected date first, fallback to createdAt)
     return [...expenses].sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
   }, [expenses])
+
+  const totalPages = Math.ceil(recentExpenses.length / ITEMS_PER_PAGE)
+
+  // Sync pageInput with currentPage
+  useEffect(() => {
+    setPageInput(currentPage.toString())
+  }, [currentPage])
+
+  const handlePageSubmit = () => {
+    const val = parseInt(pageInput)
+    if (!isNaN(val)) {
+      setCurrentPage(Math.min(Math.max(1, val), totalPages))
+    } else {
+      setPageInput(currentPage.toString())
+    }
+  }
+
+  const currentExpenses = recentExpenses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   const monthlyExpenses = useMemo(() => {
     const now = new Date()
@@ -199,8 +218,7 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-6">
               <motion.div className="grid grid-cols-1 gap-4">
-                {recentExpenses
-                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                {currentExpenses
                   .map((expense, index) => (
                     <motion.div
                       key={expense.id}
