@@ -110,7 +110,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                 {expense.category}
               </span>
             )}
-            <span className="flex items-center gap-1.5 text-sm font-semibold text-surface-600 dark:text-surface-400">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-surface-900">
               <FiCalendar size={14} className="text-brand-500" />
               {isEditing ? (
                 <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-2 py-1">
