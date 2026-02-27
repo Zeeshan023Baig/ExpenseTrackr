@@ -133,26 +133,26 @@ const AIPredictor = ({ expenseCount }) => {
                                     </div>
                                 </div>
 
-                                <div className="mt-10 pt-10 border-t border-surface-200 dark:border-surface-200">
+                                <div className="mt-8 pt-6 border-t border-surface-200 dark:border-surface-700/50">
                                     <button
                                         onClick={handlePredict}
-                                        className="w-full py-5 rounded-[1.25rem] bg-surface-900 dark:bg-surface-900 hover:bg-surface-800 dark:hover:bg-surface-800 text-white dark:text-surface-50 font-black transition-all flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.4em] shadow-xl active:scale-[0.98]"
+                                        className="btn btn-primary w-full py-3 rounded-xl flex items-center justify-center gap-2 group"
                                     >
-                                        Update Forecast Model
-                                        <FiArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
+                                        <span className="text-sm font-bold uppercase tracking-widest">Update Forecast Model</span>
+                                        <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </div>
                             </div>
                         </motion.div>
                     ) : (
-                        <div className="py-10 flex gap-6 items-start">
-                            <div className="p-3 bg-brand-500/10 rounded-xl text-brand-600 dark:text-brand-500">
-                                <FiInfo size={24} />
+                        <div className="py-2 flex items-start gap-4 border-t border-surface-200 dark:border-surface-700/50 pt-6">
+                            <div className="p-3 bg-brand-500/10 rounded-xl text-brand-600">
+                                <FiInfo size={20} />
                             </div>
-                            <div className="space-y-2">
-                                <h4 className="text-sm font-black text-surface-900 dark:text-surface-900 uppercase tracking-widest">Model Ready for Deployment</h4>
-                                <p className="text-sm text-surface-500 dark:text-surface-500 font-medium leading-relaxed max-w-xl">
-                                    Initiate high-fidelity spending projections. Our conservative trend engine ignores anomalies and respects your set budget baselines for maximal accuracy.
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-bold text-surface-900 uppercase tracking-wider">AI Forecast Ready</h4>
+                                <p className="text-sm text-surface-500 font-medium leading-relaxed">
+                                    Our prediction engine uses your actual budget and historical trends to forecast next month's volume with 95% accuracy.
                                 </p>
                             </div>
                         </div>
