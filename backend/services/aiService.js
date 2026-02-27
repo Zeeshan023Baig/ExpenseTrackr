@@ -1,74 +1,41 @@
 /**
- * Polynomial Regression helper (Degree 2)
- * y = ax^2 + bx + c
+ * Weighted Linear Regression helper
+ * y = mx + c
+ * Weights recent data more heavily than older data.
  */
-const calculatePolynomialRegression = (data) => {
+const calculateWeightedLinearRegression = (data) => {
     const n = data.length;
-    if (n < 3) {
-        // Fallback to linear-like behavior if not enough points
-        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-        for (let i = 0; i < n; i++) {
-            sumX += data[i].x; sumY += data[i].y;
-            sumXY += data[i].x * data[i].y; sumX2 += data[i].x * data[i].x;
-        }
-        const den = (n * sumX2 - sumX * sumX);
-        const m = den === 0 ? 0 : (n * sumXY - sumX * sumY) / den;
-        const b = (sumY - m * sumX) / (n || 1);
-        return { a: 0, b: m, c: b };
-    }
+    if (n < 2) return { m: 0, c: data[0]?.y || 0 };
 
-    let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
+    let sumW = 0, sumWX = 0, sumWY = 0, sumWXX = 0, sumWXY = 0;
 
     for (let i = 0; i < n; i++) {
+        // Linear weight: newest data gets full weight, oldest gets 0.5
+        const weight = 0.5 + (0.5 * (i / (n - 1 || 1)));
         const x = data[i].x;
         const y = data[i].y;
-        const x2 = x * x;
-        sumX += x;
-        sumY += y;
-        sumX2 += x2;
-        sumX3 += x2 * x;
-        sumX4 += x2 * x2;
-        sumXY += x * y;
-        sumX2Y += x2 * y;
+
+        sumW += weight;
+        sumWX += weight * x;
+        sumWY += weight * y;
+        sumWXX += weight * x * x;
+        sumWXY += weight * x * y;
     }
 
-    // Solve the system of linear equations using Cramer's rule for 3x3
-    // [ sumX4 sumX3 sumX2 ] [ a ]   [ sumX2Y ]
-    // [ sumX3 sumX2 sumX  ] [ b ] = [ sumXY  ]
-    // [ sumX2 sumX  n     ] [ c ]   [ sumY   ]
+    const den = (sumW * sumWXX - sumWX * sumWX);
+    const m = den === 0 ? 0 : (sumW * sumWXY - sumWX * sumWY) / den;
+    const c = (sumWY - m * sumWX) / sumW;
 
-    const det = (sumX4 * (sumX2 * n - sumX * sumX)) -
-        (sumX3 * (sumX3 * n - sumX * sumX2)) +
-        (sumX2 * (sumX3 * sumX - sumX2 * sumX2));
-
-    if (Math.abs(det) < 1e-6) return { a: 0, b: 0, c: sumY / n };
-
-    const detA = (sumX2Y * (sumX2 * n - sumX * sumX)) -
-        (sumX3 * (sumXY * n - sumY * sumX)) +
-        (sumX2 * (sumXY * sumX - sumY * sumX2));
-
-    const detB = (sumX4 * (sumXY * n - sumY * sumX)) -
-        (sumX2Y * (sumX3 * n - sumX * sumX2)) +
-        (sumX2 * (sumX3 * sumY - sumX2Y * sumX));
-
-    const detC = (sumX4 * (sumX2 * sumY - sumX * sumXY)) -
-        (sumX3 * (sumX3 * sumY - sumX2 * sumXY)) +
-        (sumX2Y * (sumX3 * sumX - sumX2 * sumX2));
-
-    return {
-        a: detA / det,
-        b: detB / det,
-        c: detC / det
-    };
+    return { m, c };
 };
 
 /**
- * Predicts future expenses using historical data via Polynomial Regression.
+ * Predicts future expenses using a Conservative Weighted model.
  * @param {Array} expenses 
  */
 export const predictExpenses = async (expenses) => {
     try {
-        console.log("[Polynomial Predictor] Analyzing", expenses.length, "expenses...");
+        console.log("[Conservative Predictor] Analyzing", expenses.length, "expenses...");
 
         const sortedExpenses = [...expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
         const firstDate = new Date(new Date(sortedExpenses[0].date).setHours(0, 0, 0, 0));
@@ -80,76 +47,95 @@ export const predictExpenses = async (expenses) => {
         const dailyTotalsMap = {};
         const categoryDailyMap = {};
 
+        // Calculate a clean baseline (ignore extreme single-day spikes > 3x average)
+        const totalAmount = sortedExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+        const overallAvgDaily = totalAmount / (totalDaysRange + 1);
+
         sortedExpenses.forEach(e => {
             const date = new Date(new Date(e.date).setHours(0, 0, 0, 0));
             const dayOffset = Math.floor((date - firstDate) / (1000 * 60 * 60 * 24));
-            dailyTotalsMap[dayOffset] = (dailyTotalsMap[dayOffset] || 0) + parseFloat(e.amount);
+            const amount = parseFloat(e.amount);
+
+            // Damping logic for individual daily totals to prevent spikes from exploding the trend
+            dailyTotalsMap[dayOffset] = (dailyTotalsMap[dayOffset] || 0) + amount;
+
             if (!categoryDailyMap[e.category]) categoryDailyMap[e.category] = {};
-            categoryDailyMap[e.category][dayOffset] = (categoryDailyMap[e.category][dayOffset] || 0) + parseFloat(e.amount);
+            categoryDailyMap[e.category][dayOffset] = (categoryDailyMap[e.category][dayOffset] || 0) + amount;
         });
 
         const regressionData = [];
         for (let i = 0; i <= totalDaysRange; i++) {
-            regressionData.push({ x: i, y: dailyTotalsMap[i] || 0 });
+            const y = dailyTotalsMap[i] || 0;
+            // Cap daily spikes in history for trend analysis (max 3x avg)
+            const dampedY = y > (overallAvgDaily * 3) ? (overallAvgDaily * 1.5 + y * 0.1) : y;
+            regressionData.push({ x: i, y: dampedY });
         }
 
-        // Global Trend (Polynomial Regression Degree 2)
-        const { a, b, c } = calculatePolynomialRegression(regressionData);
+        // Weighted Linear Trend
+        const { m, c } = calculateWeightedLinearRegression(regressionData);
 
-        // Predict next 30 days with damping
-        // We damp the 'a' (acceleration) and 'b' (velocity) terms progressively 
-        // to prevent the forecast from exploding into unrealistic numbers.
+        // Predict next 30 days
+        // We blend the trend (Linear) with the historical average for stability
         let predictedTotal = 0;
         for (let i = 1; i <= 30; i++) {
             const x = totalDaysRange + i;
-            const dampingFactor = Math.pow(0.95, i); // 5% damping per day for future projection
-            const forecast = (a * dampingFactor * x * x) + (b * dampingFactor * x) + c;
+            const trendForecast = m * x + c;
+            // Progressive influence: future predictions drift towards a conservative baseline
+            const blendFactor = Math.min(0.8, 0.4 + (i / 60));
+            const forecast = (trendForecast * (1 - blendFactor)) + (overallAvgDaily * blendFactor);
             predictedTotal += Math.max(0, forecast);
         }
 
         // Category Breakdown
         const predictedCategories = Object.keys(categoryDailyMap).map(cat => {
             const catData = [];
+            let catTotalHistorical = 0;
             for (let i = 0; i <= totalDaysRange; i++) {
-                catData.push({ x: i, y: categoryDailyMap[cat][i] || 0 });
+                const val = categoryDailyMap[cat][i] || 0;
+                catData.push({ x: i, y: val });
+                catTotalHistorical += val;
             }
 
-            const catPR = calculatePolynomialRegression(catData);
-            let catTotal = 0;
+            const catAvg = catTotalHistorical / (totalDaysRange + 1);
+            const { m: catM, c: catC } = calculateWeightedLinearRegression(catData);
+
+            let catPredictedTotal = 0;
             for (let i = 1; i <= 30; i++) {
                 const x = totalDaysRange + i;
-                const dampingFactor = Math.pow(0.95, i);
-                const forecast = (catPR.a * dampingFactor * x * x) + (catPR.b * dampingFactor * x) + catPR.c;
-                catTotal += Math.max(0, forecast);
+                const forecast = catM * x + catC;
+                // Categories are even more conservative (blend 70% with average)
+                const blended = (forecast * 0.3) + (catAvg * 0.7);
+                catPredictedTotal += Math.max(0, blended);
             }
             return {
                 category: cat,
-                predictedAmount: Math.round(catTotal)
+                predictedAmount: Math.round(catPredictedTotal)
             };
-        }).filter(c => c.predictedAmount > 0).sort((a, b) => b.predictedAmount - a.predictedAmount);
+        }).filter(c => c.predictedAmount > 10).sort((a, b) => b.predictedAmount - a.predictedAmount);
+
+        // Cap the total predicted to 130% of average unless trend is very strong
+        const naiveProjection = overallAvgDaily * 30;
+        const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
 
         // Insights Generation
-        const currentTrend = 2 * a * totalDaysRange + b;
-        const acceleration = 2 * a;
-
-        const trendDirection = currentTrend > 0 ? "increasing" : "decreasing";
-        const velocityVerb = Math.abs(acceleration) > 0.1 ? (acceleration > 0 ? "speeding up" : "slowing down") : "stable";
+        const trendDirection = m > 0 ? "increasing" : "decreasing";
+        const velocity = Math.abs(m) > (overallAvgDaily * 0.05) ? "steadily" : "slightly";
 
         const insights = [
-            `Your spending is ${trendDirection} and currently ${velocityVerb} based on recent patterns.`,
-            `Top predicted hotspot: ${predictedCategories[0]?.category || 'N/A'} at ₹${predictedCategories[0]?.predictedAmount.toLocaleString('en-IN') || 0}.`,
-            acceleration > 0 ? "Watch out! Your spending growth is accelerating. Consider reviewing non-essential subscriptions." : "Great job! Your spending momentum is slowing down. Keep it up!"
+            `Based on clean patterns, your spending is ${trendDirection} ${velocity}.`,
+            `Top expected area: ${predictedCategories[0]?.category || 'N/A'} (approx ₹${predictedCategories[0]?.predictedAmount.toLocaleString('en-IN') || 0}).`,
+            m > 0 ? "Recent spikes are pushing your trend up. We've adjusted for one-time costs." : "Great! Your spending is stabilized and predictable."
         ];
 
         return {
-            predictedTotal: Math.round(predictedTotal),
-            predictedCategories,
+            predictedTotal: Math.round(finalPredicted),
+            predictedCategories: predictedCategories.slice(0, 10),
             insights,
-            confidence: Math.min(98, Math.max(70, 100 - Math.round(Math.abs(a) * 100)))
+            confidence: Math.min(95, Math.max(75, 90 - Math.round(Math.abs(m / (overallAvgDaily || 1)) * 100)))
         };
 
     } catch (error) {
-        console.error("Polynomial Prediction Error:", error);
+        console.error("Conservative Prediction Error:", error);
         throw new Error(`Forecast Failed: ${error.message}`);
     }
 };
