@@ -85,7 +85,7 @@ const Expenses = () => {
                         placeholder="Search description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="input pl-10 h-11"
+                        className="input pl-10 h-11 text-surface-900 placeholder:text-surface-500"
                     />
                 </div>
 
@@ -96,7 +96,9 @@ const Expenses = () => {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800"
+                            onClick={(e) => e.target.showPicker()}
+                            onFocus={(e) => e.target.showPicker()}
+                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-white"
                             placeholder="Start Date"
                         />
                     </div>
@@ -106,7 +108,9 @@ const Expenses = () => {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800"
+                            onClick={(e) => e.target.showPicker()}
+                            onFocus={(e) => e.target.showPicker()}
+                            className="input pl-10 h-11 text-sm bg-white dark:bg-surface-800 text-surface-900 dark:text-white"
                             placeholder="End Date"
                         />
                     </div>
@@ -118,7 +122,7 @@ const Expenses = () => {
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="input pl-10 h-11 appearance-none bg-white dark:bg-surface-800"
+                            className="input pl-10 h-11 appearance-none bg-white dark:bg-surface-800 text-surface-900"
                         >
                             <option value="All">All Categories</option>
                             {categories.map(cat => (

@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiTrash2, FiEdit2, FiCalendar, FiCheck, FiX } from 'react-icons/fi'
+import { FiTrash2, FiEdit2, FiCalendar, FiCheck, FiX, FiLayers } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { ExpenseContext } from '../context/ExpenseContext'
 
 const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
+  const { categories } = useContext(ExpenseContext)
   const [isEditing, setIsEditing] = useState(false)
   const [tempAmount, setTempAmount] = useState(expense.amount)
   const [tempDescription, setTempDescription] = useState(expense.description)
+  const [tempCategory, setTempCategory] = useState(expense.category)
   const [tempDate, setTempDate] = useState(new Date(expense.date || expense.createdAt).toISOString().split('T')[0])
   const [isUpdating, setIsUpdating] = useState(false)
 
@@ -34,10 +37,11 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   const handleSave = async () => {
     const hasAmountChanged = Number(tempAmount) !== Number(expense.amount)
     const hasDescriptionChanged = tempDescription.trim() !== expense.description.trim()
+    const hasCategoryChanged = tempCategory !== expense.category
     const originalDate = new Date(expense.date || expense.createdAt).toISOString().split('T')[0]
     const hasDateChanged = tempDate !== originalDate
 
-    if (!hasAmountChanged && !hasDescriptionChanged && !hasDateChanged) {
+    if (!hasAmountChanged && !hasDescriptionChanged && !hasDateChanged && !hasCategoryChanged) {
       setIsEditing(false)
       return
     }
@@ -57,6 +61,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
       await onUpdate(expense.id, {
         amount: Number(tempAmount),
         description: tempDescription.trim(),
+        category: tempCategory,
         date: tempDate
       })
       setIsEditing(false)
@@ -71,6 +76,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
   const handleCancel = () => {
     setTempAmount(expense.amount)
     setTempDescription(expense.description)
+    setTempCategory(expense.category)
     setTempDate(new Date(expense.date || expense.createdAt).toISOString().split('T')[0])
     setIsEditing(false)
   }
@@ -86,12 +92,41 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
       <div className="flex justify-between items-start">
         <div className="flex-1 space-y-3">
           <div className="flex items-center gap-3">
-            <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border shadow-sm ${getCategoryColor(expense.category)}`}>
-              {expense.category}
-            </span>
+            {isEditing ? (
+              <div className="relative">
+                <FiLayers size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500" />
+                <select
+                  value={tempCategory}
+                  onChange={(e) => setTempCategory(e.target.value)}
+                  className="bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-full pl-7 pr-3 py-1 text-[11px] font-black uppercase tracking-widest text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none cursor-pointer"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border shadow-sm ${getCategoryColor(expense.category)}`}>
+                {expense.category}
+              </span>
+            )}
             <span className="flex items-center gap-1.5 text-sm font-semibold text-surface-600 dark:text-surface-400">
               <FiCalendar size={14} className="text-brand-500" />
-              {formatDate(expense.date || expense.createdAt)}
+              {isEditing ? (
+                <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-2 py-1">
+                  <input
+                    type="date"
+                    value={tempDate}
+                    onChange={(e) => setTempDate(e.target.value)}
+                    onClick={(e) => e.target.showPicker()}
+                    onFocus={(e) => e.target.showPicker()}
+                    className="bg-transparent text-xs font-semibold text-surface-900 dark:text-white focus:outline-none cursor-pointer"
+                    disabled={isUpdating}
+                  />
+                </div>
+              ) : (
+                formatDate(expense.date || expense.createdAt)
+              )}
             </span>
           </div>
 
@@ -111,32 +146,20 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                       value={tempDescription}
                       onChange={(e) => setTempDescription(e.target.value)}
                       placeholder="Description"
-                      className="w-full bg-surface-50 border border-brand-200 rounded-lg px-3 py-1.5 text-lg font-semibold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      className="w-full bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-3 py-1.5 text-lg font-semibold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                       autoFocus
                       disabled={isUpdating}
                     />
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-surface-900">₹</span>
+                      <span className="text-2xl font-bold text-surface-900 dark:text-white">₹</span>
                       <input
                         type="number"
                         value={tempAmount}
                         onChange={(e) => setTempAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-32 bg-surface-50 border border-brand-200 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                        disabled={isUpdating}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 bg-surface-50 border border-brand-200 rounded-lg px-3 py-1.5">
-                      <FiCalendar size={16} className="text-brand-500" />
-                      <input
-                        type="date"
-                        value={tempDate}
-                        onChange={(e) => setTempDate(e.target.value)}
-                        onClick={(e) => e.target.showPicker()}
-                        onFocus={(e) => e.target.showPicker()}
-                        className="bg-transparent text-sm font-semibold text-surface-900 focus:outline-none cursor-pointer"
+                        className="w-32 bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                         disabled={isUpdating}
                       />
                     </div>
