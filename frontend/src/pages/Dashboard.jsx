@@ -1,4 +1,4 @@
-import { useContext, useMemo, useEffect } from 'react'
+import { useContext, useMemo, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiTrendingDown, FiCalendar, FiLayout, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid, FiHelpCircle } from 'react-icons/fi'
@@ -8,6 +8,8 @@ import { useTour } from '../hooks/useTour'
 
 const Dashboard = () => {
   const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense } = useContext(ExpenseContext)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 5
   const { startTour } = useTour()
 
   // Start tour on mount with a small delay to ensure DOM is ready
@@ -195,26 +197,53 @@ const Dashboard = () => {
           {recentExpenses.length === 0 ? (
             <EmptyState message="No expenses yet. Start tracking!" />
           ) : (
-            <motion.div className="grid grid-cols-1 gap-4">
-              {recentExpenses
-                .slice(0, 10)
-                .map((expense, index) => (
-                  <motion.div
-                    key={expense.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.3 }}
-                    className="will-change-transform"
-                  >
-                    <ExpenseCard
-                      expense={expense}
-                      onUpdate={updateExpense}
-                      onDelete={deleteExpense}
-                    />
-                  </motion.div>
-                ))}
-            </motion.div>
+            <div className="space-y-6">
+              <motion.div className="grid grid-cols-1 gap-4">
+                {recentExpenses
+                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                  .map((expense, index) => (
+                    <motion.div
+                      key={expense.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ duration: 0.3 }}
+                      className="will-change-transform"
+                    >
+                      <ExpenseCard
+                        expense={expense}
+                        onUpdate={updateExpense}
+                        onDelete={deleteExpense}
+                      />
+                    </motion.div>
+                  ))}
+              </motion.div>
+
+              {/* Pagination Controls */}
+              {recentExpenses.length > ITEMS_PER_PAGE && (
+                <div className="flex items-center justify-between pt-4 border-t border-surface-200 dark:border-surface-700/50">
+                  <p className="text-sm font-medium text-surface-500">
+                    Showing <span className="text-surface-900 font-bold">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="text-surface-900 font-bold">{Math.min(currentPage * ITEMS_PER_PAGE, recentExpenses.length)}</span> of <span className="text-surface-900 font-bold">{recentExpenses.length}</span>
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="btn px-4 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-all font-bold text-sm rounded-xl"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      disabled={currentPage * ITEMS_PER_PAGE >= recentExpenses.length}
+                      className="btn px-4 py-2 bg-brand-600 text-white shadow-lg shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-brand-700 transition-all font-bold text-sm rounded-xl"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </motion.div>
       </motion.div>
