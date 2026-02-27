@@ -54,7 +54,7 @@ const Analytics = () => {
 
   // -- Charts Data --
   const categoryData = useMemo(() => {
-    const totals = expenses.reduce((acc, exp) => {
+    const totals = currentMonthExpenses.reduce((acc, exp) => {
       const cat = exp.category || 'Other'
       acc[cat] = (acc[cat] || 0) + exp.amount
       return acc
@@ -64,7 +64,7 @@ const Analytics = () => {
       .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value)
-  }, [expenses])
+  }, [currentMonthExpenses])
 
   const weeklyTrendData = useMemo(() => {
     const endDate = new Date(trendEndDate)
