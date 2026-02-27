@@ -167,7 +167,7 @@ const AIPredictor = ({ expenseCount }) => {
                                         <div className="space-y-4">
                                             <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-4">Forecast Analysis</p>
                                             <p className="text-sm font-semibold text-surface-600 leading-relaxed dark:text-surface-400">
-                                                Our AI analysis shows an {prediction.predictedTotal > (prediction.behavioral.burnRate * 30) ? 'increase' : 'uptick'} in predicted spending. We recommend maintaining your daily limit of ₹{prediction.behavioral.dailyBudgetIQ.toLocaleString('en-IN')} to stay on track.
+                                                Our AI analysis shows an {prediction.predictedTotal > ((prediction.behavioral?.burnRate || 0) * 30) ? 'increase' : 'uptick'} in predicted spending. We recommend maintaining your daily limit of ₹{(prediction.behavioral?.dailyBudgetIQ || 0).toLocaleString('en-IN')} to stay on track.
                                             </p>
                                         </div>
                                         <button
