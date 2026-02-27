@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { ExpenseContext } from '../context/ExpenseContext'
 
 const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
-  const { categories } = useContext(ExpenseContext)
+  const { categories, addCategory } = useContext(ExpenseContext)
   const [isEditing, setIsEditing] = useState(false)
   const [tempAmount, setTempAmount] = useState(expense.amount)
   const [tempDescription, setTempDescription] = useState(expense.description)
@@ -58,10 +58,15 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
 
     setIsUpdating(true)
     try {
+      // If categories doesn't include the new one, add it first
+      if (tempCategory.trim() && !categories.includes(tempCategory.trim())) {
+        await addCategory(tempCategory.trim())
+      }
+
       await onUpdate(expense.id, {
         amount: Number(tempAmount),
         description: tempDescription.trim(),
-        category: tempCategory,
+        category: tempCategory.trim(),
         date: tempDate
       })
       setIsEditing(false)
@@ -94,16 +99,19 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
           <div className="flex items-center gap-3">
             {isEditing ? (
               <div className="relative">
-                <FiLayers size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500" />
-                <select
+                <FiLayers size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-500 pointer-events-none" />
+                <input
+                  list={`category-list-${expense.id}`}
                   value={tempCategory}
                   onChange={(e) => setTempCategory(e.target.value)}
-                  className="bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-full pl-7 pr-3 py-1 text-[11px] font-black uppercase tracking-widest text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none cursor-pointer"
-                >
+                  placeholder="Category..."
+                  className="bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-full pl-7 pr-3 py-1 text-[11px] font-black uppercase tracking-widest text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 w-32"
+                />
+                <datalist id={`category-list-${expense.id}`}>
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                </select>
+                </datalist>
               </div>
             ) : (
               <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border shadow-sm ${getCategoryColor(expense.category)}`}>

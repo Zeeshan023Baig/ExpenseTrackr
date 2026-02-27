@@ -10,8 +10,6 @@ const Dashboard = () => {
   const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense, addCategory } = useContext(ExpenseContext)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageInput, setPageInput] = useState('1')
-  const [newCatName, setNewCatName] = useState('')
-  const [isAddingCat, setIsAddingCat] = useState(false)
   const ITEMS_PER_PAGE = 5
   const { startTour } = useTour()
 
@@ -39,15 +37,6 @@ const Dashboard = () => {
   useEffect(() => {
     setPageInput(currentPage.toString())
   }, [currentPage])
-
-  const handlePageSubmit = () => {
-    const val = parseInt(pageInput)
-    if (!isNaN(val)) {
-      setCurrentPage(Math.min(Math.max(1, val), totalPages))
-    } else {
-      setPageInput(currentPage.toString())
-    }
-  }
 
   const currentExpenses = recentExpenses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
@@ -148,47 +137,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Manage Categories Section */}
-          <div className="mt-6 flex flex-wrap items-center gap-3 relative z-10">
-            {isAddingCat ? (
-              <form onSubmit={handleAddCategory} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Category name"
-                  className="bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-3 py-1.5 text-xs font-semibold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  autoFocus
-                />
-                <button type="submit" className="p-1.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors">
-                  <FiPlus size={16} />
-                </button>
-                <button type="button" onClick={() => setIsAddingCat(false)} className="p-1.5 text-surface-400 hover:text-red-600 transition-colors">
-                  <FiX size={16} />
-                </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setIsAddingCat(true)}
-                className="flex items-center gap-2 text-xs font-bold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-500/30 transition-all"
-              >
-                <FiPlus /> Add Category
-              </button>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {categories.slice(0, 5).map(cat => (
-                <span key={cat} className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-surface-100 dark:bg-surface-800 text-surface-500 rounded-full border border-surface-200 dark:border-surface-700">
-                  {cat}
-                </span>
-              ))}
-              {categories.length > 5 && (
-                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 text-surface-400">
-                  +{categories.length - 5} more
-                </span>
-              )}
-            </div>
-          </div>
 
           <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
             <motion.div

@@ -7,7 +7,7 @@ import { ExpenseContext } from '../context/ExpenseContext'
 import api from '../services/api'
 
 const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
-  const { categories } = useContext(ExpenseContext)
+  const { categories, addCategory } = useContext(ExpenseContext)
   const [isScanning, setIsScanning] = useState(false)
   const [previewUrls, setPreviewUrls] = useState([])
 
@@ -98,14 +98,25 @@ const ExpenseForm = ({ onSubmit, initialData = null, onCancel }) => {
       return
     }
 
-    const trimmedCategory = formData.category.trim()
+    const trimmedCategory = formData.category.trim() || 'Other'
 
-    onSubmit({ ...formData, category: trimmedCategory || 'Other' })
+    const submit = async () => {
+      try {
+        if (trimmedCategory !== 'Other' && !categories.includes(trimmedCategory)) {
+          await addCategory(trimmedCategory)
+        }
+        onSubmit({ ...formData, category: trimmedCategory })
 
-    if (!initialData) {
-      setFormData({ description: '', amount: '', category: 'Other', date: new Date().toISOString().split('T')[0] })
-      setPreviewUrls([])
+        if (!initialData) {
+          setFormData({ description: '', amount: '', category: 'Other', date: new Date().toISOString().split('T')[0] })
+          setPreviewUrls([])
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error)
+      }
     }
+
+    submit()
   }
 
   return (
