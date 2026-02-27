@@ -239,19 +239,15 @@ const Dashboard = () => {
                       <input
                         type="number"
                         min="1"
-                        max={Math.ceil(recentExpenses.length / ITEMS_PER_PAGE)}
-                        value={currentPage}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          const max = Math.ceil(recentExpenses.length / ITEMS_PER_PAGE);
-                          if (!isNaN(val)) {
-                            setCurrentPage(Math.min(Math.max(1, val), max));
-                          }
-                        }}
-                        className="w-12 h-9 text-center bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-900 font-bold rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-xs"
+                        max={totalPages}
+                        value={pageInput}
+                        onChange={(e) => setPageInput(e.target.value)}
+                        onBlur={handlePageSubmit}
+                        onKeyDown={(e) => e.key === 'Enter' && handlePageSubmit()}
+                        className="w-12 h-9 text-center bg-surface-100 dark:bg-surface-100 border border-surface-200 dark:border-surface-700 text-surface-900 font-bold rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-xs"
                       />
                       <span className="text-xs font-semibold text-surface-400">
-                        of {Math.ceil(recentExpenses.length / ITEMS_PER_PAGE)}
+                        of {totalPages}
                       </span>
                     </div>
 
