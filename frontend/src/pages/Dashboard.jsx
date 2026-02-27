@@ -234,36 +234,25 @@ const Dashboard = () => {
                       Prev
                     </button>
 
-                    {/* Page Numbers */}
-                    <div className="flex gap-1 mx-1">
-                      {Array.from({ length: Math.ceil(recentExpenses.length / ITEMS_PER_PAGE) }).map((_, i) => {
-                        const pageNum = i + 1;
-                        // Show current, first, last, and pages around current
-                        if (
-                          pageNum === 1 ||
-                          pageNum === Math.ceil(recentExpenses.length / ITEMS_PER_PAGE) ||
-                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                        ) {
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-9 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${currentPage === pageNum
-                                  ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
-                                  : 'bg-surface-100 dark:bg-surface-800 text-surface-600 hover:bg-surface-200 dark:hover:bg-surface-700'
-                                }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        } else if (
-                          (pageNum === currentPage - 2 && pageNum > 1) ||
-                          (pageNum === currentPage + 2 && pageNum < Math.ceil(recentExpenses.length / ITEMS_PER_PAGE))
-                        ) {
-                          return <span key={pageNum} className="w-4 text-center text-surface-400">...</span>;
-                        }
-                        return null;
-                      })}
+                    {/* Page Jumper Input */}
+                    <div className="flex items-center gap-2 mx-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max={Math.ceil(recentExpenses.length / ITEMS_PER_PAGE)}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          const max = Math.ceil(recentExpenses.length / ITEMS_PER_PAGE);
+                          if (!isNaN(val)) {
+                            setCurrentPage(Math.min(Math.max(1, val), max));
+                          }
+                        }}
+                        className="w-12 h-9 text-center bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-900 font-bold rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-xs"
+                      />
+                      <span className="text-xs font-semibold text-surface-400">
+                        of {Math.ceil(recentExpenses.length / ITEMS_PER_PAGE)}
+                      </span>
                     </div>
 
                     <button
