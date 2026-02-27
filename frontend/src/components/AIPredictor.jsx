@@ -100,7 +100,7 @@ const AIPredictor = ({ expenseCount }) => {
                                 <div className="p-6 bg-white dark:bg-surface-100/10 rounded-3xl border border-surface-200 dark:border-brand-500/30 shadow-sm relative overflow-hidden">
                                     <p className="text-xs font-bold text-surface-400 uppercase tracking-widest mb-1 dark:text-surface-500">Expected Spend (Next 30 Days)</p>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl font-black text-surface-900 dark:text-surface-950 tracking-tighter">₹{prediction.predictedTotal.toLocaleString()}</span>
+                                        <span className="text-4xl font-black text-surface-900 dark:text-surface-950 tracking-tighter">₹{prediction.predictedTotal.toLocaleString('en-IN')}</span>
                                         <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1">
                                             <FiTrendingUp /> {prediction.confidence}% Confidence
                                         </span>
@@ -119,7 +119,7 @@ const AIPredictor = ({ expenseCount }) => {
                                                     <div className="w-2 h-2 bg-brand-500 rounded-full" />
                                                     <span className="font-bold text-surface-700 dark:text-surface-800">{cat.category}</span>
                                                 </div>
-                                                <span className="font-black text-surface-900 dark:text-surface-950">₹{cat.predictedAmount.toLocaleString()}</span>
+                                                <span className="font-black text-surface-900 dark:text-surface-950">₹{cat.predictedAmount.toLocaleString('en-IN')}</span>
                                             </div>
                                         ))}
                                     </div>

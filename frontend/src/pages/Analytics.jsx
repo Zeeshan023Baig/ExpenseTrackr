@@ -112,7 +112,7 @@ const Analytics = () => {
       return (
         <div className="bg-white dark:bg-surface-200 p-3 rounded-xl border border-surface-200 dark:border-surface-300 shadow-xl">
           <p className="text-xs font-bold text-surface-400 dark:text-surface-500 mb-1 uppercase tracking-wider">{label}</p>
-          <p className="text-xl font-black text-surface-900">₹{payload[0].value.toLocaleString()}</p>
+          <p className="text-xl font-black text-surface-900">₹{payload[0].value.toLocaleString('en-IN')}</p>
         </div>
       )
     }
@@ -163,7 +163,7 @@ const Analytics = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 group">
-                  <span className="text-5xl font-black text-surface-900 tracking-tighter">₹{budget.toLocaleString()}</span>
+                  <span className="text-5xl font-black text-surface-900 tracking-tighter">₹{budget.toLocaleString('en-IN')}</span>
                   <button onClick={() => { setNewBudget(budget); setIsEditingBudget(true) }} className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-brand-50 dark:hover:bg-surface-800 rounded-lg text-brand-600">
                     <FiEdit2 size={18} />
                   </button>
@@ -179,7 +179,7 @@ const Analytics = () => {
             <div className="flex justify-between items-end">
               <div>
                 <span className="text-sm font-bold text-surface-500 dark:text-surface-400 uppercase tracking-wider block mb-1">Total Spent</span>
-                <span className="text-2xl font-bold text-surface-900">₹{totalCurrentMonthExpenses.toLocaleString()}</span>
+                <span className="text-2xl font-bold text-surface-900">₹{totalCurrentMonthExpenses.toLocaleString('en-IN')}</span>
               </div>
               <div className="text-right">
                 <span className={`text-lg font-black ${totalCurrentMonthExpenses > budget ? 'text-red-500' : 'text-brand-600'}`}>

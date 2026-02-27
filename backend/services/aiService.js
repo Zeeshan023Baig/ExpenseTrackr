@@ -96,11 +96,14 @@ export const predictExpenses = async (expenses) => {
         // Global Trend (Polynomial Regression Degree 2)
         const { a, b, c } = calculatePolynomialRegression(regressionData);
 
-        // Predict next 30 days
+        // Predict next 30 days with damping
+        // We damp the 'a' (acceleration) and 'b' (velocity) terms progressively 
+        // to prevent the forecast from exploding into unrealistic numbers.
         let predictedTotal = 0;
         for (let i = 1; i <= 30; i++) {
             const x = totalDaysRange + i;
-            const forecast = a * x * x + b * x + c;
+            const dampingFactor = Math.pow(0.95, i); // 5% damping per day for future projection
+            const forecast = (a * dampingFactor * x * x) + (b * dampingFactor * x) + c;
             predictedTotal += Math.max(0, forecast);
         }
 
@@ -115,7 +118,9 @@ export const predictExpenses = async (expenses) => {
             let catTotal = 0;
             for (let i = 1; i <= 30; i++) {
                 const x = totalDaysRange + i;
-                catTotal += Math.max(0, catPR.a * x * x + catPR.b * x + catPR.c);
+                const dampingFactor = Math.pow(0.95, i);
+                const forecast = (catPR.a * dampingFactor * x * x) + (catPR.b * dampingFactor * x) + catPR.c;
+                catTotal += Math.max(0, forecast);
             }
             return {
                 category: cat,
@@ -124,15 +129,15 @@ export const predictExpenses = async (expenses) => {
         }).filter(c => c.predictedAmount > 0).sort((a, b) => b.predictedAmount - a.predictedAmount);
 
         // Insights Generation
-        const currentTrend = 2 * a * totalDaysRange + b; // Velocity at end of history
-        const acceleration = 2 * a; // Constant acceleration in degree 2
+        const currentTrend = 2 * a * totalDaysRange + b;
+        const acceleration = 2 * a;
 
         const trendDirection = currentTrend > 0 ? "increasing" : "decreasing";
         const velocityVerb = Math.abs(acceleration) > 0.1 ? (acceleration > 0 ? "speeding up" : "slowing down") : "stable";
 
         const insights = [
             `Your spending is ${trendDirection} and currently ${velocityVerb} based on recent patterns.`,
-            `Top predicted hotspot: ${predictedCategories[0]?.category || 'N/A'} at ₹${predictedCategories[0]?.predictedAmount.toLocaleString() || 0}.`,
+            `Top predicted hotspot: ${predictedCategories[0]?.category || 'N/A'} at ₹${predictedCategories[0]?.predictedAmount.toLocaleString('en-IN') || 0}.`,
             acceleration > 0 ? "Watch out! Your spending growth is accelerating. Consider reviewing non-essential subscriptions." : "Great job! Your spending momentum is slowing down. Keep it up!"
         ];
 

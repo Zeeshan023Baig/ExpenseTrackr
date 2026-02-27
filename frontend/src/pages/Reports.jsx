@@ -112,7 +112,7 @@ const Reports = () => {
       <motion.div id="analytics-metrics" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Expenses"
-          value={`₹${totalExpenses.toFixed(2)}`}
+          value={`₹${totalExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={FiBarChart2}
           color="brand"
         />
@@ -125,7 +125,7 @@ const Reports = () => {
         {highestExpense && (
           <StatCard
             title="Highest Expense"
-            value={`₹${highestExpense.amount.toFixed(2)}`}
+            value={`₹${highestExpense.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             icon={FiPieChart}
             color="red"
           />
@@ -181,7 +181,7 @@ const Reports = () => {
                 </div>
 
                 <p className="text-3xl font-bold text-brand-600 dark:text-brand-400 mb-4 drop-shadow-sm">
-                  ₹{category.amount.toFixed(2)}
+                  ₹{category.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
 
                 {/* Progress Bar */}
@@ -231,7 +231,7 @@ const Reports = () => {
                   })}
                 </p>
                 <p className="text-3xl font-bold text-surface-900 tracking-tight">
-                  ₹{data.amount.toFixed(2)}
+                  ₹{data.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </motion.div>
             ))}

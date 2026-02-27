@@ -135,8 +135,8 @@ const Dashboard = () => {
             <div>
               <h3 className="text-sm font-semibold text-surface-500 uppercase tracking-wider">Monthly Budget</h3>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-bold text-surface-900">₹{totalMonthlyExpenses.toLocaleString()}</span>
-                <span className="text-surface-500 font-medium">of ₹{budget.toLocaleString()}</span>
+                <span className="text-3xl font-bold text-surface-900">₹{totalMonthlyExpenses.toLocaleString('en-IN')}</span>
+                <span className="text-surface-500 font-medium">of ₹{budget.toLocaleString('en-IN')}</span>
               </div>
               <div className="text-right">
                 <span className={`text-lg font-bold ${totalMonthlyExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
@@ -170,13 +170,13 @@ const Dashboard = () => {
         <motion.div id="stats-section" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Expenses"
-            value={`₹${totalExpenses.toLocaleString()}`}
+            value={`₹${totalExpenses.toLocaleString('en-IN')}`}
             icon={FiTrendingDown}
             color="red"
           />
           <StatCard
             title="This Month"
-            value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}`}
+            value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString('en-IN')}`}
             icon={FiCalendar}
             color="blue"
           />
