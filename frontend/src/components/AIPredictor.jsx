@@ -121,11 +121,11 @@ const AIPredictor = ({ expenseCount }) => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="p-5 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
                                                 <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Peak Day</p>
-                                                <p className="text-lg font-black text-indigo-900 dark:text-indigo-100">{prediction.behavioral.peakDay}</p>
+                                                <p className="text-lg font-black text-indigo-900 dark:text-indigo-100">{prediction.behavioral?.peakDay || 'Not Available'}</p>
                                             </div>
                                             <div className="p-5 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
                                                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Weekend Ratio</p>
-                                                <p className="text-lg font-black text-emerald-900 dark:text-emerald-100">{(prediction.behavioral.weekendRatio * 100).toFixed(0)}% <span className="text-xs opacity-50 font-bold ml-1">of total</span></p>
+                                                <p className="text-lg font-black text-emerald-900 dark:text-emerald-100">{((prediction.behavioral?.weekendRatio || 0) * 100).toFixed(0)}% <span className="text-xs opacity-50 font-bold ml-1">of total</span></p>
                                             </div>
                                         </div>
 

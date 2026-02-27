@@ -49,14 +49,13 @@ export const predictExpenses = async (expenses) => {
 
         // Calculate a clean baseline (ignore extreme single-day spikes > 3x average)
         const totalAmount = sortedExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-        const overallAvgDaily = totalAmount / (totalDaysRange + 1);
+        const overallAvgDaily = totalAmount / (totalDaysRange + 1 || 1);
 
         sortedExpenses.forEach(e => {
             const date = new Date(new Date(e.date).setHours(0, 0, 0, 0));
             const dayOffset = Math.floor((date - firstDate) / (1000 * 60 * 60 * 24));
             const amount = parseFloat(e.amount);
 
-            // Damping logic for individual daily totals to prevent spikes from exploding the trend
             dailyTotalsMap[dayOffset] = (dailyTotalsMap[dayOffset] || 0) + amount;
 
             if (!categoryDailyMap[e.category]) categoryDailyMap[e.category] = {};
@@ -66,27 +65,21 @@ export const predictExpenses = async (expenses) => {
         const regressionData = [];
         for (let i = 0; i <= totalDaysRange; i++) {
             const y = dailyTotalsMap[i] || 0;
-            // Cap daily spikes in history for trend analysis (max 3x avg)
             const dampedY = y > (overallAvgDaily * 3) ? (overallAvgDaily * 1.5 + y * 0.1) : y;
             regressionData.push({ x: i, y: dampedY });
         }
 
-        // Weighted Linear Trend
         const { m, c } = calculateWeightedLinearRegression(regressionData);
 
-        // Predict next 30 days
-        // We blend the trend (Linear) with the historical average for stability
         let predictedTotal = 0;
         for (let i = 1; i <= 30; i++) {
             const x = totalDaysRange + i;
             const trendForecast = m * x + c;
-            // Progressive influence: future predictions drift towards a conservative baseline
             const blendFactor = Math.min(0.8, 0.4 + (i / 60));
             const forecast = (trendForecast * (1 - blendFactor)) + (overallAvgDaily * blendFactor);
             predictedTotal += Math.max(0, forecast);
         }
 
-        // Category Breakdown
         const predictedCategories = Object.keys(categoryDailyMap).map(cat => {
             const catData = [];
             let catTotalHistorical = 0;
@@ -96,14 +89,13 @@ export const predictExpenses = async (expenses) => {
                 catTotalHistorical += val;
             }
 
-            const catAvg = catTotalHistorical / (totalDaysRange + 1);
+            const catAvg = catTotalHistorical / (totalDaysRange + 1 || 1);
             const { m: catM, c: catC } = calculateWeightedLinearRegression(catData);
 
             let catPredictedTotal = 0;
             for (let i = 1; i <= 30; i++) {
                 const x = totalDaysRange + i;
                 const forecast = catM * x + catC;
-                // Categories are even more conservative (blend 70% with average)
                 const blended = (forecast * 0.3) + (catAvg * 0.7);
                 catPredictedTotal += Math.max(0, blended);
             }
@@ -112,10 +104,6 @@ export const predictExpenses = async (expenses) => {
                 predictedAmount: Math.round(catPredictedTotal)
             };
         }).filter(c => c.predictedAmount > 10).sort((a, b) => b.predictedAmount - a.predictedAmount);
-
-        // Cap the total predicted to 130% of average unless trend is very strong
-        const naiveProjection = overallAvgDaily * 30;
-        const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
 
         // Behavioral Analytics
         const weekdayTotals = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -132,24 +120,21 @@ export const predictExpenses = async (expenses) => {
         });
 
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const maxDayEntry = Object.entries(weekdayTotals).reduce((a, b) => b[1] > a[1] ? b : a);
+        const maxDayEntry = Object.entries(weekdayTotals).reduce((a, b) => b[1] > a[1] ? b : a, ["0", 0]);
         const peakDay = dayNames[maxDayEntry[0]];
 
-        // Budget IQ Calculation (Assuming a monthly cycle)
         const now = new Date();
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysPassed = now.getDate();
+        const daysPassed = now.getDate() || 1;
         const daysLeft = daysInMonth - daysPassed || 1;
 
         const monthlySpent = sortedExpenses
-            .filter(e => new Date(e.date).getMonth() === now.getMonth())
+            .filter(e => new Date(e.date).getMonth() === now.getMonth() && new Date(e.date).getFullYear() === now.getFullYear())
             .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
-        // Cap the total predicted to 130% of average unless trend is very strong
         const naiveProjection = overallAvgDaily * 30;
         const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
 
-        // Insights Generation
         const trendDirection = m > 0 ? "increasing" : "decreasing";
         const velocity = Math.abs(m) > (overallAvgDaily * 0.05) ? "steadily" : "slightly";
 
@@ -168,7 +153,7 @@ export const predictExpenses = async (expenses) => {
                 peakDay,
                 weekendRatio: weekendSpend / (weekendSpend + weekdaySpend || 1),
                 dailyBudgetIQ: Math.max(0, Math.round((naiveProjection - monthlySpent) / daysLeft)),
-                burnRate: Math.round(monthlySpent / daysPassed || 1)
+                burnRate: Math.round(monthlySpent / daysPassed)
             },
             confidence: Math.min(95, Math.max(75, 90 - Math.round(Math.abs(m / (overallAvgDaily || 1)) * 100)))
         };
