@@ -38,6 +38,15 @@ const Dashboard = () => {
     setPageInput(currentPage.toString())
   }, [currentPage])
 
+  const handlePageSubmit = () => {
+    const val = parseInt(pageInput)
+    if (!isNaN(val)) {
+      setCurrentPage(Math.min(Math.max(1, val), totalPages))
+    } else {
+      setPageInput(currentPage.toString())
+    }
+  }
+
   const currentExpenses = recentExpenses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   const monthlyExpenses = useMemo(() => {
