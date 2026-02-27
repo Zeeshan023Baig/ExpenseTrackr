@@ -107,11 +107,11 @@ const AIPredictor = ({ expenseCount }) => {
                                         <div className="space-y-4">
                                             <div>
                                                 <p className="text-xs font-bold text-surface-500 mb-1">Safe to Spend / Day</p>
-                                                <p className="text-3xl font-black text-surface-900">₹{prediction.behavioral.dailyBudgetIQ.toLocaleString('en-IN')}</p>
+                                                <p className="text-3xl font-black text-surface-900">₹{(prediction.behavioral?.dailyBudgetIQ || 0).toLocaleString('en-IN')}</p>
                                             </div>
                                             <div className="pt-4 border-t border-surface-200 dark:border-surface-700">
                                                 <p className="text-xs font-bold text-surface-500 mb-1">Current Burn Rate</p>
-                                                <p className="text-xl font-bold text-surface-700 dark:text-surface-800">₹{prediction.behavioral.burnRate.toLocaleString('en-IN')} <span className="text-xs opacity-50">/ day</span></p>
+                                                <p className="text-xl font-bold text-surface-700 dark:text-surface-800">₹{(prediction.behavioral?.burnRate || 0).toLocaleString('en-IN')} <span className="text-xs opacity-50">/ day</span></p>
                                             </div>
                                         </div>
                                     </div>
