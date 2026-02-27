@@ -98,7 +98,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                 <select
                   value={tempCategory}
                   onChange={(e) => setTempCategory(e.target.value)}
-                  className="bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-full pl-7 pr-3 py-1 text-[11px] font-black uppercase tracking-widest text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none cursor-pointer"
+                  className="bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-full pl-7 pr-3 py-1 text-[11px] font-black uppercase tracking-widest text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none cursor-pointer"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -113,7 +113,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
             <span className="flex items-center gap-1.5 text-sm font-semibold text-surface-900">
               <FiCalendar size={14} className="text-brand-500" />
               {isEditing ? (
-                <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-2 py-1">
+                <div className="flex items-center gap-2 bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-2 py-1">
                   <input
                     type="date"
                     value={tempDate}
@@ -146,7 +146,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                       value={tempDescription}
                       onChange={(e) => setTempDescription(e.target.value)}
                       placeholder="Description"
-                      className="w-full bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-3 py-1.5 text-lg font-semibold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      className="w-full bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-3 py-1.5 text-lg font-semibold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                       autoFocus
                       disabled={isUpdating}
                     />
@@ -159,7 +159,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                         value={tempAmount}
                         onChange={(e) => setTempAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-32 bg-surface-50 dark:bg-surface-800 border border-brand-200 dark:border-brand-500/30 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                        className="w-32 bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                         disabled={isUpdating}
                       />
                     </div>
