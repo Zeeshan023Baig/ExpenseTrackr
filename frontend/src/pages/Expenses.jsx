@@ -9,7 +9,6 @@ const Expenses = () => {
 
     // State for filters and sorting
     const [searchTerm, setSearchTerm] = useState('')
-    const [categoryFilter, setCategoryFilter] = useState('All')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
     const [sortField, setSortField] = useState('date') // 'date', 'amount'
@@ -20,7 +19,6 @@ const Expenses = () => {
         return expenses
             .filter(expense => {
                 const matchesSearch = expense.description?.toLowerCase().includes(searchTerm.toLowerCase())
-                const matchesCategory = categoryFilter === 'All' || expense.category === categoryFilter
 
                 const expDate = new Date(expense.date || expense.createdAt)
                 const start = startDate ? new Date(startDate) : null
@@ -30,7 +28,7 @@ const Expenses = () => {
 
                 const matchesDate = (!start || expDate >= start) && (!end || expDate <= end)
 
-                return matchesSearch && matchesCategory && matchesDate
+                return matchesSearch && matchesDate
             })
             .sort((a, b) => {
                 let comparison = 0
@@ -42,7 +40,7 @@ const Expenses = () => {
 
                 return sortOrder === 'desc' ? comparison : -comparison
             })
-    }, [expenses, searchTerm, categoryFilter, startDate, endDate, sortField, sortOrder])
+    }, [expenses, searchTerm, startDate, endDate, sortField, sortOrder])
 
     const toggleSortOrder = () => {
         setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
@@ -117,20 +115,7 @@ const Expenses = () => {
                 </div>
 
                 <div className="flex gap-2">
-                    <div className="relative flex-1">
-                        <FiLayers className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-600 dark:text-surface-400" />
-                        <select
-                            value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="input pl-10 h-11 appearance-none bg-white dark:bg-surface-800 text-surface-900"
-                        >
-                            <option value="All">All Categories</option>
-                            {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-1">
+                    <div className="flex items-center gap-1 bg-white dark:bg-surface-800 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
                         <select
                             value={sortField}
                             onChange={(e) => setSortField(e.target.value)}
@@ -152,7 +137,7 @@ const Expenses = () => {
 
             {/* Expenses List */}
             {filteredAndSortedExpenses.length === 0 ? (
-                <EmptyState message={searchTerm || categoryFilter !== 'All' || startDate || endDate ? "No matches found for your current filters." : "No expenses yet."} />
+                <EmptyState message={searchTerm || startDate || endDate ? "No matches found for your current filters." : "No expenses yet."} />
             ) : (
                 <motion.div
                     variants={containerVariants}
