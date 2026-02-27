@@ -81,24 +81,24 @@ const AIPredictor = ({ expenseCount }) => {
                             className="grid grid-cols-1 lg:grid-cols-2 gap-8"
                         >
                             <div className="space-y-6">
-                                <div className="p-6 bg-white dark:bg-surface-100/10 rounded-3xl border border-brand-500/30 relative overflow-hidden shadow-sm">
-                                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em] mb-1">Expected Spend (Next 30 Days)</p>
+                                <div className="p-6 bg-white dark:bg-surface-800/20 rounded-3xl border border-brand-500/30 relative overflow-hidden shadow-sm">
+                                    <p className="text-[10px] font-black text-surface-400 dark:text-surface-500 uppercase tracking-[0.2em] mb-1">Expected Spend (Next 30 Days)</p>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl font-black text-surface-900 dark:text-surface-950 tracking-tighter">₹{prediction.predictedTotal.toLocaleString('en-IN')}</span>
+                                        <span className="text-4xl font-black text-surface-900 dark:text-white tracking-tighter">₹{prediction.predictedTotal.toLocaleString('en-IN')}</span>
                                         <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1 shadow-sm">
                                             {prediction.confidence}% Conf
                                         </span>
                                     </div>
-                                    <FiTrendingUp className="absolute top-0 right-0 p-4 opacity-5" size={80} />
+                                    <FiTrendingUp className="absolute top-0 right-0 p-4 opacity-5 dark:opacity-10" size={80} />
                                 </div>
 
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest pl-1">Category Predictions</p>
+                                    <p className="text-[10px] font-black text-surface-400 dark:text-surface-500 uppercase tracking-widest pl-1">Category Predictions</p>
                                     <div className="space-y-3">
                                         {prediction.predictedCategories.slice(0, 4).map((cat, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-4 bg-surface-50 dark:bg-brand-950/10 rounded-2xl border border-surface-200/50 hover:border-brand-500/20 transition-colors">
-                                                <span className="text-xs font-bold text-surface-700 dark:text-surface-500">{cat.category}</span>
-                                                <span className="text-sm font-black text-surface-900">₹{cat.predictedAmount.toLocaleString('en-IN')}</span>
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-surface-50 dark:bg-surface-800/40 rounded-2xl border border-surface-200/50 dark:border-surface-700 hover:border-brand-500/20 transition-colors">
+                                                <span className="text-xs font-bold text-surface-700 dark:text-surface-300">{cat.category}</span>
+                                                <span className="text-sm font-black text-surface-900 dark:text-white">₹{cat.predictedAmount.toLocaleString('en-IN')}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -107,12 +107,12 @@ const AIPredictor = ({ expenseCount }) => {
 
                             <div className="flex flex-col justify-between py-2">
                                 <div className="space-y-6">
-                                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest">AI Trend Analysis</p>
+                                    <p className="text-[10px] font-black text-surface-400 dark:text-surface-500 uppercase tracking-widest">AI Trend Analysis</p>
                                     <div className="space-y-4">
                                         {prediction.insights.slice(0, 3).map((insight, idx) => (
-                                            <div key={idx} className="flex gap-4 p-5 bg-white/50 dark:bg-brand-950/20 rounded-3xl border border-surface-200 dark:border-brand-500/10 shadow-sm">
+                                            <div key={idx} className="flex gap-4 p-5 bg-white/50 dark:bg-surface-800/30 rounded-3xl border border-surface-200 dark:border-surface-700 shadow-sm">
                                                 <FiCheckCircle className="text-brand-500 mt-1 flex-shrink-0" size={16} />
-                                                <p className="text-sm font-semibold text-surface-700 dark:text-surface-100 leading-relaxed italic">
+                                                <p className="text-sm font-semibold text-surface-700 dark:text-white leading-relaxed italic">
                                                     "{insight}"
                                                 </p>
                                             </div>
