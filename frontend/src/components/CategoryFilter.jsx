@@ -14,8 +14,8 @@ const CategoryFilter = ({ categories, selected, onSelect }) => {
           whileTap={{ scale: 0.95 }}
           onClick={() => onSelect(null)}
           className={`px-4 py-2 rounded-full font-medium transition-colors ${selected === null
-              ? 'bg-brand-600 text-white'
-              : 'bg-surface-200 text-surface-700 hover:bg-surface-300'
+            ? 'bg-brand-600 text-white'
+            : 'bg-surface-200 text-surface-700 hover:bg-surface-300'
             }`}
         >
           All
@@ -27,8 +27,8 @@ const CategoryFilter = ({ categories, selected, onSelect }) => {
             whileTap={{ scale: 0.95 }}
             onClick={() => onSelect(category)}
             className={`px-4 py-2 rounded-full font-medium transition-colors ${selected === category
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-brand-600 text-white'
+              : 'bg-surface-200 text-surface-700 hover:bg-surface-300'
               }`}
           >
             {category}
