@@ -133,12 +133,12 @@ const AIPredictor = ({ expenseCount }) => {
                                     </div>
                                 </div>
 
-                                <div className="mt-10 pt-10 border-t border-surface-200/40 dark:border-surface-700/40">
+                                <div className="mt-10 pt-10 border-t border-surface-200 dark:border-surface-200">
                                     <button
                                         onClick={handlePredict}
-                                        className="w-full py-5 rounded-[1.25rem] bg-surface-900 dark:bg-white dark:hover:bg-brand-50 hover:bg-surface-800 text-white dark:text-surface-900 font-black transition-all flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98]"
+                                        className="w-full py-5 rounded-[1.25rem] bg-surface-900 dark:bg-surface-900 hover:bg-surface-800 dark:hover:bg-surface-800 text-white dark:text-surface-50 font-black transition-all flex items-center justify-center gap-3 group text-xs uppercase tracking-[0.4em] shadow-xl active:scale-[0.98]"
                                     >
-                                        Refresh AI Model
+                                        Update Forecast Model
                                         <FiArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-300" />
                                     </button>
                                 </div>
@@ -146,12 +146,12 @@ const AIPredictor = ({ expenseCount }) => {
                         </motion.div>
                     ) : (
                         <div className="py-10 flex gap-6 items-start">
-                            <div className="p-3 bg-brand-500/10 rounded-xl text-brand-600 dark:text-brand-400">
+                            <div className="p-3 bg-brand-500/10 rounded-xl text-brand-600 dark:text-brand-500">
                                 <FiInfo size={24} />
                             </div>
                             <div className="space-y-2">
-                                <h4 className="text-sm font-black text-surface-900 dark:text-white uppercase tracking-widest">Model Ready for Deployment</h4>
-                                <p className="text-sm text-surface-500 dark:text-surface-400 font-medium leading-relaxed max-w-xl">
+                                <h4 className="text-sm font-black text-surface-900 dark:text-surface-900 uppercase tracking-widest">Model Ready for Deployment</h4>
+                                <p className="text-sm text-surface-500 dark:text-surface-500 font-medium leading-relaxed max-w-xl">
                                     Initiate high-fidelity spending projections. Our conservative trend engine ignores anomalies and respects your set budget baselines for maximal accuracy.
                                 </p>
                             </div>
