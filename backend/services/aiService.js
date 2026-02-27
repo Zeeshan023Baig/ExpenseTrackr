@@ -32,10 +32,11 @@ const calculateWeightedLinearRegression = (data) => {
 /**
  * Predicts future expenses using a Conservative Weighted model.
  * @param {Array} expenses 
+ * @param {Number} userBudget
  */
-export const predictExpenses = async (expenses) => {
+export const predictExpenses = async (expenses, userBudget = 0) => {
     try {
-        console.log("[Conservative Predictor] Analyzing", expenses.length, "expenses...");
+        console.log("[Conservative Predictor] Analyzing", expenses.length, "expenses with budget ₹", userBudget);
 
         const sortedExpenses = [...expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
         const firstDate = new Date(new Date(sortedExpenses[0].date).setHours(0, 0, 0, 0));
@@ -132,6 +133,10 @@ export const predictExpenses = async (expenses) => {
             .filter(e => new Date(e.date).getMonth() === now.getMonth() && new Date(e.date).getFullYear() === now.getFullYear())
             .reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
+        // Use the user's actual budget, fallback to AI's guess (naive projection)
+        const budgetBaseline = userBudget > 0 ? userBudget : (overallAvgDaily * 30);
+        const dailyBudgetIQ = Math.max(0, Math.round((budgetBaseline - monthlySpent) / daysLeft));
+
         const naiveProjection = overallAvgDaily * 30;
         const finalPredicted = Math.min(predictedTotal, naiveProjection * 1.3);
 
@@ -152,7 +157,7 @@ export const predictExpenses = async (expenses) => {
             behavioral: {
                 peakDay,
                 weekendRatio: weekendSpend / (weekendSpend + weekdaySpend || 1),
-                dailyBudgetIQ: Math.max(0, Math.round((naiveProjection - monthlySpent) / daysLeft)),
+                dailyBudgetIQ,
                 burnRate: Math.round(monthlySpent / daysPassed)
             },
             confidence: Math.min(95, Math.max(75, 90 - Math.round(Math.abs(m / (overallAvgDaily || 1)) * 100)))
