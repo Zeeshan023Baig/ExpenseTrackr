@@ -9,15 +9,7 @@ export const ExpenseProvider = ({ children }) => {
   const { isAuthenticated } = useAuth()
   const [expenses, setExpenses] = useState([])
   const [budget, setBudget] = useState(0)
-  const [categories, setCategories] = useState([
-    'Food',
-    'Transportation',
-    'Entertainment',
-    'Utilities',
-    'Healthcare',
-    'Shopping',
-    'Other'
-  ])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -31,13 +23,15 @@ export const ExpenseProvider = ({ children }) => {
 
     setLoading(true)
     try {
-      const [expensesRes, budgetRes] = await Promise.all([
+      const [expensesRes, budgetRes, categoriesRes] = await Promise.all([
         expenseAPI.getAllExpenses(),
-        expenseAPI.getBudget()
+        expenseAPI.getBudget(),
+        expenseAPI.getCategories()
       ])
 
       setExpenses(Array.isArray(expensesRes.data) ? expensesRes.data : [])
       setBudget(budgetRes.data.budget || 0)
+      setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : [])
 
       setError(null)
     } catch (err) {
@@ -108,6 +102,27 @@ export const ExpenseProvider = ({ children }) => {
     }
   }, [])
 
+  const addCategory = useCallback(async (name) => {
+    try {
+      const response = await expenseAPI.createCategory(name)
+      setCategories(prev => [...new Set([...prev, response.data.name])])
+      return response.data
+    } catch (err) {
+      console.error('Error adding category:', err)
+      throw err
+    }
+  }, [])
+
+  const removeCategory = useCallback(async (name) => {
+    try {
+      await expenseAPI.deleteCategory(name)
+      setCategories(prev => prev.filter(c => c !== name))
+    } catch (err) {
+      console.error('Error removing category:', err)
+      throw err
+    }
+  }, [])
+
   const getExpensesByCategory = useCallback((category) => {
     if (!Array.isArray(expenses)) return []
     return expenses.filter(expense => expense.category === category)
@@ -137,6 +152,8 @@ export const ExpenseProvider = ({ children }) => {
     deleteExpense,
     updateExpense,
     updateUserBudget,
+    addCategory,
+    removeCategory,
     getExpensesByCategory,
     getTotalExpenses,
     getExpensesByDateRange

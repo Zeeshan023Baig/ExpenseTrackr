@@ -7,9 +7,11 @@ import { StatCard, ExpenseCard, EmptyState } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Dashboard = () => {
-  const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense } = useContext(ExpenseContext)
+  const { expenses, categories, budget, getTotalExpenses, getExpensesByCategory, deleteExpense, updateExpense, addCategory } = useContext(ExpenseContext)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageInput, setPageInput] = useState('1')
+  const [newCatName, setNewCatName] = useState('')
+  const [isAddingCat, setIsAddingCat] = useState(false)
   const ITEMS_PER_PAGE = 5
   const { startTour } = useTour()
 
@@ -139,147 +141,185 @@ const Dashboard = () => {
                 <span className="text-surface-500 font-medium">of ₹{budget.toLocaleString()}</span>
               </div>
             </div>
-            <div className="text-right">
-              <span className={`text-lg font-bold ${totalMonthlyExpenses > budget ? 'text-red-500' : 'text-brand-600 dark:text-brand-400'}`}>
-                {budget > 0 ? ((totalMonthlyExpenses / budget) * 100).toFixed(1) : 0}%
-              </span>
-            </div>
           </div>
+        </div>
 
-          <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.min(budget > 0 ? (totalMonthlyExpenses / budget) * 100 : 0, 100)}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full rounded-full shadow-lg ${totalMonthlyExpenses > budget
-                ? 'bg-gradient-to-r from-red-500 to-red-600'
-                : 'bg-gradient-to-r from-brand-500 to-purple-500'
-                }`}
-            />
-          </div>
-          {totalMonthlyExpenses > budget && (
-            <p className="text-red-500 text-sm mt-2 font-medium flex items-center gap-1 relative z-10">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              You have exceeded your budget!
-            </p>
-          )}
-        </motion.div>
-
-        {/* Stats Section */}
-        <motion.div id="stats-section" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Expenses"
-            value={`₹${totalExpenses.toLocaleString()}`}
-            icon={FiTrendingDown}
-            color="red"
-          />
-          <StatCard
-            title="This Month"
-            value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}`}
-            icon={FiCalendar}
-            color="blue"
-          />
-          <StatCard
-            title="Average"
-            value={`₹${averageExpense}`}
-            icon={FiLayout}
-            color="green"
-          />
-          <StatCard
-            title="Top Category"
-            value={topCategory}
-            icon={(() => {
-              const icons = {
-                Food: FiCoffee,
-                Transportation: FiTruck,
-                Entertainment: FiFilm,
-                Utilities: FiZap,
-                Healthcare: FiActivity,
-                Shopping: FiShoppingBag,
-                Other: FiGrid
-              }
-              return icons[topCategory] || FiPieChart
-            })()}
-            color="purple"
-          />
-        </motion.div>
-
-
-        {/* Recent Expenses Section (No Category Filter) */}
-        <motion.div id="recent-transactions" variants={itemVariants} className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-surface-900">
-              Recent Transactions
-            </h2>
-          </div>
-
-          {recentExpenses.length === 0 ? (
-            <EmptyState message="No expenses yet. Start tracking!" />
+        {/* Manage Categories Section */}
+        <div className="mt-6 flex flex-wrap items-center gap-3 relative z-10">
+          {isAddingCat ? (
+            <form onSubmit={handleAddCategory} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="Category name"
+                className="bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-3 py-1.5 text-xs font-semibold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                autoFocus
+              />
+              <button type="submit" className="p-1.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors">
+                <FiPlus size={16} />
+              </button>
+              <button type="button" onClick={() => setIsAddingCat(false)} className="p-1.5 text-surface-400 hover:text-red-600 transition-colors">
+                <FiX size={16} />
+              </button>
+            </form>
           ) : (
-            <div className="space-y-6">
-              <motion.div className="grid grid-cols-1 gap-4">
-                {currentExpenses
-                  .map((expense, index) => (
-                    <motion.div
-                      key={expense.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-50px" }}
-                      transition={{ duration: 0.3 }}
-                      className="will-change-transform"
-                    >
-                      <ExpenseCard
-                        expense={expense}
-                        onUpdate={updateExpense}
-                        onDelete={deleteExpense}
-                      />
-                    </motion.div>
-                  ))}
-              </motion.div>
-
-              {/* Pagination Controls */}
-              {recentExpenses.length > ITEMS_PER_PAGE && (
-                <div className="flex items-center justify-between pt-4 border-t border-surface-200 dark:border-surface-700/50">
-                  <div className="flex items-center gap-1 ml-auto">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="btn px-3 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-all font-bold text-xs rounded-xl"
-                    >
-                      Prev
-                    </button>
-
-                    {/* Page Jumper Input */}
-                    <div className="flex items-center gap-2 mx-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max={totalPages}
-                        value={pageInput}
-                        onChange={(e) => setPageInput(e.target.value)}
-                        onBlur={handlePageSubmit}
-                        onKeyDown={(e) => e.key === 'Enter' && handlePageSubmit()}
-                        className="w-12 h-9 text-center bg-surface-100 dark:bg-surface-100 border border-surface-200 dark:border-surface-700 text-surface-900 font-bold rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-xs"
-                      />
-                      <span className="text-xs font-semibold text-surface-400">
-                        of {totalPages}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => setCurrentPage(p => p + 1)}
-                      disabled={currentPage * ITEMS_PER_PAGE >= recentExpenses.length}
-                      className="btn px-3 py-2 bg-brand-600 text-white shadow-lg shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-brand-700 transition-all font-bold text-xs rounded-xl"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setIsAddingCat(true)}
+              className="flex items-center gap-2 text-xs font-bold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-500/30 transition-all"
+            >
+              <FiPlus /> Add Category
+            </button>
           )}
-        </motion.div>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.slice(0, 5).map(cat => (
+              <span key={cat} className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-surface-100 dark:bg-surface-800 text-surface-500 rounded-full border border-surface-200 dark:border-surface-700">
+                {cat}
+              </span>
+            ))}
+            {categories.length > 5 && (
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 text-surface-400">
+                +{categories.length - 5} more
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded-full overflow-hidden relative z-10">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(budget > 0 ? (totalMonthlyExpenses / budget) * 100 : 0, 100)}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`h-full rounded-full shadow-lg ${totalMonthlyExpenses > budget
+              ? 'bg-gradient-to-r from-red-500 to-red-600'
+              : 'bg-gradient-to-r from-brand-500 to-purple-500'
+              }`}
+          />
+        </div>
+        {totalMonthlyExpenses > budget && (
+          <p className="text-red-500 text-sm mt-2 font-medium flex items-center gap-1 relative z-10">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            You have exceeded your budget!
+          </p>
+        )}
       </motion.div>
+
+      {/* Stats Section */}
+      <motion.div id="stats-section" variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Expenses"
+          value={`₹${totalExpenses.toLocaleString()}`}
+          icon={FiTrendingDown}
+          color="red"
+        />
+        <StatCard
+          title="This Month"
+          value={`₹${monthlyExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}`}
+          icon={FiCalendar}
+          color="blue"
+        />
+        <StatCard
+          title="Average"
+          value={`₹${averageExpense}`}
+          icon={FiLayout}
+          color="green"
+        />
+        <StatCard
+          title="Top Category"
+          value={topCategory}
+          icon={(() => {
+            const icons = {
+              Food: FiCoffee,
+              Transportation: FiTruck,
+              Entertainment: FiFilm,
+              Utilities: FiZap,
+              Healthcare: FiActivity,
+              Shopping: FiShoppingBag,
+              Other: FiGrid
+            }
+            return icons[topCategory] || FiPieChart
+          })()}
+          color="purple"
+        />
+      </motion.div>
+
+
+      {/* Recent Expenses Section (No Category Filter) */}
+      <motion.div id="recent-transactions" variants={itemVariants} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-surface-900">
+            Recent Transactions
+          </h2>
+        </div>
+
+        {recentExpenses.length === 0 ? (
+          <EmptyState message="No expenses yet. Start tracking!" />
+        ) : (
+          <div className="space-y-6">
+            <motion.div className="grid grid-cols-1 gap-4">
+              {currentExpenses
+                .map((expense, index) => (
+                  <motion.div
+                    key={expense.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.3 }}
+                    className="will-change-transform"
+                  >
+                    <ExpenseCard
+                      expense={expense}
+                      onUpdate={updateExpense}
+                      onDelete={deleteExpense}
+                    />
+                  </motion.div>
+                ))}
+            </motion.div>
+
+            {/* Pagination Controls */}
+            {recentExpenses.length > ITEMS_PER_PAGE && (
+              <div className="flex items-center justify-between pt-4 border-t border-surface-200 dark:border-surface-700/50">
+                <div className="flex items-center gap-1 ml-auto">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="btn px-3 py-2 bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 text-surface-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-surface-50 dark:hover:bg-surface-700 transition-all font-bold text-xs rounded-xl"
+                  >
+                    Prev
+                  </button>
+
+                  {/* Page Jumper Input */}
+                  <div className="flex items-center gap-2 mx-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max={totalPages}
+                      value={pageInput}
+                      onChange={(e) => setPageInput(e.target.value)}
+                      onBlur={handlePageSubmit}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePageSubmit()}
+                      className="w-12 h-9 text-center bg-surface-100 dark:bg-surface-100 border border-surface-200 dark:border-surface-700 text-surface-900 font-bold rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all text-xs"
+                    />
+                    <span className="text-xs font-semibold text-surface-400">
+                      of {totalPages}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage * ITEMS_PER_PAGE >= recentExpenses.length}
+                    className="btn px-3 py-2 bg-brand-600 text-white shadow-lg shadow-brand-500/20 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-brand-700 transition-all font-bold text-xs rounded-xl"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
     </div >
   )
 }

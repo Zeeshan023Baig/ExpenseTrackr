@@ -1,16 +1,13 @@
 import express from 'express';
+import { getCategories, createCategory, deleteCategory } from '../controllers/categoryController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Since we used ENUM for categories in Expense model, 
-// we can provide a simple endpoint to get valid categories 
-// or expand this to a full Category model table if user wants custom categories.
-// For now, based on context, a static list or simple return is enough given the prompt scale.
+router.use(protect); // Protect all category routes
 
-router.get('/', (req, res) => {
-    res.json([
-        'Food', 'Transportation', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'
-    ]);
-});
+router.get('/', getCategories);
+router.post('/', createCategory);
+router.delete('/:name', deleteCategory);
 
 export default router;

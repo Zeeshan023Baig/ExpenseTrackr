@@ -55,6 +55,7 @@ export const expenseAPI = {
   // Categories
   getCategories: () => api.get('/categories'),
   createCategory: (name) => api.post('/categories', { name }),
+  deleteCategory: (name) => api.delete(`/categories/${name}`),
 
   // Budget
   getBudget: () => api.get('/budget'),
