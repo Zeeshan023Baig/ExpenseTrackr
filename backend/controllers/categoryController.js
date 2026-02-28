@@ -9,7 +9,7 @@ export const getCategories = async (req, res) => {
 
         // Default categories if user has none
         const defaults = [
-            'Food', 'Transportation', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Other'
+            'Food', 'Transportation', 'Entertainment', 'Utilities', 'Healthcare', 'Shopping', 'Subscription', 'Other'
         ];
 
         if (categories.length === 0) {

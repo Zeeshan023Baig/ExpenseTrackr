@@ -11,6 +11,7 @@ const Expenses = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState('')
     const [sortField, setSortField] = useState('date') // 'date', 'amount'
     const [sortOrder, setSortOrder] = useState('desc') // 'asc', 'desc'
 
@@ -19,6 +20,7 @@ const Expenses = () => {
         return expenses
             .filter(expense => {
                 const matchesSearch = expense.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                const matchesCategory = !selectedCategory || expense.category === selectedCategory
 
                 const expDate = new Date(expense.date || expense.createdAt)
                 const start = startDate ? new Date(startDate) : null
@@ -28,7 +30,7 @@ const Expenses = () => {
 
                 const matchesDate = (!start || expDate >= start) && (!end || expDate <= end)
 
-                return matchesSearch && matchesDate
+                return matchesSearch && matchesDate && matchesCategory
             })
             .sort((a, b) => {
                 let comparison = 0
@@ -115,6 +117,20 @@ const Expenses = () => {
                 </div>
 
                 <div className="flex gap-2">
+                    <div className="flex items-center gap-1 bg-white dark:bg-surface-100 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
+                        <FiFilter className="ml-2 text-surface-400" />
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="bg-transparent text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer min-w-[120px]"
+                        >
+                            <option value="">All Categories</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="flex items-center gap-1 bg-white dark:bg-surface-100 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
                         <select
                             value={sortField}
