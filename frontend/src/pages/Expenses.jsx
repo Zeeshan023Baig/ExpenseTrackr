@@ -42,7 +42,7 @@ const Expenses = () => {
 
                 return sortOrder === 'desc' ? comparison : -comparison
             })
-    }, [expenses, searchTerm, startDate, endDate, sortField, sortOrder])
+    }, [expenses, searchTerm, startDate, endDate, selectedCategory, sortField, sortOrder])
 
     const toggleSortOrder = () => {
         setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
