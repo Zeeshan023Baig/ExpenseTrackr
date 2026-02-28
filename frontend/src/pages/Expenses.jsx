@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiSearch, FiCalendar, FiFilter, FiArrowUp, FiArrowDown, FiLayers, FiList } from 'react-icons/fi'
+import { FiSearch, FiCalendar, FiFilter, FiArrowUp, FiArrowDown, FiLayers, FiList, FiX } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
 import { ExpenseCard, EmptyState } from '../components'
 
@@ -20,7 +20,7 @@ const Expenses = () => {
         return expenses
             .filter(expense => {
                 const matchesSearch = expense.description?.toLowerCase().includes(searchTerm.toLowerCase())
-                const matchesCategory = !selectedCategory || expense.category === selectedCategory
+                const matchesCategory = !selectedCategory || expense.category?.toLowerCase().includes(selectedCategory.toLowerCase())
 
                 const expDate = new Date(expense.date || expense.createdAt)
                 const start = startDate ? new Date(startDate) : null
@@ -119,16 +119,26 @@ const Expenses = () => {
                 <div className="flex gap-2">
                     <div className="flex items-center gap-1 bg-white dark:bg-surface-100 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
                         <FiFilter className="ml-2 text-surface-400" />
-                        <select
+                        <input
+                            list="category-filter-suggestions"
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="bg-transparent text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer min-w-[120px]"
-                        >
-                            <option value="">All Categories</option>
+                            placeholder="Type category..."
+                            className="bg-transparent text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer min-w-[150px] h-9"
+                        />
+                        <datalist id="category-filter-suggestions">
                             {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
+                                <option key={cat} value={cat} />
                             ))}
-                        </select>
+                        </datalist>
+                        {selectedCategory && (
+                            <button
+                                onClick={() => setSelectedCategory('')}
+                                className="p-1 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-full text-surface-400 mr-1"
+                            >
+                                <FiX size={14} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-1 bg-white dark:bg-surface-100 rounded-xl border border-surface-200 dark:border-surface-700 p-1 flex-1 lg:flex-none">
