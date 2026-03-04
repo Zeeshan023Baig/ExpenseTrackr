@@ -223,7 +223,6 @@
     @apply text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter truncate max-w-full;
   }
 }
-}
 
 /* Performance Optimizations */
 .gpu {
