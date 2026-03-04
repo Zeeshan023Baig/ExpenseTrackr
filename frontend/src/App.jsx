@@ -35,7 +35,10 @@ const AppContent = () => {
       {!isAuthPage && <Header />}
 
 
-      <main className={!isAuthPage ? 'container mx-auto px-4 py-8 max-w-7xl' : ''}>
+      <main
+        className={!isAuthPage ? 'container mx-auto px-4 py-8 max-w-7xl' : ''}
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+      >
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />

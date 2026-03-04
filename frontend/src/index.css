@@ -35,11 +35,11 @@
     --surface-950: 2 6 23;
     /* Slate 950 */
 
-    /* Safe Area Insets */
-    --sab: env(safe-area-inset-bottom);
-    --sat: env(safe-area-inset-top);
-    --sal: env(safe-area-inset-left);
-    --sar: env(safe-area-inset-right);
+    /* Safe Area Insets with 0px fallbacks */
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sat: env(safe-area-inset-top, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
   }
 
   /* Dark Mode Overrides */
@@ -218,10 +218,11 @@
     @apply text-surface-500 text-sm;
   }
 
-  /* Responsive Large Text for Mobile */
+  /* Responsive Large Text for Mobile - Even more aggressive */
   .text-display-currency {
-    @apply text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter;
+    @apply text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter truncate max-w-full;
   }
+}
 }
 
 /* Performance Optimizations */
