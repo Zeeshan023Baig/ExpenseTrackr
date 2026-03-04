@@ -32,21 +32,21 @@ const AIPredictor = ({ expenseCount }) => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card p-8 border-none bg-gradient-to-br from-brand-600 to-indigo-700 text-white relative overflow-hidden shadow-2xl shadow-brand-500/20 rounded-[2.5rem]"
+            className="card p-5 sm:p-8 border-none bg-gradient-to-br from-brand-600 to-indigo-700 text-white relative overflow-hidden shadow-2xl shadow-brand-500/20 rounded-[2rem] sm:rounded-[2.5rem]"
         >
             {/* Standard Background Elements to match Dashboard/Analytics */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-brand-400/20 rounded-full -ml-10 -mb-10 blur-2xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col gap-10">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-md shadow-lg">
+            <div className="relative z-10 flex flex-col gap-6 sm:gap-10">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div className="flex items-center gap-3 sm:gap-5">
+                        <div className="p-3 sm:p-4 bg-white/20 rounded-2xl backdrop-blur-md shadow-lg shrink-0">
                             <FiCpu size={28} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-white tracking-tight">AI Expense Forecast</h3>
-                            <p className="text-brand-100 text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mt-1 pl-0.5">Predictive Intelligence Engine</p>
+                            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">AI Expense Forecast</h3>
+                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mt-1 pl-0.5">Predictive Intelligence Engine</p>
                         </div>
                     </div>
 
@@ -54,9 +54,9 @@ const AIPredictor = ({ expenseCount }) => {
                         <button
                             onClick={handlePredict}
                             disabled={isDisabled}
-                            className={`py-3.5 px-8 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl group flex items-center gap-3 active:scale-95 transition-all duration-300 ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                            className={`py-2.5 px-4 sm:py-3.5 sm:px-8 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl group flex items-center justify-center gap-3 active:scale-95 transition-all duration-300 ${isDisabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                         >
-                            <span className="relative z-10 text-sm font-black tracking-wide text-white">{isDisabled ? `Add ${5 - (expenseCount || 0)} More` : 'Analyze Patterns'}</span>
+                            <span className="relative z-10 text-xs sm:text-sm font-black tracking-wide text-white">{isDisabled ? `Add ${5 - (expenseCount || 0)} More` : 'Analyze Patterns'}</span>
                             <FiZap className={`relative z-10 text-brand-200 ${isDisabled ? '' : 'group-hover:rotate-12 transition-transform'}`} size={18} />
                         </button>
                     )}
@@ -86,15 +86,15 @@ const AIPredictor = ({ expenseCount }) => {
                         >
                             <div className="space-y-8">
                                 <section>
-                                    <p className="text-[10px] font-black text-brand-100 uppercase tracking-[0.3em] mb-4 pl-1">Projected Monthly Volume</p>
-                                    <div className="p-8 bg-white/10 rounded-[2rem] border border-white/20 relative overflow-hidden group/card shadow-inner">
-                                        <div className="flex items-baseline gap-3 relative z-10">
-                                            <span className="text-5xl font-black text-white tracking-tighter">₹{prediction.predictedTotal.toLocaleString('en-IN')}</span>
-                                            <span className="text-[10px] font-black text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-emerald-500/30">
+                                    <p className="text-[9px] sm:text-[10px] font-black text-brand-100 uppercase tracking-[0.3em] mb-3 sm:mb-4 pl-1">Projected Monthly Volume</p>
+                                    <div className="p-5 sm:p-8 bg-white/10 rounded-[1.5rem] sm:rounded-[2rem] border border-white/20 relative overflow-hidden group/card shadow-inner">
+                                        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 relative z-10">
+                                            <span className="text-3xl sm:text-5xl font-black text-white tracking-tighter">₹{prediction.predictedTotal.toLocaleString('en-IN')}</span>
+                                            <span className="w-fit text-[9px] font-black text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-widest border border-emerald-500/30">
                                                 {prediction.confidence}% Confidence
                                             </span>
                                         </div>
-                                        <FiTrendingUp className="absolute top-0 right-0 p-6 text-white opacity-[0.05] group-hover/card:scale-110 transition-transform duration-700" size={140} />
+                                        <FiTrendingUp className="absolute top-0 right-0 p-4 sm:p-6 text-white opacity-[0.05] group-hover/card:scale-110 transition-transform duration-700" size={140} />
                                     </div>
                                 </section>
 
@@ -103,11 +103,11 @@ const AIPredictor = ({ expenseCount }) => {
                                         <p className="text-[10px] font-black text-brand-100 uppercase tracking-[0.3em]">Category Hotspots</p>
                                         <span className="text-[10px] font-bold text-brand-200 uppercase tracking-widest opacity-60">Top 4</span>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                         {prediction.predictedCategories.slice(0, 4).map((cat, idx) => (
-                                            <div key={idx} className="p-5 bg-white/10 rounded-2xl border border-white/10 hover:border-white/30 transition-all group/item backdrop-blur-sm">
-                                                <span className="block text-[10px] font-black text-brand-200 uppercase tracking-widest mb-1 group-hover/item:text-white transition-colors">{cat.category}</span>
-                                                <span className="text-lg font-black text-white">₹{cat.predictedAmount.toLocaleString('en-IN')}</span>
+                                            <div key={idx} className="p-4 sm:p-5 bg-white/10 rounded-2xl border border-white/10 hover:border-white/30 transition-all group/item backdrop-blur-sm">
+                                                <span className="block text-[9px] sm:text-[10px] font-black text-brand-200 uppercase tracking-widest mb-1 group-hover/item:text-white transition-colors">{cat.category}</span>
+                                                <span className="text-base sm:text-lg font-black text-white">₹{cat.predictedAmount.toLocaleString('en-IN')}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -119,9 +119,9 @@ const AIPredictor = ({ expenseCount }) => {
                                     <p className="text-[10px] font-black text-brand-100 uppercase tracking-[0.3em] pl-1">Strategic trend analysis</p>
                                     <div className="space-y-3">
                                         {prediction.insights.slice(0, 3).map((insight, idx) => (
-                                            <div key={idx} className="flex gap-5 p-6 rounded-3xl bg-white/5 hover:bg-white/10 transition-all group/insight border border-transparent hover:border-white/10 shadow-sm">
+                                            <div key={idx} className="flex gap-3 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white/5 hover:bg-white/10 transition-all group/insight border border-transparent hover:border-white/10 shadow-sm">
                                                 <div className="mt-1 w-2 h-2 rounded-full bg-brand-200 shadow-[0_0_12px_rgba(255,255,255,0.4)] flex-shrink-0" />
-                                                <p className="text-sm font-semibold text-white/90 leading-relaxed tracking-wide italic">
+                                                <p className="text-xs sm:text-sm font-semibold text-white/90 leading-relaxed tracking-wide italic">
                                                     "{insight}"
                                                 </p>
                                             </div>
@@ -141,13 +141,13 @@ const AIPredictor = ({ expenseCount }) => {
                             </div>
                         </motion.div>
                     ) : (
-                        <div className="flex items-start gap-4 p-6 bg-white/10 rounded-3xl border border-white/10">
-                            <div className="p-3 bg-white/20 rounded-xl text-white">
+                        <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 bg-white/10 rounded-2xl sm:rounded-3xl border border-white/10">
+                            <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl text-white shrink-0">
                                 <FiInfo size={20} />
                             </div>
                             <div className="space-y-1">
-                                <h4 className="text-sm font-bold text-white uppercase tracking-wider">AI Forecast Ready</h4>
-                                <p className="text-sm text-brand-100 font-medium leading-relaxed">
+                                <h4 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider leading-none">AI Forecast Ready</h4>
+                                <p className="text-xs sm:text-sm text-brand-100 font-medium leading-relaxed">
                                     Our prediction engine uses your actual budget and historical trends to forecast next month's volume with 95% accuracy.
                                 </p>
                             </div>
