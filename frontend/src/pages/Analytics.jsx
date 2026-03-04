@@ -141,7 +141,7 @@ const Analytics = () => {
           id="budget-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none"
+          className="card p-5 md:p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none"
         >
           <div className="flex justify-between items-start mb-8">
             <div className="space-y-1">
@@ -163,7 +163,7 @@ const Analytics = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 group">
-                  <span className="text-5xl font-black text-surface-900 tracking-tighter">₹{budget.toLocaleString('en-IN')}</span>
+                  <span className="text-display-currency text-surface-900 tracking-tighter">₹{budget.toLocaleString('en-IN')}</span>
                   <button onClick={() => { setNewBudget(budget); setIsEditingBudget(true) }} className="opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-brand-50 dark:hover:bg-surface-800 rounded-lg text-brand-600">
                     <FiEdit2 size={18} />
                   </button>
@@ -204,7 +204,7 @@ const Analytics = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="card p-8 border-none bg-gradient-to-br from-brand-600 to-indigo-700 text-white relative overflow-hidden shadow-2xl shadow-brand-500/20"
+          className="card p-5 md:p-8 border-none bg-gradient-to-br from-brand-600 to-indigo-700 text-white relative overflow-hidden shadow-2xl shadow-brand-500/20"
         >
           <div className="relative z-10 space-y-8">
             <div className="flex items-center gap-4">

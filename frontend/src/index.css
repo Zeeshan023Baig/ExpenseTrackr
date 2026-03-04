@@ -32,10 +32,14 @@
     --surface-600: 71 85 105;
     --surface-700: 51 65 85;
     --surface-800: 30 41 59;
-    --surface-900: 15 23 42;
-    /* Slate 900 */
     --surface-950: 2 6 23;
     /* Slate 950 */
+
+    /* Safe Area Insets */
+    --sab: env(safe-area-inset-bottom);
+    --sat: env(safe-area-inset-top);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
   }
 
   /* Dark Mode Overrides */
@@ -143,6 +147,7 @@
     @apply bg-surface-50 text-surface-900 antialiased font-sans selection:bg-brand-500 selection:text-white transition-colors duration-300;
     overflow-x: hidden;
     width: 100%;
+    padding-bottom: var(--sab);
   }
 
   html {
@@ -211,6 +216,11 @@
 
   .text-subtle {
     @apply text-surface-500 text-sm;
+  }
+
+  /* Responsive Large Text for Mobile */
+  .text-display-currency {
+    @apply text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter;
   }
 }
 

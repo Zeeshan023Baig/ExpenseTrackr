@@ -21,7 +21,7 @@ const Header = () => {
   ]
 
   return (
-    <header className="bg-surface-50/80 backdrop-blur-md border-b border-surface-200 dark:border-surface-800 sticky top-0 z-50 transition-colors duration-300">
+    <header className="bg-surface-50/80 backdrop-blur-md border-b border-surface-200 dark:border-surface-800 sticky top-0 z-50 transition-colors duration-300 pt-[var(--sat)]">
       <div className="layout-container">
         <div className="flex justify-between items-center h-16">
           <motion.div
