@@ -62,7 +62,7 @@ const Expenses = () => {
     }
 
     return (
-        <div className="layout-container py-8 space-y-8">
+        <div className="layout-container py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
@@ -77,7 +77,7 @@ const Expenses = () => {
             </div>
 
             {/* Filter Bar */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sticky top-20 z-40 bg-surface-50/80 backdrop-blur-md py-4 -mx-4 px-4 border-b border-surface-200 dark:border-surface-800">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sticky top-[72px] z-40 bg-surface-50/80 backdrop-blur-md py-4 -mx-4 px-4 border-b border-surface-200 dark:border-surface-800">
                 <div className="relative col-span-1 lg:col-span-1">
                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-600 dark:text-surface-400" />
                     <input
@@ -85,7 +85,7 @@ const Expenses = () => {
                         placeholder="Search description..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="input pl-10 h-11 text-surface-900 placeholder:text-surface-500"
+                        className="input pl-10 h-11 text-base sm:text-sm text-surface-900 placeholder:text-surface-500"
                     />
                 </div>
 
@@ -98,7 +98,7 @@ const Expenses = () => {
                             onChange={(e) => setStartDate(e.target.value)}
                             onClick={(e) => e.target.showPicker()}
                             onFocus={(e) => e.target.showPicker()}
-                            className="input pl-10 h-11 text-sm"
+                            className="input pl-10 h-11 text-base sm:text-sm"
                             placeholder="Start Date"
                         />
                     </div>
@@ -110,7 +110,7 @@ const Expenses = () => {
                             onChange={(e) => setEndDate(e.target.value)}
                             onClick={(e) => e.target.showPicker()}
                             onFocus={(e) => e.target.showPicker()}
-                            className="input pl-10 h-11 text-sm"
+                            className="input pl-10 h-11 text-base sm:text-sm"
                             placeholder="End Date"
                         />
                     </div>
@@ -123,8 +123,8 @@ const Expenses = () => {
                             list="category-filter-suggestions"
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
-                            placeholder="Type category..."
-                            className="bg-transparent text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer min-w-[150px] h-9"
+                            placeholder="Category..."
+                            className="bg-transparent text-base sm:text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer w-full h-9"
                         />
                         <datalist id="category-filter-suggestions">
                             {categories.map(cat => (
@@ -145,7 +145,7 @@ const Expenses = () => {
                         <select
                             value={sortField}
                             onChange={(e) => setSortField(e.target.value)}
-                            className="bg-transparent text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer"
+                            className="bg-transparent text-base sm:text-sm font-bold text-surface-600 px-2 outline-none cursor-pointer"
                         >
                             <option value="date">Date</option>
                             <option value="amount">Amount</option>

@@ -141,7 +141,7 @@ const Analytics = () => {
           id="budget-card"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card p-5 md:p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none"
+          className="card p-5 sm:p-8 bg-surface-100 border-surface-200/20 shadow-xl shadow-black/5 dark:shadow-none bg-gradient-to-br from-surface-100 to-surface-50 dark:from-surface-100/5 dark:to-surface-50/5"
         >
           <div className="flex justify-between items-start mb-8">
             <div className="space-y-1">
@@ -217,7 +217,7 @@ const Analytics = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 pt-4">
               <div className="space-y-2">
                 <label className="block text-brand-100 text-xs font-black uppercase tracking-widest">Target Savings (₹)</label>
                 <div className="relative group">
@@ -229,7 +229,7 @@ const Analytics = () => {
                       const value = e.target.value.replace(/[^0-9]/g, '')
                       setSavingsGoal(value ? Number(value) : 0)
                     }}
-                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:bg-white/20 rounded-2xl px-5 py-4 text-white placeholder:text-white/30 outline-none transition-all font-black text-2xl"
+                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:bg-white/20 rounded-2xl px-5 py-3 sm:py-4 text-white placeholder:text-white/30 outline-none transition-all font-black text-xl sm:text-2xl"
                     placeholder="0"
                   />
                 </div>
@@ -245,7 +245,7 @@ const Analytics = () => {
                       const value = e.target.value.replace(/[^0-9]/g, '')
                       handleWeeklyLimitChange(value ? Number(value) : 0)
                     }}
-                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:bg-white/20 rounded-2xl px-5 py-4 text-white placeholder:text-white/30 outline-none transition-all font-black text-2xl"
+                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 focus:border-white/40 focus:bg-white/20 rounded-2xl px-5 py-3 sm:py-4 text-white placeholder:text-white/30 outline-none transition-all font-black text-xl sm:text-2xl"
                     placeholder="0"
                   />
                 </div>
@@ -271,7 +271,7 @@ const Analytics = () => {
               Category Breakdown
             </h3>
           </div>
-          <div className="h-[350px] w-full">
+          <div className="h-[250px] sm:h-[350px] w-full">
             {categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -330,7 +330,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          <div className="h-[350px] w-full">
+          <div className="h-[250px] sm:h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />

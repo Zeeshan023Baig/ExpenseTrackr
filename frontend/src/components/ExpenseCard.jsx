@@ -138,7 +138,7 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
             </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             <AnimatePresence mode="wait">
               {isEditing ? (
                 <motion.div
@@ -161,13 +161,14 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-surface-900 dark:text-white">₹</span>
+                      <span className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">₹</span>
                       <input
                         type="number"
+                        inputMode="decimal"
                         value={tempAmount}
                         onChange={(e) => setTempAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-32 bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-2 py-1 text-xl font-bold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                        className="w-24 sm:w-32 bg-surface-50 dark:bg-surface-100 border border-brand-200 dark:border-surface-700/50 rounded-lg px-2 py-1 text-lg sm:text-xl font-bold text-surface-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                         disabled={isUpdating}
                       />
                     </div>
@@ -180,10 +181,10 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <h3 className="font-semibold text-lg text-surface-900 group-hover:text-brand-600 transition-colors">
+                  <h3 className="font-bold text-base sm:text-lg text-surface-900 group-hover:text-brand-600 transition-colors line-clamp-2">
                     {expense.description}
                   </h3>
-                  <p className="text-2xl font-bold text-surface-900 mt-1">
+                  <p className="text-xl sm:text-2xl font-black text-surface-900 mt-1">
                     ₹{expense.amount.toLocaleString()}
                   </p>
                 </motion.div>
@@ -213,17 +214,17 @@ const ExpenseCard = ({ expense, onUpdate, onDelete }) => {
               </button>
             </div>
           ) : (
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+            <div className="flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity md:translate-x-4 md:group-hover:translate-x-0">
               <button
                 onClick={() => setIsEditing(true)}
-                className="p-2 text-surface-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+                className="p-2.5 text-surface-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
                 title="Edit Details"
               >
                 <FiEdit2 size={18} />
               </button>
               <button
                 onClick={() => onDelete(expense.id)}
-                className="p-2 text-surface-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                className="p-2.5 text-surface-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 title="Delete"
               >
                 <FiTrash2 size={18} />
