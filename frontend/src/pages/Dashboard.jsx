@@ -13,16 +13,7 @@ const Dashboard = () => {
   const ITEMS_PER_PAGE = 5
   const { startTour } = useTour()
 
-  // Start tour on mount with a small delay to ensure DOM is ready
-  useEffect(() => {
-    if (!localStorage.getItem('has-seen-dashboard-tour')) {
-      const timer = setTimeout(() => {
-        startTour()
-        localStorage.setItem('has-seen-dashboard-tour', 'true')
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [startTour])
+
 
   const totalExpenses = getTotalExpenses()
 

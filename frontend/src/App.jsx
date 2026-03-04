@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ExpenseProvider } from './context/ExpenseContext'
 import { ThemeProvider } from './context/ThemeContext'
-import { Header, LoadingSpinner, ChatBot, UserGuide } from './components'
+import { Header, LoadingSpinner, ChatBot } from './components'
 import { Dashboard, Analytics, Expenses, AddExpense, EditExpense, Reports, Login, Register, ResetPassword } from './pages'
 
 const PrivateRoute = ({ children }) => {
@@ -27,24 +27,13 @@ const AppContent = () => {
   const { isAuthenticated } = useAuth()
   const isAuthPage = ['/login', '/register'].includes(location.pathname) || location.pathname.startsWith('/reset-password/')
 
-  const [showGuide, setShowGuide] = useState(false)
 
-  useEffect(() => {
-    if (isAuthenticated && !localStorage.getItem('has-seen-guide')) {
-      setShowGuide(true)
-    }
-  }, [isAuthenticated])
-
-  const handleGuideComplete = () => {
-    localStorage.setItem('has-seen-guide', 'true')
-    setShowGuide(false)
-  }
 
 
   return (
     <div className="min-h-screen bg-surface-50 transition-colors duration-300 font-sans text-surface-900">
       {!isAuthPage && <Header />}
-      {showGuide && <UserGuide onComplete={handleGuideComplete} />}
+
 
       <main className={!isAuthPage ? 'container mx-auto px-4 py-8 max-w-7xl' : ''}>
         <Routes>
