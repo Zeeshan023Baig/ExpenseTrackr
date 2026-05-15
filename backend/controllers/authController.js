@@ -51,6 +51,7 @@ const registerUser = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
+                webhookToken: user.webhookToken,
                 token: generateToken(user.id)
             });
         } else {
@@ -78,6 +79,7 @@ const loginUser = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
+                webhookToken: user.webhookToken,
                 token: generateToken(user.id)
             });
         } else {
@@ -99,7 +101,8 @@ const getMe = async (req, res) => {
             id: user.id,
             username: user.username,
             email: user.email,
-            phoneNumber: user.phoneNumber
+            phoneNumber: user.phoneNumber,
+            webhookToken: user.webhookToken
         });
     } catch (error) {
         console.error(error);
