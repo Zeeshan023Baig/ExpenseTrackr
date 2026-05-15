@@ -61,12 +61,22 @@ export const AuthProvider = ({ children }) => {
         toast.success('Logged out successfully')
     }
 
+    const refreshUser = async () => {
+        try {
+            const { data } = await authAPI.getMe()
+            setUser(data)
+        } catch (error) {
+            console.error('Failed to refresh user', error)
+        }
+    }
+
     const value = {
         user,
         loading,
         login,
         register,
         logout,
+        refreshUser,
         isAuthenticated: !!user
     }
 

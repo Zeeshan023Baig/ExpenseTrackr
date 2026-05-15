@@ -78,4 +78,8 @@ export const aiAPI = {
   predict: () => api.get('/ai/predict')
 }
 
-export default api
+export const smsAPI = {
+  generateToken: () => api.post('/sms/token')
+}
+
+export default api;

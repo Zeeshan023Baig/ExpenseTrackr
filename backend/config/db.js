@@ -55,6 +55,13 @@ const connectDB = async () => {
             // console.log("resetPasswordExpires migration skipped:", err.message);
         }
 
+        try {
+            await sequelize.query("ALTER TABLE Users ADD COLUMN webhookToken VARCHAR(255) NULL UNIQUE;");
+            console.log("Added webhookToken column to Users.");
+        } catch (err) {
+            // console.log("webhookToken migration skipped:", err.message);
+        }
+
         console.log("Database Synced...");
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);

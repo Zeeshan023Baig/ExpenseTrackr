@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiTrendingDown, FiCalendar, FiLayout, FiPieChart, FiPlus, FiCoffee, FiTruck, FiFilm, FiZap, FiActivity, FiShoppingBag, FiGrid, FiHelpCircle } from 'react-icons/fi'
 import { ExpenseContext } from '../context/ExpenseContext'
-import { StatCard, ExpenseCard, EmptyState } from '../components'
+import { StatCard, ExpenseCard, EmptyState, AutomationSettings } from '../components'
 import { useTour } from '../hooks/useTour'
 
 const Dashboard = () => {
@@ -194,6 +194,12 @@ const Dashboard = () => {
             })()}
             color="purple"
           />
+        </motion.div>
+
+
+        {/* Automation Settings */}
+        <motion.div variants={itemVariants}>
+          <AutomationSettings />
         </motion.div>
 
 

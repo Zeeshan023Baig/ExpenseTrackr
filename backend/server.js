@@ -24,6 +24,7 @@ import budgetRoutes from "./routes/budgetRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import ocrRoutes from "./routes/ocrRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import smsRoutes from "./routes/smsRoutes.js";
 
 // Connect to database
 connectDB();
@@ -48,6 +49,7 @@ app.use("/api/budget", budgetRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/ocr", ocrRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/sms", smsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
