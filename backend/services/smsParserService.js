@@ -14,8 +14,8 @@ export const parseSMS = async (smsText) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" }, { apiVersion: "v1beta" });
+        
         const prompt = `
         You are an expert financial assistant. Analyze the following bank SMS message and extract transaction details.
 
