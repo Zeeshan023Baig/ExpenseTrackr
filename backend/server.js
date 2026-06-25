@@ -34,6 +34,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    if (req.method === 'POST' || req.method === 'PUT') {
+        console.log('Body:', { ...req.body, password: req.body.password ? '***' : undefined });
+    }
+    next();
+});
+
 // test route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");

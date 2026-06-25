@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiCpu, FiCopy, FiRefreshCcw, FiCheckCircle, FiInfo } from 'react-icons/fi'
-import { smsAPI } from '../services/api'
+import { smsAPI, API_BASE_URL } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -24,7 +24,7 @@ const AutomationSettings = () => {
   }
 
   const webhookUrl = user?.webhookToken 
-    ? `${window.location.origin.replace('3000', '5000')}/api/sms/webhook/${user.webhookToken}`
+    ? `${API_BASE_URL}/sms/webhook/${user.webhookToken}`
     : 'No token generated yet'
 
   const copyToClipboard = () => {

@@ -71,17 +71,17 @@ const Login = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-surface-900">Email Address</label>
+                            <label className="block text-sm font-semibold text-surface-900">Email or Username</label>
                             <div className="relative">
                                 <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                                 <input
-                                    type="email"
+                                    type="text"
                                     name="email"
                                     required
                                     value={formData.email}
                                     onChange={handleChange}
                                     className="pl-10 w-full input-field"
-                                    placeholder="name@example.com"
+                                    placeholder="name@example.com or username"
                                 />
                             </div>
                         </div>

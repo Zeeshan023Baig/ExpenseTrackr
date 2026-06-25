@@ -68,10 +68,19 @@ const registerUser = async (req, res) => {
 // @access  Public
 const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, username, password } = req.body;
+        const identifier = email || username;
 
-        // Check for user email
-        const user = await User.findOne({ where: { email } });
+        if (!identifier || !password) {
+            return res.status(400).json({ message: 'Please provide email or username, and password' });
+        }
+
+        // Check for user by email or username
+        const user = await User.findOne({ 
+            where: { 
+                [Op.or]: [{ email: identifier }, { username: identifier }] 
+            } 
+        });
 
         if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
@@ -86,8 +95,8 @@ const loginUser = async (req, res) => {
             res.status(400).json({ message: 'Invalid credentials' });
         }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error("Login API Error:", error);
+        res.status(500).json({ message: error.message || 'Server Error' });
     }
 };
 

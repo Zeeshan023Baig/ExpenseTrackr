@@ -9,7 +9,7 @@ const getApiUrl = () => {
   return `http://${hostname}:5000/api`
 }
 
-const API_BASE_URL = getApiUrl()
+export const API_BASE_URL = getApiUrl()
 
 const api = axios.create({
   baseURL: API_BASE_URL,
