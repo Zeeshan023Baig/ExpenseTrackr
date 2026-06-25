@@ -34,39 +34,8 @@ const connectDB = async () => {
         await sequelize.authenticate();
         console.log("MySQL Connected...");
 
-        await sequelize.sync(); // Schema verified
-
-        // Force migration for Category ENUM -> VARCHAR (Fix for custom categories)
-        try {
-            await sequelize.query("ALTER TABLE Expenses MODIFY COLUMN category VARCHAR(255) NOT NULL;");
-            console.log("Schema migration (Category -> VARCHAR) executed.");
-        } catch (err) {
-            console.log("Schema migration skipped/error (safe to ignore if already altered):", err.message);
-        }
-
-        // --- NEW: Migration for User Reset Password Columns ---
-        try {
-            await sequelize.query("ALTER TABLE Users ADD COLUMN resetPasswordToken VARCHAR(255) NULL;");
-            console.log("Added resetPasswordToken column to Users.");
-        } catch (err) {
-            // console.log("resetPasswordToken migration skipped:", err.message);
-        }
-
-        try {
-            await sequelize.query("ALTER TABLE Users ADD COLUMN resetPasswordExpires DATETIME NULL;");
-            console.log("Added resetPasswordExpires column to Users.");
-        } catch (err) {
-            // console.log("resetPasswordExpires migration skipped:", err.message);
-        }
-
-        try {
-            await sequelize.query("ALTER TABLE Users ADD COLUMN webhookToken VARCHAR(255) NULL UNIQUE;");
-            console.log("Added webhookToken column to Users.");
-        } catch (err) {
-            // console.log("webhookToken migration skipped:", err.message);
-        }
-
-        console.log("Database Synced...");
+        await sequelize.sync({ alter: true }); // Schema verified and altered
+        console.log("Database Synced with alter:true...");
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);
         process.exit(1);
