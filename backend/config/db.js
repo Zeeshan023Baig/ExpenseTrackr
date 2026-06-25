@@ -36,6 +36,14 @@ const connectDB = async () => {
 
         await sequelize.sync({ alter: true }); // Schema verified and altered
         console.log("Database Synced with alter:true...");
+
+        // Forcefully add webhookToken if alter fails
+        try {
+            await sequelize.query("ALTER TABLE Users ADD COLUMN webhookToken VARCHAR(255) NULL UNIQUE;");
+            console.log("Forced webhookToken column creation.");
+        } catch (err) {
+            // Ignore if exists
+        }
     } catch (error) {
         console.error("Error connecting to MySQL:", error.message);
         process.exit(1);

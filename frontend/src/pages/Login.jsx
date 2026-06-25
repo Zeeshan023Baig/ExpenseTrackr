@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiMail, FiLock, FiArrowRight, FiX } from 'react-icons/fi'
+import { FiMail, FiLock, FiArrowRight, FiX, FiEye, FiEyeOff } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
@@ -14,6 +14,7 @@ const Login = () => {
         password: ''
     })
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const [showForgotPassword, setShowForgotPassword] = useState(false)
     const [resetEmail, setResetEmail] = useState('')
     const [resetLoading, setResetLoading] = useState(false)
@@ -100,14 +101,21 @@ const Login = () => {
                             <div className="relative">
                                 <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     name="password"
                                     required
                                     value={formData.password}
                                     onChange={handleChange}
-                                    className="pl-10 w-full input-field"
+                                    className="pl-10 pr-10 w-full input-field"
                                     placeholder="••••••••"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-800 hover:text-surface-600 focus:outline-none"
+                                >
+                                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
                             </div>
                         </div>
 

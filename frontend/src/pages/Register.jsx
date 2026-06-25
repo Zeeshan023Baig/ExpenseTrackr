@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiUser, FiMail, FiLock, FiArrowRight, FiPhone } from 'react-icons/fi'
+import { FiUser, FiMail, FiLock, FiArrowRight, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
+import toast from 'react-hot-toast'
 
 const Register = () => {
     const { register } = useAuth()
@@ -14,6 +15,7 @@ const Register = () => {
         password: ''
     })
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -21,6 +23,14 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        
+        // Mobile number validation (exactly 10 digits)
+        const phoneRegex = /^\d{10}$/
+        if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber.replace(/\D/g, ''))) {
+            toast.error("Phone number must have exactly 10 digits")
+            return
+        }
+        
         setLoading(true)
         try {
             await register(formData)
@@ -78,7 +88,7 @@ const Register = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-surface-900">Phone Number</label>
+                        <label className="block text-sm font-semibold text-surface-900">Phone Number (10 digits)</label>
                         <div className="relative">
                             <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                             <input
@@ -87,7 +97,7 @@ const Register = () => {
                                 value={formData.phoneNumber}
                                 onChange={handleChange}
                                 className="pl-10 w-full input-field"
-                                placeholder="+1 234 567 890"
+                                placeholder="1234567890"
                             />
                         </div>
                     </div>
@@ -97,14 +107,21 @@ const Register = () => {
                         <div className="relative">
                             <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-800" />
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="pl-10 w-full input-field"
+                                className="pl-10 pr-10 w-full input-field"
                                 placeholder="••••••••"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-800 hover:text-surface-600 focus:outline-none"
+                            >
+                                {showPassword ? <FiEyeOff /> : <FiEye />}
+                            </button>
                         </div>
                     </div>
 
