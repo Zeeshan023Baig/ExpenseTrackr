@@ -34,8 +34,8 @@ const connectDB = async () => {
         await sequelize.authenticate();
         console.log("MySQL Connected...");
 
-        await sequelize.sync({ alter: true }); // Schema verified and altered
-        console.log("Database Synced with alter:true...");
+        await sequelize.sync(); // Schema verified
+        console.log("Database Synced...");
 
         // Forcefully add webhookToken if alter fails
         try {
